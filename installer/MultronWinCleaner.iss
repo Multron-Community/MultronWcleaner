@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "1.26.3"
+  #define AppVersion "1.26.4"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\MultronWinCleaner\bin\Release\net8.0-windows"
@@ -11,7 +11,7 @@
 #define AppName "Multron Win Cleaner"
 #define AppExe "MultronWinCleaner.exe"
 #define AppPublisher "Multron"
-#define AppUrl "https://github.com/winball501/MultronWcleaner"
+#define AppUrl "https://github.com/Multron-Community/MultronWcleaner"
 
 [Setup]
 AppId={{82C7E0F4-6EAE-434E-B06B-45D11A2ED2D0}

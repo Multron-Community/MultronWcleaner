@@ -60,7 +60,8 @@ namespace MultronWinCleaner.Processes
         public const string AutoReloadSettingKey = "databaseautoreload";
         public const string StatusSettingKey = "databaseupdatestatus";
         public const string ButtonSettingKey = "databaseupdatebutton";
-        public const string DatabaseReleasesUrl = "https://github.com/winball501/MultronWcleaner-Database/releases/latest";
+        public const string RepoOwner = "Multron-Community";
+        public const string DatabaseReleasesUrl = "https://github.com/" + RepoOwner + "/MultronWcleaner-Database/releases/latest";
         private const string LastCheckSettingKey = "databaselastcheck";
         public static readonly int[] UpdateIntervals = { 1, 2, 6, 12, 24 };
         public const int DefaultUpdateHours = 2;
@@ -135,7 +136,7 @@ namespace MultronWinCleaner.Processes
             try
             {
                 string repo = "MultronWcleaner-Database";
-                string owner = "winball501";
+                string owner = RepoOwner;
                 var client = new GitHubClient(new ProductHeaderValue("MultronWcleaner-Database"));
                 var latest = await client.Repository.Release.GetLatest(owner, repo);
                 WriteSetting(LastCheckSettingKey, DateTime.UtcNow.Ticks.ToString());
@@ -255,7 +256,7 @@ namespace MultronWinCleaner.Processes
 
         public const string AppUpdateSettingKey = "appautoupdate";
         private const string AppLastCheckSettingKey = "applastcheck";
-        public static readonly Version CurrentAppVersion = new Version("1.26.3");
+        public static readonly Version CurrentAppVersion = new Version("1.26.4");
 
         public static bool IsAppAutoUpdateEnabled() => ReadSetting(AppUpdateSettingKey) != "0";
 
@@ -272,6 +273,8 @@ namespace MultronWinCleaner.Processes
             public string FileName = "";
             public long Size;
             public string PageUrl = "";
+            public string? ManifestUrl;
+            public string? SignatureUrl;
         }
 
         public const string UpdatedArgument = "--updated";
@@ -286,7 +289,7 @@ namespace MultronWinCleaner.Processes
             Release latest;
             try
             {
-                latest = await client.Repository.Release.GetLatest("winball501", "MultronWcleaner");
+                latest = await client.Repository.Release.GetLatest(RepoOwner, "MultronWcleaner");
             }
             catch (NotFoundException)
             {
@@ -299,13 +302,16 @@ namespace MultronWinCleaner.Processes
 
             var asset = latest.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
             if (asset == null) return null;
+            string? AssetUrl(string name) => latest.Assets.FirstOrDefault(a => a.Name == name)?.BrowserDownloadUrl;
             return new AppUpdate
             {
                 Version = new Version(match.Value),
                 DownloadUrl = asset.BrowserDownloadUrl,
                 FileName = asset.Name,
                 Size = asset.Size,
-                PageUrl = latest.HtmlUrl ?? ""
+                PageUrl = latest.HtmlUrl ?? "",
+                ManifestUrl = AssetUrl(UpdateSignature.ManifestName),
+                SignatureUrl = AssetUrl(UpdateSignature.SignatureName)
             };
         }
 
@@ -327,7 +333,10 @@ namespace MultronWinCleaner.Processes
             string zipPath = Path.Combine(downloadFolder, Path.GetFileName(update.FileName));
             try
             {
+                IReadOnlyDictionary<string, string> hashes = await FetchSignedHashesAsync(update);
+                string expected = UpdateSignature.ExpectedHash(hashes, update.FileName);
                 await DownloadAsync(update, zipPath, progress);
+                UpdateSignature.VerifyFile(zipPath, expected);
                 ExtractPackage(zipPath, stagingFolder);
                 string packageRoot = FindPackageRoot(stagingFolder)
                     ?? throw new InvalidDataException(Loc.T("The update package does not contain Multron Win Cleaner."));
@@ -338,6 +347,19 @@ namespace MultronWinCleaner.Processes
                 TryDelete(zipPath);
                 try { if (Directory.Exists(stagingFolder)) Directory.Delete(stagingFolder, true); } catch { }
             }
+        }
+
+        private static async Task<IReadOnlyDictionary<string, string>> FetchSignedHashesAsync(AppUpdate update)
+        {
+            if (!UpdateSignature.IsTrustedUrl(update.DownloadUrl)
+                || !UpdateSignature.IsTrustedUrl(update.ManifestUrl)
+                || !UpdateSignature.IsTrustedUrl(update.SignatureUrl))
+                throw new InvalidDataException(Loc.T("The update does not come from the official GitHub releases."));
+            using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("MultronWcleaner/" + CurrentAppVersion);
+            byte[] manifest = await http.GetByteArrayAsync(update.ManifestUrl);
+            string signature = await http.GetStringAsync(update.SignatureUrl);
+            return UpdateSignature.VerifyManifest(manifest, signature, UpdateKey.PublicKey, update.Version, CurrentAppVersion);
         }
 
         private static async Task DownloadAsync(AppUpdate update, string zipPath, IProgress<int>? progress)

@@ -8,23 +8,23 @@
   Completely free, open-source, and free of subscriptions, paywalls, or background telemetry.
 
   <p align="center">
-    <a href="https://github.com/winball501/MultronWcleaner/releases">
-      <img src="https://img.shields.io/github/v/release/winball501/MultronWcleaner?style=for-the-badge&color=0e7490&label=Release" alt="Release" />
+    <a href="https://github.com/Multron-Community/MultronWcleaner/releases">
+      <img src="https://img.shields.io/github/v/release/Multron-Community/MultronWcleaner?style=for-the-badge&color=0e7490&label=Release" alt="Release" />
     </a>
     <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Platform" />
     <img src="https://img.shields.io/badge/Stack-C%23%20%7C%20WPF-512bd4?style=for-the-badge&logo=dotnet&logoColor=white" alt="Stack" />
-    <a href="https://github.com/winball501/MultronWcleaner-Database">
+    <a href="https://github.com/Multron-Community/MultronWcleaner-Database">
       <img src="https://img.shields.io/badge/Database-Community%20Driven-059669?style=for-the-badge&logo=github&logoColor=white" alt="Database Repo" />
     </a>
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/License-MIT-15803d?style=for-the-badge" alt="License: MIT" />
     </a>
-    <a href="https://github.com/winball501/MultronWcleaner/actions/workflows/build.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/winball501/MultronWcleaner/build.yml?branch=beta&style=for-the-badge&logo=githubactions&logoColor=white" alt="Build Status"/>
+    <a href="https://github.com/Multron-Community/MultronWcleaner/actions/workflows/build.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/Multron-Community/MultronWcleaner/build.yml?branch=beta&style=for-the-badge&logo=githubactions&logoColor=white" alt="Build Status"/>
   </a>
   </p>
 
-  [Download Release](https://github.com/winball501/MultronWcleaner/releases/latest) • [Database Repo](https://github.com/winball501/MultronWcleaner-Database) • [Report Issue](https://github.com/winball501/MultronWcleaner/issues) • [Support on Patreon](https://www.patreon.com/cw/multron)
+  [Download Release](https://github.com/Multron-Community/MultronWcleaner/releases/latest) • [Database Repo](https://github.com/Multron-Community/MultronWcleaner-Database) • [Report Issue](https://github.com/Multron-Community/MultronWcleaner/issues) • [Support on Patreon](https://www.patreon.com/cw/multron)
 
 </div>
 
@@ -75,7 +75,7 @@ The application is fully localized into **12 languages**: English, Turkish, Germ
 
 ### 🧹 Deep System Cleanup
 * **Application Rules:** Continuously updated definitions for third-party software, browser caches, and temporary data.
-* **Modular Rule Database:** Cleanup targets are governed by a modular [`database.txt`](https://github.com/winball501/MultronWcleaner-Database) repository, allowing instant community contributions without altering core application binaries.
+* **Modular Rule Database:** Cleanup targets are governed by a modular [`database.txt`](https://github.com/Multron-Community/MultronWcleaner-Database) repository, allowing instant community contributions without altering core application binaries.
 * **Deep Log Tracing:** Configurable detection and wiping of `.log`, `.etl`, `.dmp`, `.tmp`, and `.bak` files across target directories.
 * **Age-Based File Filters:** Target files strictly older than defined day thresholds based on file creation or last access timestamps.
 * **Exceptions:** Exclude files and whole folders from scanning and cleaning.
@@ -108,7 +108,7 @@ The application is fully localized into **12 languages**: English, Turkish, Germ
 ### 🛡️ Malware Scanner & Quarantine
 
 > [!NOTE]
-> **Test release:** the cloud malware scan is published for testing. It is released so it can be tried thoroughly and made stable, so results and behavior may still change. Please report false detections, missed threats or any problems in [Issues](https://github.com/winball501/MultronWcleaner/issues).
+> **Test release:** the cloud malware scan is published for testing. It is released so it can be tried thoroughly and made stable, so results and behavior may still change. Please report false detections, missed threats or any problems in [Issues](https://github.com/Multron-Community/MultronWcleaner/issues).
 
 * **Cloud Engine:** Files are checked in the cloud by the [viruskov.com](https://viruskov.com) OPEN-EDR engine over an encrypted TLS connection. The scan servers run on a VDS hosted by [Türkbil](https://turkbil.net.tr/).
 * **Quick, Full and Custom Scans:** Scan running processes, startup items and the folders you choose, or let a malware scan run automatically after the main system scan.
@@ -184,11 +184,27 @@ The application is fully localized into **12 languages**: English, Turkish, Germ
 
 ## Installation
 
-1. Navigate to the [Releases](https://github.com/winball501/MultronWcleaner/releases) section.
+1. Navigate to the [Releases](https://github.com/Multron-Community/MultronWcleaner/releases) section.
 2. Download one of these:
    * `mwc_setup.exe` installs the app for your user in `%LOCALAPPDATA%\Programs\Multron Win Cleaner` (no administrator rights needed for setup) and updates an existing installation in place.
    * `mwc.zip` is the portable version: extract it anywhere and run `MultronWinCleaner.exe` from the `mwc` folder.
 3. Start the app and confirm the UAC prompt. Later updates can be installed from Settings > App Updates.
+
+---
+
+## Automatic Updates
+
+Multron Win Cleaner updates itself from the GitHub releases of this repository (Settings > App Updates). Since 1.26.4 every update is verified before it is installed:
+
+* **Signed releases.** Each release has an `update.json` with the version and the SHA-256 of every file, signed with the Multron Win Cleaner release key (`update.json.sig`, ECDSA P-256). The public key is built into the app, so a file that was changed on GitHub without the private key is refused.
+* **Checked file.** The downloaded `mwc.zip` must match its SHA-256 in the signed `update.json` before it is unpacked.
+* **No going back.** The signed version must match the release and be newer than the installed version, so an old signed release cannot be used to install an older version.
+* **Official source only.** The update, its manifest and its signature must come from `https://github.com`.
+* **Protected key.** The release workflow builds the app without any secrets. A separate job in the `release-signing` environment signs exactly the files that build produced, adds a GitHub build attestation and publishes the release.
+
+Check a download yourself with `node scripts/verify-update.mjs update.json update.json.sig mwc.zip` from this repository, or `gh attestation verify mwc.zip --repo Multron-Community/MultronWcleaner`. Versions before 1.26.4 still update normally; they install 1.26.4 without the signature check, and every update after that is verified.
+
+**For maintainers:** the signing key was created with `node scripts/update-keys.mjs`; its public half is in `MultronWinCleaner/Processes/UpdateKey.cs` and the private half is the `UPDATE_SIGNING_KEY` secret of the `release-signing` environment. Keep an offline backup of it: installed copies only accept updates signed with this key.
 
 ---
 
@@ -301,7 +317,7 @@ If the connection drops during a scan, the client reconnects one attempt at a ti
 
 ## Community Database Contributions
 
-The cleaning rules are kept outside the main codebase to allow rapid additions without needing a new version release. You can inspect or extend the rule definitions directly at the [MultronWcleaner-Database](https://github.com/winball501/MultronWcleaner-Database) repository.
+The cleaning rules are kept outside the main codebase to allow rapid additions without needing a new version release. You can inspect or extend the rule definitions directly at the [MultronWcleaner-Database](https://github.com/Multron-Community/MultronWcleaner-Database) repository.
 
 Pull Requests adding support for new applications or custom directory paths are always reviewed and merged there.
 

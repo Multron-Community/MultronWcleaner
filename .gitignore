@@ -485,3 +485,4 @@ $RECYCLE.BIN/
 
 # Release output
 dist/
+*signing-key*

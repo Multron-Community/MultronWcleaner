@@ -19,25 +19,33 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
+    name: Build
     runs-on: windows-latest
+    permissions:
+      contents: read
+    outputs:
+      skip: ${{ steps.ver.outputs.skip }}
+      version: ${{ steps.ver.outputs.version }}
+      tag: ${{ steps.ver.outputs.tag }}
+      name: ${{ steps.ver.outputs.name }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
         with:
           dotnet-version: '8.0.x'
 
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce
 
       - name: Resolve version
         id: ver
@@ -151,28 +159,54 @@ jobs:
             installer/MultronWinCleaner.iss
           if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
 
-      - name: Checksums
-        if: steps.ver.outputs.skip != 'true'
-        shell: pwsh
-        run: |
-          Get-ChildItem dist -File | ForEach-Object {
-            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
-          } | Set-Content dist/SHA256SUMS.txt -Encoding ascii
-
       - name: Upload artifact
         if: steps.ver.outputs.skip != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: MultronWinCleaner-${{ steps.ver.outputs.version }}
+          name: release-files
           path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Sign, attest & publish
+    needs: release
+    if: needs.release.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    environment: release-signing
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Download what the build job made
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-files
+          path: dist
+
+      - name: Sign the update
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: node scripts/sign-release.mjs dist "$VERSION"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be
+        with:
+          subject-path: |
+            dist/*.zip
+            dist/*.exe
 
       - name: Publish GitHub release
-        if: steps.ver.outputs.skip != 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
-          tag_name: ${{ steps.ver.outputs.tag }}
+          tag_name: ${{ needs.release.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: ${{ steps.ver.outputs.name }}
+          name: ${{ needs.release.outputs.name }}
           body_path: RELEASE_NOTES.md
           prerelease: ${{ github.event.inputs.prerelease == 'true' }}
           make_latest: ${{ github.event.inputs.prerelease != 'true' }}

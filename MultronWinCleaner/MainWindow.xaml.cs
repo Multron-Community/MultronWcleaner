@@ -471,7 +471,7 @@ namespace Multron_Win_Cleaner
                 {
                     Process.Start(new ProcessStartInfo
                     {
-                        FileName = "https://github.com/winball501/MultronWcleaner-Database",
+                        FileName = "https://github.com/Multron-Community/MultronWcleaner-Database",
                         UseShellExecute = true
                     });
                 }
