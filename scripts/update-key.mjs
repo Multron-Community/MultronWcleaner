@@ -9,12 +9,12 @@ export const MANIFEST_APP = 'multron-win-cleaner';
 export const GENERATED = ['SHA256SUMS.txt', 'update.json', 'update.json.sig'];
 
 export function readPublicKey() {
-  const match = fs.readFileSync(keyFile, 'utf8').match(/PublicKey\s*=\s*"([^"]*)"/);
+  const match = fs.readFileSync(keyFile, 'utf8').match(/\bPublicKey\s*=\s*"([^"]*)"/);
   return match ? match[1].trim() : '';
 }
 
 export function writePublicKey(base64) {
-  const text = fs.readFileSync(keyFile, 'utf8').replace(/(PublicKey\s*=\s*")[^"]*(")/, `$1${base64}$2`);
+  const text = fs.readFileSync(keyFile, 'utf8').replace(/(\bPublicKey\s*=\s*")[^"]*(")/, `$1${base64}$2`);
   fs.writeFileSync(keyFile, text);
 }
 

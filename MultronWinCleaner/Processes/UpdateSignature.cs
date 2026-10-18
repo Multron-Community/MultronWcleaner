@@ -12,7 +12,8 @@ namespace MultronWinCleaner.Processes
     {
         public const string ManifestName = "update.json";
         public const string SignatureName = "update.json.sig";
-        private const string ManifestApp = "multron-win-cleaner";
+        public const string AppManifest = "multron-win-cleaner";
+        public const string DatabaseManifest = "multron-win-cleaner-database";
         private static readonly string[] TrustedHosts = { "github.com", "api.github.com" };
 
         public static bool IsTrustedUrl(string? url) =>
@@ -27,7 +28,10 @@ namespace MultronWinCleaner.Processes
         private static InvalidDataException NotVerified() =>
             new InvalidDataException(Loc.T("The update signature could not be verified, so the update was not installed."));
 
-        public static IReadOnlyDictionary<string, string> VerifyManifest(byte[] manifest, string signature, string publicKey, Version version, Version current)
+        public static IReadOnlyDictionary<string, string> VerifyManifest(byte[] manifest, string signature, string publicKey, Version version, Version current) =>
+            VerifyManifest(manifest, signature, publicKey, AppManifest, version, current, false);
+
+        public static IReadOnlyDictionary<string, string> VerifyManifest(byte[] manifest, string signature, string publicKey, string app, Version version, Version current, bool allowSameVersion)
         {
             if (string.IsNullOrWhiteSpace(publicKey))
                 throw NotVerified();
@@ -64,14 +68,17 @@ namespace MultronWinCleaner.Processes
             {
                 throw NotVerified();
             }
-            if ((string?)json["name"] != ManifestApp || json["files"] is not JObject files)
+            if ((string?)json["name"] != app || json["files"] is not JObject files)
                 throw NotVerified();
             if (!Version.TryParse((string?)json["version"], out Version? signedVersion))
                 throw NotVerified();
 
             Version signed = Normalize(signedVersion);
-            if (signed != Normalize(version) || signed <= Normalize(current))
+            if (signed != Normalize(version))
                 throw new InvalidDataException(Loc.F("The signed update is for version {0}, not {1}, so it was not installed.", signed, Normalize(version)));
+            bool older = allowSameVersion ? signed < Normalize(current) : signed <= Normalize(current);
+            if (older)
+                throw new InvalidDataException(Loc.F("Version {0} is not newer than the installed version {1}, so it was not installed.", signed, Normalize(current)));
 
             var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var property in files.Properties())

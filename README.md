@@ -200,11 +200,12 @@ Multron Win Cleaner updates itself from the GitHub releases of this repository (
 * **Checked file.** The downloaded `mwc.zip` must match its SHA-256 in the signed `update.json` before it is unpacked.
 * **No going back.** The signed version must match the release and be newer than the installed version, so an old signed release cannot be used to install an older version.
 * **Official source only.** The update, its manifest and its signature must come from `https://github.com`.
+* **Signed database.** Since 1.26.5 the cleaning database is verified the same way, with its own key: each [database release](https://github.com/Multron-Community/MultronWcleaner-Database/releases) has a signed `update.json`, and a `database.txt` that does not match it is refused while the current database stays in use.
 * **Protected key.** The release workflow builds the app without any secrets. A separate job in the `release-signing` environment signs exactly the files that build produced, adds a GitHub build attestation and publishes the release.
 
 Check a download yourself with `node scripts/verify-update.mjs update.json update.json.sig mwc.zip` from this repository, or `gh attestation verify mwc.zip --repo Multron-Community/MultronWcleaner`. Versions before 1.26.4 still update normally; they install 1.26.4 without the signature check, and every update after that is verified.
 
-**For maintainers:** the signing key was created with `node scripts/update-keys.mjs`; its public half is in `MultronWinCleaner/Processes/UpdateKey.cs` and the private half is the `UPDATE_SIGNING_KEY` secret of the `release-signing` environment. Keep an offline backup of it: installed copies only accept updates signed with this key.
+**For maintainers:** the app signing key was created with `node scripts/update-keys.mjs`; its public half is `PublicKey` in `MultronWinCleaner/Processes/UpdateKey.cs` and the private half is the `UPDATE_SIGNING_KEY` secret of the `release-signing` environment. The database key lives in the database repository (`node scripts/update-keys.js`, `update-key.pub`, its own `release-signing` environment); its public half is `DatabasePublicKey` in the same file. Keep an offline backup of it: installed copies only accept updates signed with this key.
 
 ---
 

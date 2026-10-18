@@ -1517,6 +1517,7 @@
   "The update signature could not be verified, so the update was not installed.": "Не удалось проверить подпись обновления, поэтому обновление не установлено.",
   "The update package does not match its signed checksum and was not installed.": "Пакет обновления не совпадает с подписанной контрольной суммой и не был установлен.",
   "The signed update is for version {0}, not {1}, so it was not installed.": "Подписанное обновление предназначено для версии {0}, а не {1}, поэтому оно не установлено.",
+  "Version {0} is not newer than the installed version {1}, so it was not installed.": "Версия {0} не новее установленной версии {1}, поэтому она не установлена.",
   "The update does not come from the official GitHub releases.": "Обновление получено не из официальных выпусков на GitHub.",
   "Restarting to finish the update...": "Перезапуск для завершения обновления...",
   "App Updates": "Обновления приложения",

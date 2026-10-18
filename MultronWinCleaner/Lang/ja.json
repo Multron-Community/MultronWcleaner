@@ -1514,6 +1514,7 @@
   "The update signature could not be verified, so the update was not installed.": "更新の署名を検証できなかったため、更新はインストールされませんでした。",
   "The update package does not match its signed checksum and was not installed.": "更新パッケージが署名済みチェックサムと一致しないため、インストールされませんでした。",
   "The signed update is for version {0}, not {1}, so it was not installed.": "署名済みの更新はバージョン {0} 用で、{1} 用ではないため、インストールされませんでした。",
+  "Version {0} is not newer than the installed version {1}, so it was not installed.": "バージョン {0} はインストール済みのバージョン {1} より新しくないため、インストールされませんでした。",
   "The update does not come from the official GitHub releases.": "この更新は公式の GitHub リリースから提供されたものではありません。",
   "Restarting to finish the update...": "更新を完了するために再起動しています...",
   "App Updates": "アプリの更新",

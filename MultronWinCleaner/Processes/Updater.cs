@@ -163,6 +163,22 @@ namespace MultronWinCleaner.Processes
                 var asset = latest.Assets.FirstOrDefault(a => a.Name.EndsWith(".txt"));
                 if (asset == null)
                     return null;
+                string? manifestUrl = latest.Assets.FirstOrDefault(a => a.Name == UpdateSignature.ManifestName)?.BrowserDownloadUrl;
+                string? signatureUrl = latest.Assets.FirstOrDefault(a => a.Name == UpdateSignature.SignatureName)?.BrowserDownloadUrl;
+                if (!UpdateSignature.IsTrustedUrl(asset.BrowserDownloadUrl)
+                    || !UpdateSignature.IsTrustedUrl(manifestUrl)
+                    || !UpdateSignature.IsTrustedUrl(signatureUrl))
+                    throw new InvalidDataException(Loc.T("The update does not come from the official GitHub releases."));
+                string expectedHash;
+                using (var signedHttp = new HttpClient { Timeout = TimeSpan.FromMinutes(2) })
+                {
+                    signedHttp.DefaultRequestHeaders.UserAgent.ParseAdd("MultronWcleaner/" + CurrentAppVersion);
+                    byte[] manifest = await signedHttp.GetByteArrayAsync(manifestUrl);
+                    string signature = await signedHttp.GetStringAsync(signatureUrl);
+                    var hashes = UpdateSignature.VerifyManifest(manifest, signature, UpdateKey.DatabasePublicKey,
+                        UpdateSignature.DatabaseManifest, latestVersion, currentVersion, !File.Exists(databaseFile));
+                    expectedHash = UpdateSignature.ExpectedHash(hashes, asset.Name);
+                }
 
                 var downloadFolder = Path.Combine(appDirectory, "Update");
                 Directory.CreateDirectory(downloadFolder);
@@ -200,6 +216,7 @@ namespace MultronWinCleaner.Processes
                     }
                 }
 
+                UpdateSignature.VerifyFile(filePath, expectedHash);
                 string downloaded = await File.ReadAllTextAsync(filePath);
                 if (!downloaded.Contains("{=") || !downloaded.Contains("}"))
                 {
@@ -256,7 +273,7 @@ namespace MultronWinCleaner.Processes
 
         public const string AppUpdateSettingKey = "appautoupdate";
         private const string AppLastCheckSettingKey = "applastcheck";
-        public static readonly Version CurrentAppVersion = new Version("1.26.4");
+        public static readonly Version CurrentAppVersion = new Version("1.26.5");
 
         public static bool IsAppAutoUpdateEnabled() => ReadSetting(AppUpdateSettingKey) != "0";
 

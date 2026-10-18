@@ -1516,6 +1516,7 @@
   "The update signature could not be verified, so the update was not installed.": "La signature de la mise à jour n'a pas pu être vérifiée, la mise à jour n'a donc pas été installée.",
   "The update package does not match its signed checksum and was not installed.": "Le paquet de mise à jour ne correspond pas à sa somme de contrôle signée et n'a pas été installé.",
   "The signed update is for version {0}, not {1}, so it was not installed.": "La mise à jour signée concerne la version {0}, et non la {1}, elle n'a donc pas été installée.",
+  "Version {0} is not newer than the installed version {1}, so it was not installed.": "La version {0} n'est pas plus récente que la version installée {1}, elle n'a donc pas été installée.",
   "The update does not come from the official GitHub releases.": "La mise à jour ne provient pas des versions officielles sur GitHub.",
   "Restarting to finish the update...": "Redémarrage pour terminer la mise à jour...",
   "App Updates": "Mises à jour de l\u0027application",
