@@ -51,6 +51,9 @@ namespace MultronWinCleaner.Processes
 
         public bool IsConnected => current?.IsUsable == true;
 
+        public bool SupportsReports(bool falseNegative) =>
+            current is { } c && (falseNegative ? c.SupportsFalseNegativeReports : c.SupportsFalsePositiveReports);
+
         public CloudScanClient() : this(ServerUrl, ServerCertSha256)
         {
         }
@@ -221,6 +224,69 @@ namespace MultronWinCleaner.Processes
                 }
 
                 return await UploadAndScanAsync(connection, pending, id, path, result, uploadProgress, ct, rescan);
+            }
+            finally
+            {
+                connection.Pending.TryRemove(id, out _);
+            }
+        }
+
+        public async Task<VerdictReport> ReportVerdictAsync(bool falseNegative, string sha256, string fileName, string note, CancellationToken ct)
+        {
+            Connection connection = current is { IsUsable: true } c ? c : throw new IOException(Loc.T("Not connected."));
+            if (!SupportsReports(falseNegative))
+                throw new CloudScanFatalException(falseNegative
+                    ? Loc.T("The cloud server does not accept false negative reports yet.")
+                    : Loc.T("The cloud server does not accept false positive reports yet."));
+
+            long id = Interlocked.Increment(ref nextId);
+            var pending = new PendingScan();
+            connection.Pending[id] = pending;
+            try
+            {
+                await connection.SendLock.WaitAsync(ct);
+                try
+                {
+                    await connection.SendJsonAsync(new JObject
+                    {
+                        ["type"] = falseNegative ? "report_fn" : "report_fp",
+                        ["id"] = id,
+                        ["sha256"] = sha256,
+                        ["name"] = fileName,
+                        ["note"] = note
+                    }, ct);
+                }
+                catch (Exception ex)
+                {
+                    connection.Fault(ex);
+                    throw;
+                }
+                finally
+                {
+                    connection.SendLock.Release();
+                }
+
+                JObject reply;
+                try
+                {
+                    reply = await pending.Final.Task.WaitAsync(ResultTimeout, ct);
+                }
+                catch (TimeoutException)
+                {
+                    throw new IOException(Loc.T("The cloud server did not answer in time"));
+                }
+
+                if ((string?)reply["type"] == "error")
+                    throw new CloudScanFatalException((string?)reply["message"] ?? Loc.T("Server error"));
+
+                return new VerdictReport
+                {
+                    Status = (string?)reply["status"] ?? "pending",
+                    Verdict = (string?)reply["verdict"] ?? "",
+                    ThreatName = (string?)reply["threat_name"] ?? "",
+                    Note = (string?)reply["note"] ?? "",
+                    FileOnServer = (bool?)reply["file_on_server"] ?? true
+                };
             }
             finally
             {
@@ -506,6 +572,8 @@ namespace MultronWinCleaner.Processes
 
             public bool SupportsCheck { get; private set; }
             public bool SupportsBrotli { get; private set; }
+            public bool SupportsFalsePositiveReports { get; private set; }
+            public bool SupportsFalseNegativeReports { get; private set; }
             public int CheckBatchSize { get; private set; } = 256;
             public SemaphoreSlim UploadSlots { get; private set; } = new(4, 4);
 
@@ -590,6 +658,16 @@ namespace MultronWinCleaner.Processes
                     foreach (JToken e in encodings)
                         if ((string?)e == "br")
                             SupportsBrotli = true;
+                SupportsFalsePositiveReports = false;
+                SupportsFalseNegativeReports = false;
+                if (reply["features"] is JArray features)
+                    foreach (JToken f in features)
+                    {
+                        if ((string?)f == "report_fp")
+                            SupportsFalsePositiveReports = true;
+                        else if ((string?)f == "report_fn")
+                            SupportsFalseNegativeReports = true;
+                    }
                 int pipeline = Math.Clamp((int?)reply["pipeline"] ?? 4, 1, 32);
                 UploadSlots = new SemaphoreSlim(pipeline, pipeline);
 
@@ -624,6 +702,9 @@ namespace MultronWinCleaner.Processes
                                 break;
                             case "send_file":
                                 pending.Ack.TrySetResult(message);
+                                break;
+                            case "report_result":
+                                pending.Final.TrySetResult(message);
                                 break;
                             case "result":
                             case "error":
@@ -701,6 +782,16 @@ namespace MultronWinCleaner.Processes
                 return JObject.Parse(Encoding.UTF8.GetString(message.GetBuffer(), 0, (int)message.Length));
             }
         }
+    }
+
+    public sealed class VerdictReport
+    {
+        public string Status { get; set; } = "pending";
+        public string Verdict { get; set; } = "";
+        public string ThreatName { get; set; } = "";
+        public string Note { get; set; } = "";
+        public bool FileOnServer { get; set; } = true;
+        public bool IsCompleted => Status == "completed";
     }
 
     public class CloudScanResult : System.ComponentModel.INotifyPropertyChanged

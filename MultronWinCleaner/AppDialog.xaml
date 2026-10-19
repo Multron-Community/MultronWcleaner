@@ -26,6 +26,9 @@
                                  IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
                                  IsTabStop="False" Cursor="Arrow"/>
                     </ScrollViewer>
+                    <TextBox x:Name="InputBox" Visibility="Collapsed" Margin="0,-12,0,24" MinHeight="80" MaxHeight="160"
+                             TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                             Style="{DynamicResource ModernTextBoxStyle}"/>
                     <StackPanel x:Name="ButtonsPanel" Orientation="Horizontal" HorizontalAlignment="Right"/>
                 </StackPanel>
             </Border>

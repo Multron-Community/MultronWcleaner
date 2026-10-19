@@ -47,6 +47,24 @@ namespace MultronWinCleaner
             return dialog.result;
         }
 
+        public static string? Prompt(Window? owner, string message, string title, int maxLength)
+        {
+            var app = Application.Current;
+            if (app == null)
+                return null;
+            if (!app.Dispatcher.CheckAccess())
+                return app.Dispatcher.Invoke(() => Prompt(owner, message, title, maxLength));
+
+            var dialog = new AppDialog();
+            dialog.Setup(message, title, MessageBoxButton.OKCancel, MessageBoxImage.Question);
+            dialog.InputBox.Visibility = Visibility.Visible;
+            dialog.InputBox.MaxLength = maxLength;
+            dialog.Loaded += (s, e) => dialog.InputBox.Focus();
+            dialog.PlaceOver(owner ?? ActiveWindow());
+            dialog.ShowDialog();
+            return dialog.result == MessageBoxResult.OK ? dialog.InputBox.Text.Trim() : null;
+        }
+
         private static Window? ActiveWindow()
         {
             var windows = Application.Current.Windows.OfType<Window>().Where(w => w.IsVisible && w.WindowState != WindowState.Minimized && w is not AppDialog).ToList();
@@ -126,7 +144,7 @@ namespace MultronWinCleaner
             };
             ButtonsPanel.Children.Add(button);
             if (primary)
-                Loaded += (s, e) => button.Focus();
+                Loaded += (s, e) => { if (InputBox.Visibility != Visibility.Visible) button.Focus(); };
         }
 
         private void PlaceOver(Window? owner)
