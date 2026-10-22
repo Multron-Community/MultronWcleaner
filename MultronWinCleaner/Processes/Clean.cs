@@ -47,12 +47,24 @@ namespace MultronWinCleaner.Processes
         private long itemBytes;
         private int itemLocked;
         private int itemDenied;
+        private int itemReboot;
+        private int totalReboot;
         private int totalFiles;
         private long totalBytes;
         private int totalLocked;
         private int totalDenied;
         private int cleanedItems;
+
+        private SecureDelete.Mode? shredModeCache;
+        private SecureDelete.Mode ShredMode => shredModeCache ??= SecureDelete.ReadConfiguredMode();
+        private bool Shredding => ShredMode != SecureDelete.Mode.Off;
         private int skippedItems;
+        private readonly System.Collections.Concurrent.ConcurrentQueue<string> exceptionLog = new();
+        private const int MaxLoggedExceptions = 2000;
+        private readonly System.Collections.Concurrent.ConcurrentQueue<string> rebootFiles = new();
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> rebootSet = new(StringComparer.OrdinalIgnoreCase);
+        private const int MaxListedRebootFiles = 300;
+        private readonly System.Collections.Concurrent.ConcurrentQueue<(string File, int Error)> deniedFiles = new();
         private readonly Stopwatch cleanTimer = new Stopwatch();
         private bool automaticRun;
         private bool runComponentCleanup;
@@ -197,6 +209,7 @@ namespace MultronWinCleaner.Processes
                 main.buttonStartScan.Content = Loc.T("Cancel");
                 main.buttonReset.Visibility = Visibility.Hidden;
                 main.progressBar1.Value = 0;
+                main.ShowRestartRequired(0);
                 main.AnimateIcon(true);
                 checkedPaths = new HashSet<string>(
                     main.viewModel.Groups.Where(g => g.allFiles != null).SelectMany(g => g.allFiles).Where(f => f.IsChecked).Select(f => f.Path),
@@ -209,7 +222,8 @@ namespace MultronWinCleaner.Processes
             runRestoreHealth = repairChoices.Restore;
             runSfc = repairChoices.Sfc;
             cleanTimer.Restart();
-            var task = ScandotsAsync(Loc.T("Cleaning"), cts.Token);
+            shredModeCache = null;
+            var task = ScandotsAsync(Shredding ? Loc.T("Shredding & Cleaning") : Loc.T("Cleaning"), cts.Token);
             main.database.RemoveAll(item => item.EndsWith("=logscan"));
             int totalCount = main.database.Count;
             int cleanedCount = 0;
@@ -217,26 +231,24 @@ namespace MultronWinCleaner.Processes
 
             await UpdateStatusColor(BLUE);
 
+            if (Shredding)
+                await AddStatusTextBlock(Loc.F("Secure deletion is on ({0}): files are shredded before they are removed, so they cannot be recovered.", SecureDelete.Describe(ShredMode)));
+
             if (main.logfiles.Count > 0)
             {
-                var status = await AddStatusTextBlock(Loc.F("Cleaning: Found Log Files in C:\\ ({0} files)", main.logfiles.Count));
-                int current = 0;
+                var status = await AddStatusTextBlock(Loc.F(Shredding ? "Shredding & Cleaning: Found Log Files in C:\\ ({0} files)" : "Cleaning: Found Log Files in C:\\ ({0} files)", main.logfiles.Count));
                 StartItem(Loc.T("Deep Log Files"));
-
-                foreach (string logfile in main.logfiles)
+                int logTotal = main.logfiles.Count;
+                await DeleteFilesAsync(main.logfiles.ToList(), Loc.T("Deep Log Scan Result"), done =>
                 {
-                    if (main.cancelclean == 2) break;
-
-                    TryDeleteFile(logfile, Loc.T("Deep Log Scan Result"));
-                    current++;
-                    dotsText = Loc.F("Cleaning: Deep Log Files ({0} / {1})", current, main.logfiles.Count);
-                    await UpdateProgress(current, main.logfiles.Count);
-                }
+                    dotsText = Loc.F(Shredding ? "Shredding & Cleaning: Deep Log Files ({0} / {1})" : "Cleaning: Deep Log Files ({0} / {1})", done, logTotal);
+                    _ = UpdateProgress(done, logTotal);
+                });
 
                 FinishItem();
                 await main.Dispatcher.InvokeAsync(() =>
                 {
-                    status.Text = Loc.F("Cleaned: Found Log Files in C:\\ ({0})", DetailText());
+                    status.Text = Loc.F(Shredding ? "Shredded & Cleaned: Found Log Files in C:\\ ({0})" : "Cleaned: Found Log Files in C:\\ ({0})", DetailText());
                     if (itemLocked > 0 || itemDenied > 0)
                         status.Foreground = Brushes.Goldenrod;
                 });
@@ -319,8 +331,8 @@ namespace MultronWinCleaner.Processes
                 }
                 else if (Directory.Exists(path) || File.Exists(path))
                 {
-                    dotsText = Loc.F("Cleaning: {0}", name);
-                    var statusBlock = await AddStatusTextBlock(Loc.F("Cleaning: {0}: {1}", name, path));
+                    dotsText = Loc.F(Shredding ? "Shredding & Cleaning: {0}" : "Cleaning: {0}", name);
+                    var statusBlock = await AddStatusTextBlock(Loc.F(Shredding ? "Shredding & Cleaning: {0}: {1}" : "Cleaning: {0}: {1}", name, path));
                     StartItem(name);
 
                     if (File.Exists(path))
@@ -345,8 +357,9 @@ namespace MultronWinCleaner.Processes
                         }
                         else if (targetGroup.allFiles.Any(f => f.IsChecked))
                         {
-                            await CleanDirectory(path, name);
-                            await DeleteEmptyDirectories(path);
+                            var groupFiles = targetGroup.allFiles.Where(f => f.IsChecked).Select(f => f.Path).ToList();
+                            await DeleteFilesAsync(groupFiles, name, null);
+                            await Task.Run(() => DeleteEmptyDirectories(path));
                             iscleaned = itemLocked > 0 || itemDenied > 0 ? 6 : 1;
                         }
                     }
@@ -370,7 +383,7 @@ namespace MultronWinCleaner.Processes
                         }
                         else if (iscleaned == 1)
                         {
-                            statusBlock.Text = Loc.F("Cleaned: {0}: {1} ({2})", name, path, detail);
+                            statusBlock.Text = Loc.F(Shredding ? "Shredded & Cleaned: {0}: {1} ({2})" : "Cleaned: {0}: {1} ({2})", name, path, detail);
                             statusBlock.Foreground = BLUE;
                         }
                         else if (iscleaned == 5)
@@ -385,7 +398,7 @@ namespace MultronWinCleaner.Processes
                         }
                         else if (iscleaned == 6)
                         {
-                            statusBlock.Text = Loc.F("Partly Cleaned: {0}: {1} ({2})", name, path, detail);
+                            statusBlock.Text = Loc.F(Shredding ? "Partly Shredded & Cleaned: {0}: {1} ({2})" : "Partly Cleaned: {0}: {1} ({2})", name, path, detail);
                             statusBlock.Foreground = Brushes.Goldenrod;
                         }
                     });
@@ -397,13 +410,21 @@ namespace MultronWinCleaner.Processes
 
             cleanTimer.Stop();
             TimeSpan elapsed = cleanTimer.Elapsed;
-            string summaryText = Loc.F("{0}: {1} files deleted ({2}) from {3} locations, {4} locked files, {5} access denied, {6} unticked locations skipped. Took {7}m {8}s", Loc.T(main.cancelclean == 2 ? "Cleaning canceled" : "Summary"), totalFiles, main.formatsize(totalBytes), cleanedItems, totalLocked, totalDenied, skippedItems, (int)elapsed.TotalMinutes, elapsed.Seconds);
+            string summaryText = Loc.F(Shredding
+                    ? "{0}: {1} files shredded and deleted ({2}) from {3} locations, {4} locked files, {5} access denied, {6} unticked locations skipped. Took {7}m {8}s"
+                    : "{0}: {1} files deleted ({2}) from {3} locations, {4} locked files, {5} access denied, {6} unticked locations skipped. Took {7}m {8}s",
+                Loc.T(main.cancelclean == 2 ? "Cleaning canceled" : "Summary"), totalFiles, main.formatsize(totalBytes), cleanedItems, totalLocked, totalDenied, skippedItems, (int)elapsed.TotalMinutes, elapsed.Seconds);
+            if (totalReboot > 0)
+                summaryText += " " + Loc.F("{0} file(s) in use by Windows will be deleted at the next restart.", totalReboot);
+            if (Shredding)
+                summaryText += " " + Loc.F("Secure deletion: {0}.", SecureDelete.Describe(ShredMode));
             var summaryBlock = await AddStatusTextBlock(summaryText);
             await main.Dispatcher.InvokeAsync(() =>
             {
                 summaryBlock.FontWeight = FontWeights.Bold;
                 summaryBlock.Foreground = totalLocked > 0 || totalDenied > 0 ? Brushes.Goldenrod : GREEN;
             });
+            await ShowRebootFilesAsync();
             await FinalizeCleaning();
         }
         private async Task RemoveMalwareThreatsAsync()
@@ -453,6 +474,11 @@ namespace MultronWinCleaner.Processes
                 {
                     text = Loc.F("Threat Locked, will be deleted at restart: {0}: {1}", removal.Threat, removal.FilePath);
                     brush = Brushes.Goldenrod;
+                    if (rebootSet.TryAdd(removal.FilePath, 0))
+                    {
+                        rebootFiles.Enqueue(removal.FilePath);
+                        Interlocked.Increment(ref totalReboot);
+                    }
                 }
                 else
                 {
@@ -536,6 +562,7 @@ namespace MultronWinCleaner.Processes
             itemBytes = 0;
             itemLocked = 0;
             itemDenied = 0;
+            itemReboot = 0;
         }
         private void FinishItem()
         {
@@ -543,6 +570,7 @@ namespace MultronWinCleaner.Processes
             totalBytes += itemBytes;
             totalLocked += itemLocked;
             totalDenied += itemDenied;
+            totalReboot += itemReboot;
             if (itemFiles > 0)
                 cleanedItems++;
         }
@@ -551,9 +579,72 @@ namespace MultronWinCleaner.Processes
             string text = Loc.F(itemFiles == 1 ? "{0} file, {1}" : "{0} files, {1}", itemFiles, main.formatsize(itemBytes));
             if (itemLocked > 0)
                 text += Loc.F(", {0} locked", itemLocked);
+            if (itemReboot > 0)
+                text += Loc.F(", {0} at next restart", itemReboot);
             if (itemDenied > 0)
                 text += Loc.F(", {0} access denied", itemDenied);
             return text;
+        }
+
+        private void CountUnremovable(string file)
+        {
+            if (ForceDelete.ScheduleDeleteAtReboot(file))
+            {
+                if (rebootSet.TryAdd(file, 0))
+                {
+                    Interlocked.Increment(ref itemReboot);
+                    rebootFiles.Enqueue(file);
+                }
+            }
+            else
+            {
+                Interlocked.Increment(ref itemDenied);
+                int error = ForceDelete.LastScheduleError;
+                deniedFiles.Enqueue((file, error));
+                catchexception($"Could not delete or schedule for the next restart (Windows error {error}): {file}");
+            }
+        }
+
+        private int DeleteParallelism => Shredding ? 2 : Math.Clamp(Environment.ProcessorCount, 4, 16);
+
+        private Task DeleteFilesAsync(IReadOnlyList<string> files, string groupName, Action<int>? progress)
+        {
+            if (files.Count == 0)
+                return Task.CompletedTask;
+            return Task.Run(() =>
+            {
+                int done = 0;
+                var throttle = Stopwatch.StartNew();
+                try
+                {
+                    Parallel.ForEach(files, new ParallelOptions { MaxDegreeOfParallelism = DeleteParallelism }, (file, state) =>
+                    {
+                        if (main.cancelclean == 2)
+                        {
+                            state.Stop();
+                            return;
+                        }
+                        TryDeleteFile(file, groupName);
+                        int n = Interlocked.Increment(ref done);
+                        if (progress != null)
+                        {
+                            bool report;
+                            lock (throttle)
+                            {
+                                report = throttle.ElapsedMilliseconds >= 100 || n == files.Count;
+                                if (report) throttle.Restart();
+                            }
+                            if (report)
+                                progress(n);
+                        }
+                    });
+                }
+                catch (AggregateException ex)
+                {
+                    catchexception(ex.Message);
+                }
+                progress?.Invoke(Volatile.Read(ref done));
+            });
         }
         private void TryDeleteFile(string file, string groupName)
         {
@@ -567,47 +658,154 @@ namespace MultronWinCleaner.Processes
                     return;
 
                 long length = info.Length;
-                info.Delete();
-                itemFiles++;
-                itemBytes += length;
-                if (itemFiles % 50 == 0)
-                    dotsText = Loc.F("Cleaning: {0} ({1} files)", currentItem, itemFiles);
+                if (info.IsReadOnly)
+                {
+                    try { info.IsReadOnly = false; } catch { }
+                }
+
+                if (ShredMode != SecureDelete.Mode.Off)
+                {
+                    if (!SecureDelete.Shred(file, ShredMode))
+                    {
+                        if (File.Exists(file))
+                        {
+                            if (catchlockedfile(null, file, groupName))
+                                Interlocked.Increment(ref itemLocked);
+                            else
+                                CountUnremovable(file);
+                        }
+                        return;
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        info.Delete();
+                    }
+                    catch (Exception ex)
+                    {
+                        if (!ForceDelete.TryHardDelete(file))
+                        {
+                            if (File.Exists(file))
+                            {
+                                if (catchlockedfile(ex, file, groupName))
+                                    Interlocked.Increment(ref itemLocked);
+                                else
+                                    CountUnremovable(file);
+                            }
+                            catchexception(ex.Message + " " + ex.StackTrace);
+                            return;
+                        }
+                    }
+                }
+
+                int deleted = Interlocked.Increment(ref itemFiles);
+                Interlocked.Add(ref itemBytes, length);
+                if (deleted % 50 == 0)
+                    dotsText = Loc.F(Shredding ? "Shredding & Cleaning: {0} ({1} files)" : "Cleaning: {0} ({1} files)", currentItem, deleted);
             }
             catch (Exception Ex)
             {
                 if (File.Exists(file))
                 {
                     if (catchlockedfile(Ex, file, groupName))
-                        itemLocked++;
+                        Interlocked.Increment(ref itemLocked);
                     else
-                        itemDenied++;
+                        CountUnremovable(file);
                 }
                 catchexception(Ex.Message + " " + Ex.StackTrace);
             }
         }
-        public bool catchlockedfile(Exception ex, string file, string groupName)
+        public bool catchlockedfile(Exception? ex, string file, string groupName)
         {
-            bool isLocked = false;
+            bool isLocked = WhoUsesFile.HasClosableLocker(file);
 
-            if (ex is IOException ioEx)
+            if (isLocked)
             {
-                int errorCode = Marshal.GetHRForException(ioEx) & 0x0000FFFF;
-                if (errorCode == 0x20 || errorCode == 0x21)
-                    isLocked = true;
-            }
-
-            if (isLocked && lockedFiles.Add(file))
-            {
-                main.paths.Add(file + "=" + "0" + "=" + Loc.T("Unknown Process") + "=" + groupName);
+                lock (lockedFiles)
+                {
+                    if (lockedFiles.Add(file))
+                        main.paths.Add(file + "=" + "0" + "=" + Loc.T("Unknown Process") + "=" + groupName);
+                }
             }
             return isLocked;
         }
         public void catchexception(string message)
         {
-            using (StreamWriter writer = new StreamWriter(Environment.CurrentDirectory + "\\exceptions.txt"))
+            if (exceptionLog.Count < MaxLoggedExceptions)
+                exceptionLog.Enqueue(message);
+        }
+
+        private async Task ShowRebootFilesAsync()
+        {
+            await ShowFileListAsync(
+                rebootFiles.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(f => f, StringComparer.OrdinalIgnoreCase).Select(f => Loc.F("Will be deleted at the next restart: {0}", f)).ToList(),
+                count => Loc.F("Will be deleted at the next restart ({0}): these files are in use by Windows or a Windows service, so Windows removes them when the PC restarts.", count));
+            await ShowFileListAsync(
+                deniedFiles.GroupBy(d => d.File, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).OrderBy(d => d.File, StringComparer.OrdinalIgnoreCase)
+                    .Select(d => d.Error != 0 ? Loc.F("Could not delete: {0} (Windows error {1})", d.File, d.Error) : Loc.F("Could not delete: {0}", d.File)).ToList(),
+                count => Loc.F("Could not be deleted ({0}): access to these files is denied and Windows did not accept them for deletion at the next restart.", count));
+        }
+
+        private async Task ShowFileListAsync(List<string> lines, Func<int, string> headerText)
+        {
+            if (lines.Count == 0)
+                return;
+            var files = lines;
+            await main.Dispatcher.InvokeAsync(() =>
             {
-                writer.WriteLine(message);
+                main.wrapPanelDirectories.Children.Add(new Border
+                {
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x26, 0xFF, 0x57, 0x22)),
+                    BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xFF, 0x57, 0x22)),
+                    BorderThickness = new Thickness(0, 0, 0, 2),
+                    Padding = new Thickness(8, 6, 8, 6),
+                    Margin = new Thickness(5, 14, 5, 4),
+                    Child = new TextBlock
+                    {
+                        Text = headerText(files.Count),
+                        Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xFF, 0x57, 0x22)),
+                        FontSize = 17,
+                        FontWeight = FontWeights.Bold,
+                        TextWrapping = TextWrapping.Wrap
+                    }
+                });
+                foreach (string file in files.Take(MaxListedRebootFiles))
+                {
+                    main.wrapPanelDirectories.Children.Add(new TextBlock
+                    {
+                        Text = file,
+                        Foreground = BLUE,
+                        FontSize = 14,
+                        Margin = new Thickness(15, 2, 5, 2),
+                        ToolTip = file
+                    });
+                }
+                if (files.Count > MaxListedRebootFiles)
+                {
+                    main.wrapPanelDirectories.Children.Add(new TextBlock
+                    {
+                        Text = Loc.F("...and {0} more.", files.Count - MaxListedRebootFiles),
+                        Foreground = BLUE,
+                        FontSize = 14,
+                        Margin = new Thickness(15, 2, 5, 2)
+                    });
+                }
+                main.ScrollViewerDirectories.ScrollToBottom();
+            });
+        }
+
+        private void WriteExceptionLog()
+        {
+            if (exceptionLog.IsEmpty)
+                return;
+            try
+            {
+                File.WriteAllLines(System.IO.Path.Combine(Environment.CurrentDirectory, "exceptions.txt"), exceptionLog);
             }
+            catch { }
+            exceptionLog.Clear();
         }
         public class LockedFileGroupViewModel : INotifyPropertyChanged
         {
@@ -663,45 +861,16 @@ namespace MultronWinCleaner.Processes
 
 
 
-        private async Task CleanDirectory(string path, string name)
+        public void DeleteEmptyDirectories(string parentPath)
         {
             try
             {
-                foreach (var subDir in Directory.GetDirectories(path))
+                foreach (string subDir in Directory.EnumerateDirectories(parentPath, "*", new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint }).ToList())
                 {
                     if (main.cancelclean == 2) return;
-                    await CleanDirectory(subDir, name);
-                }
-            }
-            catch (Exception)
-            {
-                
-            }
-            try
-            {
-                foreach (var file in Directory.GetFiles(path))
-                {
-                    if (main.cancelclean == 2) return;
-                    TryDeleteFile(file, name);
-                }
-            }
-            catch (Exception)
-            {
+                    DeleteEmptyDirectories(subDir);
 
-            }
-        }
-        public async Task DeleteEmptyDirectories(string parentPath)
-        {
-
-            try
-            {
-                foreach (string subDir in Directory.GetDirectories(parentPath))
-                {
-                    
-                    await DeleteEmptyDirectories(subDir);
-
-
-                    if (Directory.Exists(subDir) && Directory.GetFileSystemEntries(subDir).Length == 0)
+                    if (Directory.Exists(subDir) && !Directory.EnumerateFileSystemEntries(subDir).Any())
                     {
                         try
                         {
@@ -735,8 +904,40 @@ namespace MultronWinCleaner.Processes
             main.AnimateIcon(false);
             string resultMessage = "";
             await cts.CancelAsync();
-            long newFreeSpace = new DriveInfo("C:\\").AvailableFreeSpace;
-            long freedSpace = newFreeSpace - totalsize;
+            WriteExceptionLog();
+            long freedSpace = totalBytes;
+            long freeAfter = new DriveInfo("C:\\").AvailableFreeSpace;
+            long freeDelta = freeAfter - totalsize;
+            string diskLine = Loc.F("Free space on C: before {0}, after {1} ({2})",
+                main.formatsize(totalsize), main.formatsize(freeAfter),
+                (freeDelta >= 0 ? "+" : "-") + main.formatsize(Math.Abs(freeDelta)));
+            var diskBlock = await AddStatusTextBlock(diskLine);
+            await main.Dispatcher.InvokeAsync(() => diskBlock.FontWeight = FontWeights.Bold);
+            int restartFiles = rebootSet.Count;
+            if (restartFiles > 0)
+            {
+                await main.Dispatcher.InvokeAsync(() =>
+                {
+                    main.wrapPanelDirectories.Children.Add(new Border
+                    {
+                        Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xFF, 0x57, 0x22)),
+                        CornerRadius = new CornerRadius(8),
+                        Padding = new Thickness(14, 10, 14, 10),
+                        Margin = new Thickness(5, 12, 5, 8),
+                        Child = new TextBlock
+                        {
+                            Text = Loc.T("Cleaning done! Restart required.") + " " +
+                                   Loc.F("{0} file(s) are in use by Windows and will be deleted when the PC restarts. Restart to finish cleaning.", restartFiles),
+                            Foreground = Brushes.White,
+                            FontSize = 18,
+                            FontWeight = FontWeights.Bold,
+                            TextWrapping = TextWrapping.Wrap
+                        }
+                    });
+                    main.ScrollViewerDirectories.ScrollToBottom();
+                    main.ShowRestartRequired(restartFiles);
+                });
+            }
             if (main.paths.Count > 0)
             {
                 await main.Dispatcher.InvokeAsync(() =>
@@ -758,11 +959,11 @@ namespace MultronWinCleaner.Processes
                 {
                     if(File.Exists(main.settings.logfilepath))
                     {
-                        System.IO.File.AppendAllText(main.settings.logfilepath, resultMessage + "(last scan)" + Environment.NewLine);
+                        System.IO.File.AppendAllText(main.settings.logfilepath, resultMessage + " " + diskLine + "(last scan)" + Environment.NewLine);
                     }
                  
                 }
-                main.label1_Copy.Text = resultMessage;
+                main.label1_Copy.Text = resultMessage + Environment.NewLine + diskLine;
                 main.label1_Copy.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FF9800"));
                 main.reset = 1;
                

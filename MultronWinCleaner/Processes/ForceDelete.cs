@@ -38,6 +38,7 @@ namespace MultronWinCleaner.Processes
 
         public static Result Delete(string path, Action<string>? progress = null)
         {
+            EnsureBackupPrivileges();
             var result = new Result { Progress = progress };
             path = Path.GetFullPath(path);
 
@@ -56,13 +57,22 @@ namespace MultronWinCleaner.Processes
             if (TryDelete(path, result))
                 return Done(result, Outcome.Deleted);
 
+            Report(result, Loc.T("Unlinking the file directly..."));
+            if (ForcePosixDelete(path, result) && !File.Exists(path))
+                return Done(result, Outcome.Deleted);
+
             Report(result, Loc.T("Looking for programs that lock the file..."));
-            if (CloseLockingProcesses(path, result) && TryDeleteWithRetries(path, result))
+            if (CloseLockingProcesses(path, result) && (TryDeleteWithRetries(path, result) || ForcePosixDelete(path, result)) && !File.Exists(path))
                 return Done(result, Outcome.Deleted);
 
             Report(result, Loc.T("Taking ownership of the file..."));
-            if (TakeOwnership(path, result) && TryDeleteWithRetries(path, result))
-                return Done(result, Outcome.Deleted);
+            if (TakeOwnership(path, result))
+            {
+                if (TryDeleteWithRetries(path, result))
+                    return Done(result, Outcome.Deleted);
+                if (ForcePosixDelete(path, result) && !File.Exists(path))
+                    return Done(result, Outcome.Deleted);
+            }
 
             Report(result, Loc.T("Attempting deletion with SYSTEM privileges via Sysinternals PsExec..."));
             if (DeleteAsSystemWithPsExec(path, result) && !File.Exists(path))
@@ -173,13 +183,27 @@ namespace MultronWinCleaner.Processes
                 if (!File.Exists(path))
                     return true;
                 File.Delete(path);
-                return !File.Exists(path);
+                if (!File.Exists(path))
+                    return true;
             }
             catch (Exception ex)
             {
                 result.Error = ex.Message;
-                return false;
             }
+
+            try
+            {
+                if (DeleteFileW(ExtendedPath(path)) && !File.Exists(path))
+                    return true;
+                int err = Marshal.GetLastWin32Error();
+                if (err != 0)
+                    result.Error = new System.ComponentModel.Win32Exception(err).Message;
+            }
+            catch (Exception ex)
+            {
+                result.Error = ex.Message;
+            }
+            return !File.Exists(path);
         }
 
         private static bool TryDeleteWithRetries(string path, Result result)
@@ -191,6 +215,206 @@ namespace MultronWinCleaner.Processes
                 Thread.Sleep(300);
             }
             return false;
+        }
+
+        public static bool TryHardDelete(string path)
+        {
+            try { path = Path.GetFullPath(path); } catch { return false; }
+            EnsureBackupPrivileges();
+            var result = new Result();
+            if (TryDelete(path, result))
+                return true;
+            if (ClearAttributes(path) && TryDelete(path, result))
+                return true;
+            if (ForcePosixDelete(path, result) && !File.Exists(path))
+                return true;
+
+            if (TakeOwnership(path, result))
+            {
+                if (TryDelete(path, result))
+                    return true;
+                if (ForcePosixDelete(path, result) && !File.Exists(path))
+                    return true;
+            }
+            return !File.Exists(path);
+        }
+
+
+        private static readonly Lazy<bool> BackupPrivileges = new(EnableBackupPrivileges);
+
+        internal static void EnsureBackupPrivileges() => _ = BackupPrivileges.Value;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LUID { public uint LowPart; public int HighPart; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct TOKEN_PRIVILEGES { public int PrivilegeCount; public LUID Luid; public uint Attributes; }
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool OpenProcessToken(IntPtr processHandle, uint desiredAccess, out IntPtr tokenHandle);
+
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool LookupPrivilegeValueW(string? systemName, string name, out LUID luid);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool AdjustTokenPrivileges(IntPtr tokenHandle, bool disableAll, ref TOKEN_PRIVILEGES newState,
+            int bufferLength, IntPtr previousState, IntPtr returnLength);
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetCurrentProcess();
+
+        private static bool EnableBackupPrivileges()
+        {
+            const uint TOKEN_ADJUST_PRIVILEGES = 0x20, TOKEN_QUERY = 0x8, SE_PRIVILEGE_ENABLED = 0x2;
+            if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, out IntPtr token))
+                return false;
+            bool any = false;
+            try
+            {
+                foreach (string name in new[] { "SeBackupPrivilege", "SeRestorePrivilege", "SeTakeOwnershipPrivilege" })
+                {
+                    if (!LookupPrivilegeValueW(null, name, out LUID luid))
+                        continue;
+                    var tp = new TOKEN_PRIVILEGES { PrivilegeCount = 1, Luid = luid, Attributes = SE_PRIVILEGE_ENABLED };
+                    if (AdjustTokenPrivileges(token, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero) && Marshal.GetLastWin32Error() == 0)
+                        any = true;
+                }
+            }
+            catch { }
+            finally { CloseHandle(token); }
+            return any;
+        }
+
+        internal static Microsoft.Win32.SafeHandles.SafeFileHandle? OpenForOverwrite(string path, bool writeThrough)
+        {
+            EnsureBackupPrivileges();
+            const int GENERIC_WRITE = 0x40000000;
+            const int FILE_FLAG_WRITE_THROUGH = unchecked((int)0x80000000);
+            IntPtr h = CreateFileW(ExtendedPath(path), GENERIC_WRITE, 0, IntPtr.Zero, OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT | (writeThrough ? FILE_FLAG_WRITE_THROUGH : 0), IntPtr.Zero);
+            if (h == InvalidHandle || h == IntPtr.Zero)
+                return null;
+            return new Microsoft.Win32.SafeHandles.SafeFileHandle(h, ownsHandle: true);
+        }
+
+        internal static FileStream? OpenForBackupRead(string path, int bufferSize, bool useAsync)
+        {
+            EnsureBackupPrivileges();
+            const int GENERIC_READ = unchecked((int)0x80000000);
+            const int FILE_FLAG_SEQUENTIAL_SCAN = 0x08000000;
+            const int FILE_FLAG_OVERLAPPED = 0x40000000;
+            IntPtr h = CreateFileW(ExtendedPath(path), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, IntPtr.Zero, OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_SEQUENTIAL_SCAN | (useAsync ? FILE_FLAG_OVERLAPPED : 0), IntPtr.Zero);
+            if (h == InvalidHandle || h == IntPtr.Zero)
+                return null;
+            var handle = new Microsoft.Win32.SafeHandles.SafeFileHandle(h, ownsHandle: true);
+            return new FileStream(handle, FileAccess.Read, bufferSize, useAsync);
+        }
+
+        internal static FileStream OpenRead(string path, int bufferSize, bool useAsync)
+        {
+            try
+            {
+                return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, bufferSize,
+                    useAsync ? FileOptions.Asynchronous | FileOptions.SequentialScan : FileOptions.SequentialScan);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                var stream = OpenForBackupRead(path, bufferSize, useAsync);
+                if (stream == null)
+                    throw;
+                return stream;
+            }
+        }
+
+        [ThreadStatic]
+        private static int lastScheduleError;
+
+        public static int LastScheduleError => lastScheduleError;
+
+        public static bool ScheduleDeleteAtReboot(string path)
+        {
+            lastScheduleError = 0;
+            try { path = Path.GetFullPath(path); } catch { return false; }
+            if (!File.Exists(path))
+                return true;
+            if (IsScheduledForReboot(path))
+                return true;
+            if (MoveFileEx(path, null, MOVEFILE_DELAY_UNTIL_REBOOT))
+                return true;
+            lastScheduleError = Marshal.GetLastWin32Error();
+            return TryAppendPendingRename(path, null);
+        }
+
+        private const int DELETE = 0x00010000;
+        private const int FILE_SHARE_READ = 0x1;
+        private const int FILE_SHARE_WRITE = 0x2;
+        private const int FILE_SHARE_DELETE = 0x4;
+        private const int OPEN_EXISTING = 3;
+        private const int FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+        private const int FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
+
+        private const int FileDispositionInfo = 4;
+        private const int FileDispositionInfoEx = 21;
+
+        private const int FILE_DISPOSITION_FLAG_DELETE = 0x1;
+        private const int FILE_DISPOSITION_FLAG_POSIX_SEMANTICS = 0x2;
+        private const int FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE = 0x10;
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool DeleteFileW(string lpFileName);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern IntPtr CreateFileW(string lpFileName, int dwDesiredAccess, int dwShareMode,
+            IntPtr lpSecurityAttributes, int dwCreationDisposition, int dwFlagsAndAttributes, IntPtr hTemplateFile);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetFileInformationByHandle(IntPtr hFile, int fileInformationClass, ref int fileInformation, int dwBufferSize);
+
+        private static readonly IntPtr InvalidHandle = new IntPtr(-1);
+
+        internal static string ExtendedPath(string path)
+        {
+            if (string.IsNullOrEmpty(path) || path.StartsWith(@"\\?\", StringComparison.Ordinal) || path.StartsWith(@"\??\", StringComparison.Ordinal))
+                return path;
+            if (path.StartsWith(@"\\", StringComparison.Ordinal))
+                return @"\\?\UNC\" + path.Substring(2);
+            return @"\\?\" + path;
+        }
+
+        private static bool ForcePosixDelete(string path, Result result)
+        {
+            if (!File.Exists(path))
+                return true;
+
+            IntPtr handle = CreateFileW(ExtendedPath(path), DELETE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, IntPtr.Zero, OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, IntPtr.Zero);
+            if (handle == InvalidHandle || handle == IntPtr.Zero)
+                return false;
+
+            try
+            {
+                int flagsEx = FILE_DISPOSITION_FLAG_DELETE | FILE_DISPOSITION_FLAG_POSIX_SEMANTICS | FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE;
+                if (SetFileInformationByHandle(handle, FileDispositionInfoEx, ref flagsEx, sizeof(int)))
+                {
+                    Step(result, Loc.T("Unlinked the file with NTFS POSIX semantics"));
+                    return true;
+                }
+
+                int flag = 1;
+                if (SetFileInformationByHandle(handle, FileDispositionInfo, ref flag, sizeof(int)))
+                {
+                    Step(result, Loc.T("Marked the file for deletion when it is released"));
+                    return true;
+                }
+            }
+            catch (Exception) { }
+            finally
+            {
+                CloseHandle(handle);
+            }
+            return !File.Exists(path);
         }
 
         private static bool ClearAttributes(string path)
@@ -342,9 +566,12 @@ namespace MultronWinCleaner.Processes
         private static bool TakeOwnership(string path, Result result)
         {
             bool owned = RunTool("takeown.exe", $"/F \"{path}\" /A");
-            bool granted = RunTool("icacls.exe", $"\"{path}\" /grant *S-1-5-32-544:F /C");
+            RunTool("icacls.exe", $"\"{path}\" /reset /C");
+            RunTool("icacls.exe", $"\"{path}\" /remove:d *S-1-1-0 *S-1-5-32-544 *S-1-5-18 /C");
+            RunTool("icacls.exe", $"\"{path}\" /inheritance:e /C");
+            bool granted = RunTool("icacls.exe", $"\"{path}\" /grant *S-1-5-32-544:F *S-1-5-18:F /C");
             if (owned || granted)
-                Step(result, Loc.T("Took ownership and gave Administrators full control"));
+                Step(result, Loc.T("Took ownership, reset permissions and gave Administrators full control"));
             return owned || granted;
         }
 
@@ -608,9 +835,11 @@ namespace MultronWinCleaner.Processes
             try
             {
                 using var key = Registry.LocalMachine.OpenSubKey(SessionManagerKey);
-                if (key?.GetValue(PendingRenameValue) is string[] entries)
+                string native = NativePath(path);
+                foreach (string valueName in new[] { PendingRenameValue, PendingRenameValue + "2" })
                 {
-                    string native = NativePath(path);
+                    if (key?.GetValue(valueName) is not string[] entries)
+                        continue;
                     foreach (string entry in entries)
                         if (string.Equals(entry, native, StringComparison.OrdinalIgnoreCase) ||
                             string.Equals(entry, path, StringComparison.OrdinalIgnoreCase))
@@ -621,8 +850,11 @@ namespace MultronWinCleaner.Processes
             return false;
         }
 
+        private static readonly object PendingRenameLock = new();
+
         private static bool TryAppendPendingRename(string path, string? destination)
         {
+            lock (PendingRenameLock)
             try
             {
                 using var key = Registry.LocalMachine.OpenSubKey(SessionManagerKey, writable: true);
@@ -710,7 +942,7 @@ namespace MultronWinCleaner.Processes
                 return true;
             }
 
-            run = RunPsExec(psExec, $"-s -accepteula -nobanner cmd.exe /c \"takeown /f \"{path}\" /a & icacls \"{path}\" /grant *S-1-5-32-544:F /grant SYSTEM:F /c & attrib -r -s -h \"{path}\" & del /f /q /a \"{path}\"\"");
+            run = RunPsExec(psExec, $"-s -accepteula -nobanner cmd.exe /c \"takeown /f \"{path}\" /a & icacls \"{path}\" /reset /c & icacls \"{path}\" /remove:d *S-1-1-0 *S-1-5-32-544 *S-1-5-18 /c & icacls \"{path}\" /grant *S-1-5-32-544:F /grant SYSTEM:F /c & attrib -r -s -h \"{path}\" & del /f /q /a \"{path}\"\"");
             if (!File.Exists(path))
             {
                 Step(result, Loc.T("Reset permissions and deleted the file with SYSTEM privileges using Sysinternals PsExec"));

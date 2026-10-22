@@ -590,7 +590,7 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                                 <TextBlock Text="MULTRON WIN CLEANER" FontSize="15" FontFamily="Bahnschrift, Century Gothic, Segoe UI" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
                                 <Border Background="#201E88E5" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="v1.26.6 beta" FontSize="11" FontWeight="Bold" Foreground="#FF1E88E5" />
+                                    <TextBlock Text="v1.27 beta" FontSize="11" FontWeight="Bold" Foreground="#FF1E88E5" />
                                 </Border>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -654,6 +654,18 @@
                                             <TextBlock x:Name="labelDiskSize" Text="{loc:Tr 'Size on disk: 0 Byte'}" Foreground="{DynamicResource TextSecondary}" FontSize="13" FontWeight="Normal" TextAlignment="Center" TextWrapping="Wrap" />
                                             <TextBlock x:Name="labelStartupClean" Foreground="#FF28A745" FontSize="13" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
                                             <TextBlock x:Name="labelAutoClean" Foreground="#FF28A745" FontSize="13" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="Collapsed" />
+                                            <TextBlock x:Name="labelShred" Foreground="#FF28A745" Visibility="Collapsed" FontSize="13" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                            <Border x:Name="RestartRequiredPanel" Visibility="Collapsed" Margin="0,12,0,0" Padding="12,10" CornerRadius="10"
+                                                    Background="#26FF5722" BorderBrush="#FFFF5722" BorderThickness="2">
+                                                <StackPanel>
+                                                    <TextBlock x:Name="RestartRequiredTitle" Text="{loc:Tr 'Cleaning done! Restart required.'}" Foreground="#FFFF5722" FontSize="17" FontWeight="Bold"
+                                                               TextAlignment="Center" TextWrapping="Wrap"/>
+                                                    <TextBlock x:Name="RestartRequiredText" Foreground="{DynamicResource TextPrimary}" FontSize="13" FontWeight="SemiBold"
+                                                               TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                                                    <Button Content="{loc:Tr 'Restart now'}" Click="RestartNow_Click" Style="{StaticResource ModernButtonStyle}"
+                                                            Background="#FFFF5722" Foreground="White" Padding="16,8" HorizontalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
                                         </StackPanel>
                                     </ScrollViewer>
 
@@ -1021,6 +1033,8 @@
                                                             <TextBlock x:Name="MalwareResultsStatus" Text="" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
                                                         </StackPanel>
                                                     </DockPanel>
+
+                                                    <loc:CloudScanView x:Name="MainCloudScanView" Margin="42,10,0,0"/>
 
                                                     <ItemsControl x:Name="MalwareThreatsList" Margin="42,10,0,0" Visibility="Collapsed" MaxHeight="320"
                                                                   VirtualizingPanel.IsVirtualizing="True"

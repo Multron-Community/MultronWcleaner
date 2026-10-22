@@ -81,6 +81,7 @@ namespace Multron_Win_Cleaner
 
             InitializeComponent();
             _trayAnimator = new TrayIconAnimator(TrayIcon, "pack://application:,,,/MultronWinCleaner;component/Assets/mwc_icon.ico", "pack://application:,,,/MultronWinCleaner;component/Assets/TrayFrames/frame{0:00}.ico", frameCount: 12);
+            Loaded += (s, e) => UpdateShredBadge();
 
             if (!System.IO.File.Exists(settingsPath))
             {
@@ -600,7 +601,7 @@ namespace Multron_Win_Cleaner
             {
                 Content = Loc.T("Microsoft MRT Scan") + "=" + Loc.T("Scans with the Malicious Software Removal Tool built into Windows. It runs hidden, before the cloud scan.") + "=" + MrtOptionKey,
                 Margin = new Thickness(10),
-                IsChecked = IsSettingOnByDefault(MrtScanSettingKey),
+                IsChecked = SettingIsOn(MrtScanSettingKey),
                 BorderThickness = new Thickness(0),
                 BorderBrush = new SolidColorBrush(Colors.Transparent),
                 Background = new SolidColorBrush(System.Windows.Media.Colors.White),
@@ -2172,6 +2173,44 @@ namespace Multron_Win_Cleaner
             }
         }
 
+        public void UpdateShredBadge()
+        {
+            if (labelShred == null) return;
+            var mode = MultronWinCleaner.Processes.SecureDelete.ReadConfiguredMode();
+            if (mode == MultronWinCleaner.Processes.SecureDelete.Mode.Off)
+            {
+                labelShred.Visibility = Visibility.Collapsed;
+                return;
+            }
+            string detail = MultronWinCleaner.Processes.SecureDelete.Describe(mode);
+            labelShred.Text = Loc.F("Shred & Delete is on · {0}", detail);
+            labelShred.Visibility = Visibility.Visible;
+            labelShred.ToolTip = Loc.F("Cleaning overwrites files before deleting them so they cannot be recovered. Setting: {0}. Change it in Settings > Secure Deletion (Shredding).", detail);
+        }
+
+        private bool suppressCleanmgrExclusive;
+
+        private void CleanmgrExclusive_Checked(object sender, RoutedEventArgs e)
+        {
+            if (suppressCleanmgrExclusive || sender is not CheckBox picked) return;
+            suppressCleanmgrExclusive = true;
+            try
+            {
+                foreach (CheckBox cb in checkboxes2)
+                {
+                    if (ReferenceEquals(cb, picked)) continue;
+                    if (cb.Content is string content
+                        && content.StartsWith("cleanmgr.exe", StringComparison.OrdinalIgnoreCase)
+                        && cb.IsChecked == true)
+                        cb.IsChecked = false;
+                }
+            }
+            finally
+            {
+                suppressCleanmgrExclusive = false;
+            }
+        }
+
         public async Task createshortcut(string checkboxname, string expander)
         { 
             CheckBox checkbox = new CheckBox
@@ -2194,6 +2233,8 @@ namespace Multron_Win_Cleaner
             checkbox.IsChecked = MultronWinCleaner.Processes.Load.ReadSelections().TryGetValue(commandKey, out bool savedCommand) && savedCommand;
             checkbox.Checked += (s, e) => SaveCommandSelection(commandKey, true);
             checkbox.Unchecked += (s, e) => SaveCommandSelection(commandKey, false);
+            if (checkboxname.StartsWith("cleanmgr.exe", StringComparison.OrdinalIgnoreCase))
+                checkbox.Checked += CleanmgrExclusive_Checked;
             ApplyOptionTemplate(checkbox);
             checkboxes2.Add(checkbox);
 
@@ -2774,79 +2815,124 @@ namespace Multron_Win_Cleaner
                 int progress = 0;
                 int killed = 0;
                 int deleted = 0;
+                int reboot = 0;
                 List<string> lockedPaths = await main.Dispatcher.InvokeAsync(() =>
                     main.paths.Select(p => main.stringtokenizer(p, "=", 0) ?? "").Where(p => p.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList());
+                int total = Math.Max(1, lockedPaths.Count);
 
-                for (int i = 0; i < lockedPaths.Count; i++)
+                async Task ReportProgress()
                 {
-                    if (main.cancelstatus.IsCancellationRequested) break;
-
-                    string path = lockedPaths[i];
-
-                    if (System.IO.File.Exists(path))
-                    {
-                        long fileSize = 0;
-                        string? error = TryDeleteLocked(path, ref fileSize, out bool inUse);
-
-                        if (error != null && inUse)
-                        {
-                            foreach (var locker in WhoUsesFile.GetLockers(path))
-                            {
-                                if (WhoUsesFile.IsProtectedProcess(locker.Id, locker.Name))
-                                {
-                                    await AddKillMessage(Loc.F("Skipped system process: {0} (PID {1}) for {2}", locker.Name, locker.Id, path), System.Windows.Media.Brushes.Goldenrod);
-                                    continue;
-                                }
-
-                                try
-                                {
-                                    await AddKillMessage(Loc.F("Killing: {0} (PID {1}) for {2}", locker.Name, locker.Id, path), System.Windows.Media.Brushes.Red);
-                                    using (Process proc = Process.GetProcessById(locker.Id))
-                                    {
-                                        proc.Kill();
-                                        proc.WaitForExit(5000);
-                                    }
-                                    killed++;
-                                }
-                                catch (ArgumentException)
-                                {
-                                }
-                                catch (Exception ex)
-                                {
-                                    await AddKillMessage(Loc.F("Cannot Kill: {0} (PID {1}) - {2}", locker.Name, locker.Id, ex.Message), System.Windows.Media.Brushes.Goldenrod);
-                                }
-                            }
-
-                            for (int attempt = 0; attempt < 3 && error != null && inUse; attempt++)
-                            {
-                                await Task.Delay(300);
-                                error = TryDeleteLocked(path, ref fileSize, out inUse);
-                            }
-                        }
-
-                        if (error == null)
-                        {
-                            deleted++;
-                            totalsize += fileSize;
-                            await AddKillMessage(Loc.F("Deleted: {0} ({1})", path, main.formatsize(fileSize)), System.Windows.Media.Brushes.Green);
-                        }
-                        else
-                        {
-                            await AddKillMessage(Loc.F("Cannot Delete: {0} - {1}", path, error), System.Windows.Media.Brushes.Goldenrod);
-                        }
-                    }
-                    else
-                    {
-                        await AddKillMessage(Loc.F("File no longer exists: {0}", path), InfoBrush);
-                    }
-
-                    progress++;
+                    int done = Interlocked.Increment(ref progress);
+                    double percent = Math.Min(100, done * 100.0 / total);
                     await main.Dispatcher.InvokeAsync(() =>
                     {
-                        double percent = (progress * 100.0) / lockedPaths.Count;
                         main.progressBar1.Value = percent;
                         main.UpdateArc(percent);
                     });
+                }
+
+                async Task Deleted(string path, long size)
+                {
+                    Interlocked.Increment(ref deleted);
+                    Interlocked.Add(ref totalsize, size);
+                    await AddKillMessage(Loc.F("Deleted: {0} ({1})", path, main.formatsize(size)), System.Windows.Media.Brushes.Green);
+                    await ReportProgress();
+                }
+
+                var remaining = new System.Collections.Concurrent.ConcurrentBag<(string Path, long Size, string Error, bool InUse)>();
+                await Parallel.ForEachAsync(lockedPaths, new ParallelOptions { MaxDegreeOfParallelism = 8 }, async (path, _) =>
+                {
+                    if (main.cancelstatus.IsCancellationRequested) return;
+                    if (!System.IO.File.Exists(path))
+                    {
+                        await AddKillMessage(Loc.F("File no longer exists: {0}", path), InfoBrush);
+                        await ReportProgress();
+                        return;
+                    }
+                    long size = 0;
+                    string? error = TryDeleteLocked(path, ref size, out bool inUse);
+                    if (error != null && MultronWinCleaner.Processes.ForceDelete.TryHardDelete(path))
+                        error = null;
+                    if (error == null)
+                        await Deleted(path, size);
+                    else
+                        remaining.Add((path, size, error, inUse));
+                });
+
+                var killedPids = new HashSet<int>();
+                foreach (var item in remaining.OrderBy(r => r.Path, StringComparer.OrdinalIgnoreCase))
+                {
+                    if (main.cancelstatus.IsCancellationRequested) break;
+
+                    string path = item.Path;
+                    long fileSize = item.Size;
+                    string? error = item.Error;
+                    bool inUse = item.InUse;
+
+                    if (inUse)
+                    {
+                        bool closedAny = false;
+                        foreach (var locker in WhoUsesFile.GetLockerDetails(path))
+                        {
+                            if (locker.IsService)
+                            {
+                                await AddKillMessage(Loc.F("Skipped Windows service: {0} (PID {1}) for {2}", locker.Name, locker.Id, path), System.Windows.Media.Brushes.Goldenrod);
+                                continue;
+                            }
+                            if (WhoUsesFile.IsProtectedProcess(locker.Id, locker.Name))
+                            {
+                                await AddKillMessage(Loc.F("Skipped system process: {0} (PID {1}) for {2}", locker.Name, locker.Id, path), System.Windows.Media.Brushes.Goldenrod);
+                                continue;
+                            }
+                            if (!killedPids.Add(locker.Id))
+                                continue;
+
+                            try
+                            {
+                                await AddKillMessage(Loc.F("Killing: {0} (PID {1}) for {2}", locker.Name, locker.Id, path), System.Windows.Media.Brushes.Red);
+                                using (Process proc = Process.GetProcessById(locker.Id))
+                                {
+                                    proc.Kill(entireProcessTree: true);
+                                    proc.WaitForExit(5000);
+                                }
+                                killed++;
+                                closedAny = true;
+                            }
+                            catch (ArgumentException)
+                            {
+                                closedAny = true;
+                            }
+                            catch (Exception ex)
+                            {
+                                await AddKillMessage(Loc.F("Cannot Kill: {0} (PID {1}) - {2}", locker.Name, locker.Id, ex.Message), System.Windows.Media.Brushes.Goldenrod);
+                            }
+                        }
+
+                        for (int attempt = 0; attempt < 4 && error != null && (closedAny || attempt == 0); attempt++)
+                        {
+                            await Task.Delay(attempt == 0 ? 150 : 400);
+                            error = TryDeleteLocked(path, ref fileSize, out inUse);
+                            if (error != null && MultronWinCleaner.Processes.ForceDelete.TryHardDelete(path))
+                                error = null;
+                        }
+                    }
+
+                    if (error == null || !System.IO.File.Exists(path))
+                    {
+                        await Deleted(path, fileSize);
+                        continue;
+                    }
+
+                    if (MultronWinCleaner.Processes.ForceDelete.ScheduleDeleteAtReboot(path))
+                    {
+                        reboot++;
+                        await AddKillMessage(Loc.F("Will be deleted at the next restart: {0}", path), InfoBrush);
+                    }
+                    else
+                    {
+                        await AddKillMessage(Loc.F("Cannot Delete: {0} - {1}", path, error), System.Windows.Media.Brushes.Goldenrod);
+                    }
+                    await ReportProgress();
                 }
 
                 await cts.CancelAsync();
@@ -2867,6 +2953,10 @@ namespace Multron_Win_Cleaner
                         message = Loc.F("Killing Done! {0} Process Killed, {1} Files Deleted. Freed Space: {2}", killed, deleted, main.formatsize(totalsize));
                         labelColor = System.Windows.Media.Brushes.Red;
                     }
+                    if (reboot > 0)
+                        message += " " + Loc.F("{0} file(s) in use by Windows will be deleted at the next restart.", reboot);
+                    if (reboot > 0)
+                        main.ShowRestartRequired(reboot);
 
                     main.label1_Copy.Text = message;
                     main.label1_Copy.Foreground = labelColor;
@@ -3662,8 +3752,28 @@ namespace Multron_Win_Cleaner
             LockedFilesWindowOverlay.Visibility = Visibility.Collapsed;
         }
 
+        public void ShowRestartRequired(int files)
+        {
+            if (files <= 0)
+            {
+                RestartRequiredPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+            RestartRequiredText.Text = Loc.F("{0} file(s) are in use by Windows and will be deleted when the PC restarts. Restart to finish cleaning.", files);
+            RestartRequiredPanel.Visibility = Visibility.Visible;
+        }
+
+        private void RestartNow_Click(object sender, RoutedEventArgs e)
+        {
+            var answer = AppDialog.Show(this, Loc.T("Restart the PC now to finish cleaning? Save your work in other programs first."),
+                Loc.T("Restart required"), MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (answer == MessageBoxResult.Yes)
+                SystemActions.Restart();
+        }
+
         private void ButtonReset_Click(object sender, RoutedEventArgs e)
         {
+            RestartRequiredPanel.Visibility = Visibility.Collapsed;
             wrapPanelDirectories.Visibility = Visibility.Hidden;
 
             dataGridGroups.Visibility = Visibility.Hidden;

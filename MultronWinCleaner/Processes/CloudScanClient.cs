@@ -36,9 +36,13 @@ namespace MultronWinCleaner.Processes
         public static bool IsServerConfigured => ServerUrl.Length > 0;
 
         public const int ProtocolVersion = 3;
-        private const int CheckBatchDelayMs = 15;
+        private const int CheckBatchDelayMs = 25;
+        private const int MaxChecksPerMessage = 50;
+        private const double DefaultChecksPerSecond = 500;
+        private double checkRateCap = double.MaxValue;
         private const int MaxJsonMessageBytes = 1024 * 1024;
         private const int UploadChunkSize = 256 * 1024;
+        private const int UploadWindowFactor = 4;
 
         private readonly Uri serverUri;
         private readonly string pinnedCertSha256;
@@ -48,8 +52,22 @@ namespace MultronWinCleaner.Processes
 
         public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(15);
         public TimeSpan ResultTimeout { get; set; } = TimeSpan.FromMinutes(10);
+        public bool CompressUploads { get; set; } = true;
 
         public bool IsConnected => current?.IsUsable == true;
+
+        public string Diagnostics()
+        {
+            var c = current;
+            if (c == null)
+                return Loc.T("not connected");
+            double silent = (DateTime.UtcNow - new DateTime(Interlocked.Read(ref c.LastReceiveTicks), DateTimeKind.Utc)).TotalSeconds;
+            return Loc.F("{0}: {1:N0} checks sent in {2:N0} messages, {3:N0} messages received, last one {4:0} s ago, {5:N0} requests waiting",
+                c.IsUsable ? Loc.T("open") : Loc.T("closed"), Interlocked.Read(ref c.ChecksSent), Interlocked.Read(ref c.CheckMessagesSent),
+                Interlocked.Read(ref c.MessagesReceived), silent, c.Pending.Count)
+                + Loc.F(", check rate {0:N0}/s", c.ChecksPerSecond)
+                + (c.SlowDownRequested ? ", " + Loc.T("the server asked to slow down") : "");
+        }
 
         public bool SupportsReports(bool falseNegative) =>
             current is { } c && (falseNegative ? c.SupportsFalseNegativeReports : c.SupportsFalsePositiveReports);
@@ -82,12 +100,16 @@ namespace MultronWinCleaner.Processes
             if (MultronWinCleaner.MalwareScan.IsOfflineMode)
                 throw new InvalidOperationException(Loc.T("Malware scan is disabled in offline mode."));
 
-            current?.Fault(new IOException(Loc.T("Reconnecting.")));
+            var previous = current;
+            if (previous is { SlowDownRequested: true })
+                checkRateCap = Math.Min(checkRateCap, previous.ChecksPerSecond / 2);
+            previous?.Fault(new IOException(Loc.T("Reconnecting.")));
 
             var connection = new Connection();
             try
             {
                 await connection.OpenAsync(serverUri, pinnedCertSha256.Length > 0 ? ValidateServerCertificate : null, ConnectTimeout, ct);
+                connection.CapChecks(checkRateCap);
             }
             catch
             {
@@ -167,21 +189,41 @@ namespace MultronWinCleaner.Processes
             return false;
         }
 
-        public async Task<CloudScanResult> ScanFileAsync(string path, IProgress<double>? uploadProgress, CancellationToken ct, bool rescan = false)
+        public async Task<CloudScanResult> ScanFileAsync(string path, IProgress<double>? uploadProgress, CancellationToken ct, bool rescan = false,
+            string? knownSha256 = null, long knownSize = -1, Func<UploadStage, double, long, CancellationToken>? uploadStatus = null)
+            => (await ScanCoreAsync(path, uploadProgress, ct, rescan, knownSha256, knownSize, uploadStatus, check: true, upload: true))!;
+
+        public Task<CloudScanResult?> CheckOnlyAsync(string path, string sha256, long size, CancellationToken ct)
+            => ScanCoreAsync(path, null, ct, false, sha256, size, null, check: true, upload: false);
+
+        public async Task<CloudScanResult> UploadOnlyAsync(string path, string sha256, long size, CancellationToken ct,
+            Func<UploadStage, double, long, CancellationToken>? uploadStatus = null)
+            => (await ScanCoreAsync(path, null, ct, false, sha256, size, uploadStatus, check: false, upload: true))!;
+
+        private async Task<CloudScanResult?> ScanCoreAsync(string path, IProgress<double>? uploadProgress, CancellationToken ct, bool rescan,
+            string? knownSha256, long knownSize, Func<UploadStage, double, long, CancellationToken>? uploadStatus, bool check, bool upload)
         {
             Connection connection = current is { IsUsable: true } c ? c : throw new IOException(Loc.T("Not connected."));
 
             var result = new CloudScanResult { FilePath = path };
 
-            try
+            if (knownSha256 is { Length: 64 } && knownSize >= 0)
             {
-                (result.Sha256, result.Size) = await HashFileAsync(path, ct);
+                result.Sha256 = knownSha256;
+                result.Size = knownSize;
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            else
             {
-                result.Verdict = "error";
-                result.Detail = Loc.F("Cannot read file: {0}", ex.Message);
-                return result;
+                try
+                {
+                    (result.Sha256, result.Size) = await HashFileAsync(path, ct);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    result.Verdict = "error";
+                    result.Detail = Loc.F("Cannot read file: {0}", ex.Message);
+                    return result;
+                }
             }
 
             long id = Interlocked.Increment(ref nextId);
@@ -192,9 +234,12 @@ namespace MultronWinCleaner.Processes
                 if (!connection.IsUsable)
                     throw new IOException(Loc.T("Connection lost."));
 
-                if (connection.SupportsCheck)
+                if (check && !connection.SupportsCheck && !upload)
+                    return null;
+
+                if (check && connection.SupportsCheck)
                 {
-                    var check = new JObject
+                    var checkItem = new JObject
                     {
                         ["id"] = id,
                         ["name"] = Path.GetFileName(path),
@@ -204,10 +249,11 @@ namespace MultronWinCleaner.Processes
                         ["path"] = FullFolder(path)
                     };
                     if (rescan)
-                        check["rescan"] = true;
-                    connection.QueueCheck(check);
+                        checkItem["rescan"] = true;
+                    connection.QueueCheck(checkItem);
 
                     JObject answer;
+                    Interlocked.Increment(ref connection.AwaitingChecks);
                     try
                     {
                         answer = await pending.Check.Task.WaitAsync(ResultTimeout, ct);
@@ -218,12 +264,19 @@ namespace MultronWinCleaner.Processes
                         result.Detail = Loc.T("The cloud server did not answer in time");
                         return result;
                     }
+                    finally
+                    {
+                        Interlocked.Decrement(ref connection.AwaitingChecks);
+                    }
 
                     if ((string?)answer["type"] != "need_upload")
                         return Fill(result, answer);
+                    if (!upload)
+                        return null;
                 }
 
-                return await UploadAndScanAsync(connection, pending, id, path, result, uploadProgress, ct, rescan);
+                result.Uploaded = true;
+                return await UploadAndScanAsync(connection, pending, id, path, result, uploadProgress, ct, rescan, uploadStatus);
             }
             finally
             {
@@ -295,90 +348,118 @@ namespace MultronWinCleaner.Processes
         }
 
         private async Task<CloudScanResult> UploadAndScanAsync(Connection connection, PendingScan pending, long id, string path,
-            CloudScanResult result, IProgress<double>? uploadProgress, CancellationToken ct, bool rescan = false)
+            CloudScanResult result, IProgress<double>? uploadProgress, CancellationToken ct, bool rescan = false,
+            Func<UploadStage, double, long, CancellationToken>? uploadStatus = null)
         {
-            await connection.UploadSlots.WaitAsync(ct);
+            CancellationToken skip = uploadStatus?.Invoke(UploadStage.Waiting, 0, 0) ?? CancellationToken.None;
+            using var skipCts = CancellationTokenSource.CreateLinkedTokenSource(ct, skip);
+            CancellationToken beforeSend = skipCts.Token;
+            await connection.UploadWindow.WaitAsync(beforeSend);
             try
             {
-                byte[]? data;
+                await connection.UploadSlots.WaitAsync(beforeSend);
                 try
                 {
-                    data = await ReadFileAsync(path, ct);
-                }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-                {
-                    result.Verdict = "error";
-                    result.Detail = Loc.F("Cannot read file: {0}", ex.Message);
-                    return result;
-                }
-
-                result.Size = data.Length;
-                result.Sha256 = Convert.ToHexString(SHA256.HashData(data));
-
-                byte[] payload = data;
-                if (connection.SupportsBrotli && ShouldTryCompress(path, data.Length))
-                {
-                    byte[] source = data;
-                    byte[]? packed = await Task.Run(() => TryBrotli(source), ct);
-                    if (packed != null)
-                        payload = packed;
-                }
-                bool compressed = !ReferenceEquals(payload, data);
-
-                await connection.SendLock.WaitAsync(ct);
-                try
-                {
-                    var scanMsg = new JObject
+                    byte[]? data;
+                    try
                     {
-                        ["type"] = "scan",
-                        ["id"] = id,
-                        ["name"] = Path.GetFileName(path),
-                        ["size"] = result.Size,
-                        ["sha256"] = result.Sha256,
-                        ["folder"] = NormalizeFolder(path),
-                        ["path"] = FullFolder(path)
-                    };
-                    if (rescan)
-                        scanMsg["rescan"] = true;
-                    if (compressed)
-                    {
-                        scanMsg["encoding"] = "br";
-                        scanMsg["csize"] = payload.Length;
+                        data = await ReadFileAsync(path, beforeSend);
                     }
-                    await connection.SendJsonAsync(scanMsg, ct);
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        result.Verdict = "error";
+                        result.Detail = Loc.F("Cannot read file: {0}", ex.Message);
+                        return result;
+                    }
 
-                    JObject ack = await pending.Ack.Task.WaitAsync(ResultTimeout, ct);
-                    if ((string?)ack["type"] == "send_file")
-                        await connection.SendBytesAsync(payload, uploadProgress, ct);
-                }
-                catch (Exception ex)
-                {
-                    connection.Fault(ex);
-                    throw;
+                    result.Size = data.Length;
+                    result.Sha256 = Convert.ToHexString(SHA256.HashData(data));
+
+                    byte[] payload = data;
+                    if (CompressUploads && connection.SupportsBrotli && ShouldTryCompress(path, data.Length))
+                    {
+                        byte[] source = data;
+                        byte[]? packed = await Task.Run(() => TryBrotli(source), beforeSend);
+                        if (packed != null)
+                            payload = packed;
+                    }
+                    bool compressed = !ReferenceEquals(payload, data);
+
+                    await connection.SendLock.WaitAsync(beforeSend);
+                    try
+                    {
+                        var scanMsg = new JObject
+                        {
+                            ["type"] = "scan",
+                            ["id"] = id,
+                            ["name"] = Path.GetFileName(path),
+                            ["size"] = result.Size,
+                            ["sha256"] = result.Sha256,
+                            ["folder"] = NormalizeFolder(path),
+                            ["path"] = FullFolder(path)
+                        };
+                        if (rescan)
+                            scanMsg["rescan"] = true;
+                        if (compressed)
+                        {
+                            scanMsg["encoding"] = "br";
+                            scanMsg["csize"] = payload.Length;
+                        }
+                        await connection.SendJsonAsync(scanMsg, ct);
+
+                        JObject ack = await pending.Ack.Task.WaitAsync(ResultTimeout, ct);
+                        if ((string?)ack["type"] == "send_file")
+                        {
+                            int payloadLength = payload.Length;
+                            uploadStatus?.Invoke(UploadStage.Uploading, 0, payloadLength);
+                            IProgress<double>? progress = uploadStatus == null ? uploadProgress
+                                : new InlineProgress(f => { uploadProgress?.Report(f); uploadStatus(UploadStage.Uploading, f * 100, payloadLength); });
+                            await connection.SendBytesAsync(payload, progress, ct);
+                            uploadStatus?.Invoke(UploadStage.Analyzing, 100, payload.Length);
+                        }
+                        else
+                            uploadStatus?.Invoke(UploadStage.Analyzing, 100, 0);
+                    }
+                    catch (Exception ex)
+                    {
+                        connection.Fault(ex);
+                        throw;
+                    }
+                    finally
+                    {
+                        connection.SendLock.Release();
+                    }
+                    data = null;
                 }
                 finally
                 {
-                    connection.SendLock.Release();
+                    connection.UploadSlots.Release();
                 }
-                data = null;
+
+                JObject reply;
+                try
+                {
+                    reply = await pending.Final.Task.WaitAsync(ResultTimeout, beforeSend);
+                }
+                catch (TimeoutException)
+                {
+                    result.Verdict = "error";
+                    result.Detail = Loc.T("The viruskov.com OPEN-EDR cloud engine did not answer in time");
+                    return result;
+                }
+                return Fill(result, reply);
             }
             finally
             {
-                connection.UploadSlots.Release();
+                connection.UploadWindow.Release();
             }
+        }
 
-            JObject reply;
-            try
-            {
-                reply = await pending.Final.Task.WaitAsync(ResultTimeout, ct);
-            }
-            catch (TimeoutException)
-            {
-                result.Verdict = "error";
-                result.Detail = Loc.T("The viruskov.com OPEN-EDR cloud engine did not answer in time");
-                return result;
-            }
-            return Fill(result, reply);
+        private sealed class InlineProgress : IProgress<double>
+        {
+            private readonly Action<double> handler;
+            public InlineProgress(Action<double> handler) => this.handler = handler;
+            public void Report(double value) => handler(value);
         }
 
         private static CloudScanResult Fill(CloudScanResult result, JObject reply)
@@ -429,7 +510,7 @@ namespace MultronWinCleaner.Processes
 
         private static async Task<(string Sha256, long Size)> HashFileAsync(string path, CancellationToken ct)
         {
-            using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, UploadChunkSize, useAsync: true);
+            using var file = ForceDelete.OpenRead(path, UploadChunkSize, useAsync: true);
             byte[] hash = await SHA256.HashDataAsync(file, ct);
             return (Convert.ToHexString(hash), file.Length);
         }
@@ -523,10 +604,35 @@ namespace MultronWinCleaner.Processes
 
         private static async Task<byte[]> ReadFileAsync(string path, CancellationToken ct)
         {
-            using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, UploadChunkSize, useAsync: true);
+            using var file = ForceDelete.OpenRead(path, UploadChunkSize, useAsync: true);
             using var buffer = new MemoryStream(file.Length > 0 && file.Length < int.MaxValue ? (int)file.Length : 0);
             await file.CopyToAsync(buffer, ct);
             return buffer.Length == buffer.Capacity ? buffer.GetBuffer() : buffer.ToArray();
+        }
+
+        public async Task SendSessionEndAsync(string status, int scanned, int threats, CancellationToken ct)
+        {
+            Connection? connection = current;
+            if (connection is not { IsUsable: true }) return;
+            try
+            {
+                await connection.SendLock.WaitAsync(ct);
+                try
+                {
+                    await connection.SendJsonAsync(new JObject
+                    {
+                        ["type"] = "session_end",
+                        ["status"] = status,
+                        ["scanned"] = scanned,
+                        ["threats"] = threats
+                    }, ct);
+                }
+                finally
+                {
+                    connection.SendLock.Release();
+                }
+            }
+            catch { }
         }
 
         public async Task CloseAsync()
@@ -575,7 +681,43 @@ namespace MultronWinCleaner.Processes
             public bool SupportsFalsePositiveReports { get; private set; }
             public bool SupportsFalseNegativeReports { get; private set; }
             public int CheckBatchSize { get; private set; } = 256;
+            public double ChecksPerSecond { get; private set; } = 2500;
             public SemaphoreSlim UploadSlots { get; private set; } = new(4, 4);
+            public SemaphoreSlim UploadWindow { get; private set; } = new(16, 16);
+            private double checkTokens = 2500;
+            public long ChecksSent;
+            public bool SlowDownRequested;
+
+            public void CapChecks(double cap)
+            {
+                if (cap >= ChecksPerSecond) return;
+                ChecksPerSecond = Math.Max(10, cap);
+                checkTokens = Math.Min(checkTokens, ChecksPerSecond);
+            }
+            public int AwaitingChecks;
+            public long CheckMessagesSent;
+            public long MessagesReceived;
+            public long LastReceiveTicks = DateTime.UtcNow.Ticks;
+            public static readonly TimeSpan SilenceLimit = TimeSpan.FromSeconds(120);
+            private long lastRefill = System.Diagnostics.Stopwatch.GetTimestamp();
+
+            private async Task PaceChecksAsync(int count)
+            {
+                while (true)
+                {
+                    long now = System.Diagnostics.Stopwatch.GetTimestamp();
+                    double elapsed = (now - lastRefill) / (double)System.Diagnostics.Stopwatch.Frequency;
+                    lastRefill = now;
+                    checkTokens = Math.Min(ChecksPerSecond, checkTokens + elapsed * ChecksPerSecond);
+                    if (checkTokens >= count)
+                    {
+                        checkTokens -= count;
+                        return;
+                    }
+                    int wait = (int)Math.Ceiling((count - checkTokens) / ChecksPerSecond * 1000);
+                    await Task.Delay(Math.Max(1, wait));
+                }
+            }
 
             public bool IsUsable => Volatile.Read(ref faulted) == 0 && Socket.State == WebSocketState.Open;
 
@@ -593,16 +735,20 @@ namespace MultronWinCleaner.Processes
                     while (await reader.WaitToReadAsync())
                     {
                         await Task.Delay(CheckBatchDelayMs);
+                        int max = Math.Max(1, Math.Min(Math.Min(CheckBatchSize, MaxChecksPerMessage), (int)ChecksPerSecond));
                         var items = new JArray();
-                        while (items.Count < CheckBatchSize && reader.TryRead(out JObject? item))
+                        while (items.Count < max && reader.TryRead(out JObject? item))
                             items.Add(item);
                         if (items.Count == 0)
                             continue;
 
+                        await PaceChecksAsync(items.Count);
                         await SendLock.WaitAsync();
                         try
                         {
                             await SendJsonAsync(new JObject { ["type"] = "check", ["items"] = items }, CancellationToken.None);
+                            Interlocked.Add(ref ChecksSent, items.Count);
+                            Interlocked.Increment(ref CheckMessagesSent);
                         }
                         finally
                         {
@@ -653,6 +799,10 @@ namespace MultronWinCleaner.Processes
 
                 SupportsCheck = ((int?)reply["version"] ?? 2) >= 3;
                 CheckBatchSize = Math.Clamp((int?)reply["checkBatch"] ?? 256, 1, 1024);
+                ChecksPerSecond = reply["checksPerSec"] is JToken rate && (double?)rate is double r && r > 0
+                    ? Math.Max(1, r * 0.85)
+                    : DefaultChecksPerSecond;
+                checkTokens = ChecksPerSecond;
                 SupportsBrotli = false;
                 if (reply["encodings"] is JArray encodings)
                     foreach (JToken e in encodings)
@@ -670,10 +820,32 @@ namespace MultronWinCleaner.Processes
                     }
                 int pipeline = Math.Clamp((int?)reply["pipeline"] ?? 4, 1, 32);
                 UploadSlots = new SemaphoreSlim(pipeline, pipeline);
+                UploadWindow = new SemaphoreSlim(pipeline * UploadWindowFactor, pipeline * UploadWindowFactor);
 
+                Interlocked.Exchange(ref LastReceiveTicks, DateTime.UtcNow.Ticks);
                 _ = Task.Run(ReceiveLoopAsync);
                 if (SupportsCheck)
                     _ = Task.Run(CheckSendLoopAsync);
+                _ = Task.Run(WatchdogAsync);
+            }
+
+            private async Task WatchdogAsync()
+            {
+                while (IsUsable)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    if (Volatile.Read(ref AwaitingChecks) <= 0)
+                    {
+                        Interlocked.Exchange(ref LastReceiveTicks, DateTime.UtcNow.Ticks);
+                        continue;
+                    }
+                    var silent = DateTime.UtcNow - new DateTime(Interlocked.Read(ref LastReceiveTicks), DateTimeKind.Utc);
+                    if (silent > SilenceLimit)
+                    {
+                        Fault(new IOException(Loc.F("The cloud server stopped answering ({0} requests waited {1:0} s without a reply).", Volatile.Read(ref AwaitingChecks), silent.TotalSeconds)));
+                        return;
+                    }
+                }
             }
 
             private async Task ReceiveLoopAsync()
@@ -683,13 +855,20 @@ namespace MultronWinCleaner.Processes
                     while (true)
                     {
                         JObject message = await ReceiveJsonAsync(CancellationToken.None);
+                        Interlocked.Increment(ref MessagesReceived);
+                        Interlocked.Exchange(ref LastReceiveTicks, DateTime.UtcNow.Ticks);
                         string type = (string?)message["type"] ?? "";
                         long? id = (long?)message["id"];
 
                         if (id is null or 0)
                         {
                             if (type == "error")
-                                throw new IOException(Loc.F("Server error: {0}", (string?)message["message"] ?? Loc.T("unknown")));
+                            {
+                                string text = (string?)message["message"] ?? Loc.T("unknown");
+                                if (text.Contains("slow down", StringComparison.OrdinalIgnoreCase) || text.Contains("too many", StringComparison.OrdinalIgnoreCase))
+                                    SlowDownRequested = true;
+                                throw new IOException(Loc.F("Server error: {0}", text));
+                            }
                             continue;
                         }
                         if (!Pending.TryGetValue(id.Value, out PendingScan? pending))
@@ -794,11 +973,40 @@ namespace MultronWinCleaner.Processes
         public bool IsCompleted => Status == "completed";
     }
 
+    public enum ResultAction { None, Quarantine, Delete, Disinfect, RemoveAtRoot }
+
+    public sealed class ResultActionOption
+    {
+        public ResultAction Value { get; init; }
+        public string Text { get; init; } = "";
+    }
+
     public class CloudScanResult : System.ComponentModel.INotifyPropertyChanged
     {
         private bool isSelected;
+        private ResultAction action;
 
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+        public static IReadOnlyList<ResultActionOption> ActionOptions { get; } = new[]
+        {
+            new ResultActionOption { Value = ResultAction.None, Text = Loc.T("No action") },
+            new ResultActionOption { Value = ResultAction.Quarantine, Text = Loc.T("Quarantine") },
+            new ResultActionOption { Value = ResultAction.Delete, Text = Loc.T("Delete") },
+            new ResultActionOption { Value = ResultAction.Disinfect, Text = Loc.T("Disinfect") },
+            new ResultActionOption { Value = ResultAction.RemoveAtRoot, Text = Loc.T("Remove at the root") },
+        };
+
+        public ResultAction Action
+        {
+            get => action;
+            set
+            {
+                if (action == value) return;
+                action = value;
+                PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Action)));
+            }
+        }
 
         public bool IsSelected
         {
@@ -819,6 +1027,20 @@ namespace MultronWinCleaner.Processes
         public string Verdict { get; set; } = "unknown";
         public string ThreatName { get; set; } = "";
         public string Detail { get; set; } = "";
+
+        public double Entropy { get; set; } = -1;
+        public bool Uploaded { get; set; }
+
+        public CloudScanResult CopyFor(string path)
+        {
+            var copy = (CloudScanResult)MemberwiseClone();
+            copy.PropertyChanged = null;
+            copy.isSelected = false;
+            copy.FilePath = path;
+            copy.RemovalSteps = new List<string>();
+            return copy;
+        }
+        public bool LikelyPacked => Entropy >= FileEntropy.PackedThreshold;
         public string Threat => string.IsNullOrEmpty(ThreatName) ? Detail : ThreatName;
         public string ThreatOrDetail => RemovalDetail.Length == 0 ? Threat : Threat.Length == 0 ? RemovalDetail : Threat + " · " + RemovalDetail;
 
@@ -827,6 +1049,21 @@ namespace MultronWinCleaner.Processes
         public DateTime? RemovedAt { get; set; }
         public List<string> RemovalSteps { get; set; } = new();
         public bool IsRemoved => Verdict is "deleted" or "quarantined" or "reboot";
+
+        public CloudScanResult MarkDisinfected(string detail)
+        {
+            var copy = (CloudScanResult)MemberwiseClone();
+            copy.PropertyChanged = null;
+            copy.isSelected = false;
+            copy.OriginalVerdict = Verdict;
+            copy.Verdict = "clean";
+            copy.ThreatName = "";
+            copy.Detail = detail;
+            copy.RemovalDetail = detail;
+            copy.RemovedAt = DateTime.Now;
+            copy.RemovalSteps = new List<string>();
+            return copy;
+        }
 
         public CloudScanResult MarkRemoved(string verdict, string detail, IEnumerable<string>? steps = null)
         {

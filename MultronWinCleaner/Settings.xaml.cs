@@ -63,12 +63,13 @@ namespace MultronWinCleaner
             "customday", "starttime", "customaccess", "endtime", "minutes", "loglocation", "logpath", "autoclean", "trayicon",
             MainWindow.OfflineModeSettingKey, MainWindow.AutoSaveSelectionsSettingKey, MainWindow.AllBrowserProfilesSettingKey,
             MainWindow.AdvancedInterfaceSettingKey, MainWindow.MrtScanSettingKey, MainWindow.MrtModeSettingKey, MainWindow.MrtRemoveSettingKey,
+            MultronWinCleaner.MalwareScan.WithMainScanSettingKey, MultronWinCleaner.MalwareScan.ModeSettingKey,
             MultronWinCleaner.Processes.SecurityCheck.IgnoredSettingKey,
             "oldscan", "access_scan", "onlylowcpu", "runifactive", "pluggedin", "batterylow", "enablelog", "showlastlog",
             "cleanallusers", "cleanselectedusers", "startupscan", "startupclean", "startupnotifyscan", "startupnotifyclean",
             MainWindow.NotifySecuritySettingKey, MainWindow.NotifyFirewallSettingKey, MainWindow.NotifyDuplicatesSettingKey,
             MainWindow.NotifyMalwareSettingKey, Notify.PositionSettingKey, Notify.LayoutSettingKey,
-            "accessscanindex", "oldscanindex", "scheduletype", "postaction",
+            "accessscanindex", "oldscanindex", "scheduletype", "postaction", "shredmode",
             "day1", "day2", "day3", "day4", "day5", "day6", "day7", "limitweeks", "week1", "week2", "week3", "week4", "week5",
             MultronWinCleaner.Processes.Updater.AppUpdateSettingKey, MultronWinCleaner.Processes.Updater.AutoUpdateSettingKey,
             MultronWinCleaner.Processes.Updater.AutoUpdateHoursSettingKey, MultronWinCleaner.Processes.Updater.AutoReloadSettingKey,
@@ -456,6 +457,10 @@ namespace MultronWinCleaner
             SetComboBoxSelection(cmbAgePreset, GetString("oldscanindex"));
             SetComboBoxSelection(cmbScheduleType, GetString("scheduletype"));
             SetComboBoxSelection(cmbPostCleanupAction, GetString("postaction"));
+
+            shredModeLoading = true;
+            cmbShredMode.SelectedIndex = int.TryParse(GetString("shredmode"), out int shredMode) ? Math.Clamp(shredMode, 0, 4) : 0;
+            shredModeLoading = false;
 
             for (int i = 1; i <= 7; i++)
             {
@@ -1089,6 +1094,14 @@ namespace MultronWinCleaner
         private bool startupCleanLoading;
 
         private bool transparencyLoading;
+        private bool shredModeLoading;
+
+        private void ShredMode_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (shredModeLoading || cmbShredMode == null) return;
+            Utilities?.savesettings($"shredmode:{Math.Max(0, cmbShredMode.SelectedIndex)}");
+            mainWindow?.UpdateShredBadge();
+        }
 
         private void LoadTransparencySettings()
         {

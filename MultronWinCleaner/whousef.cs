@@ -75,6 +75,50 @@ namespace MFK
                                     [In, Out] RM_PROCESS_INFO[]? rgAffectedApps,
                                     ref uint lpdwRebootReasons);
 
+        public static List<(int Id, string Name, bool IsService)> GetLockerDetails(string path)
+        {
+            var lockers = new List<(int Id, string Name, bool IsService)>();
+            if (RmStartSession(out uint handle, 0, Guid.NewGuid().ToString()) != 0)
+                return lockers;
+            try
+            {
+                const int ERROR_MORE_DATA = 234;
+                uint needed = 0, count = 0, reasons = RmRebootReasonNone;
+                if (RmRegisterResources(handle, 1, new[] { path }, 0, null, 0, null) != 0)
+                    return lockers;
+                int res = RmGetList(handle, out needed, ref count, null, ref reasons);
+                if (res != ERROR_MORE_DATA || needed == 0)
+                    return lockers;
+                var info = new RM_PROCESS_INFO[needed];
+                count = needed;
+                if (RmGetList(handle, out needed, ref count, info, ref reasons) != 0)
+                    return lockers;
+                for (int i = 0; i < count; i++)
+                {
+                    int id = info[i].Process.dwProcessId;
+                    bool service = info[i].ApplicationType is RM_APP_TYPE.RmService or RM_APP_TYPE.RmCritical
+                        || !string.IsNullOrEmpty(info[i].strServiceShortName);
+                    string name = info[i].strAppName ?? "";
+                    try
+                    {
+                        using var process = Process.GetProcessById(id);
+                        name = process.ProcessName;
+                    }
+                    catch (Exception) { }
+                    lockers.Add((id, name, service));
+                }
+            }
+            catch (Exception) { }
+            finally
+            {
+                RmEndSession(handle);
+            }
+            return lockers;
+        }
+
+        public static bool HasClosableLocker(string path) =>
+            GetLockerDetails(path).Any(l => !l.IsService && !IsProtectedProcess(l.Id, l.Name));
+
         static public List<Process> WhoIsLocking(string path)
         {
             uint handle;
@@ -156,7 +200,8 @@ namespace MFK
         {
             "System", "Idle", "Registry", "Memory Compression", "smss", "csrss", "wininit", "winlogon", "services",
             "lsass", "lsaiso", "svchost", "fontdrvhost", "dwm", "explorer", "sihost", "taskhostw", "ctfmon",
-            "spoolsv", "MsMpEng", "NisSrv", "SecurityHealthService", "audiodg", "conhost", "RuntimeBroker", "StartMenuExperienceHost"
+            "spoolsv", "MsMpEng", "NisSrv", "SecurityHealthService", "audiodg", "conhost", "RuntimeBroker", "StartMenuExperienceHost",
+            "TrustedInstaller", "TiWorker", "msiexec", "MoUsoCoreWorker", "usocoreworker", "wuauclt", "SearchIndexer", "SearchHost", "ShellExperienceHost"
         };
 
         public static bool IsProtectedProcess(int id, string name)

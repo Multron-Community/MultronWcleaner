@@ -668,6 +668,24 @@ Cursor="Hand"/>
                             </StackPanel>
                         </GroupBox>
 
+                        <GroupBox Header="{loc:Tr 'Secure Deletion (Shredding)'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr 'For privacy, overwrite files before deleting them during cleaning so they cannot be recovered. SSD-aware: on a solid-state drive the extra passes are skipped (they cannot target the same memory cells and only wear the drive); after deletion the TRIM command discards the blocks.'}"
+                                           FontSize="14" Opacity="0.75" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                                <ComboBox x:Name="cmbShredMode" Height="34" Width="460" HorizontalAlignment="Left" Padding="8"
+                                          FontSize="15" FontWeight="Medium" SelectionChanged="ShredMode_Changed"
+                                          Style="{DynamicResource ModernComboBoxStyle}">
+                                    <ComboBoxItem Content="{loc:Tr 'Off — normal delete (fastest)'}"/>
+                                    <ComboBoxItem Content="{loc:Tr 'Automatic — SSD-aware (recommended)'}"/>
+                                    <ComboBoxItem Content="{loc:Tr '1 pass (fast)'}"/>
+                                    <ComboBoxItem Content="{loc:Tr '3 passes (DoD 5220.22-M)'}"/>
+                                    <ComboBoxItem Content="{loc:Tr '7 passes (thorough)'}"/>
+                                </ComboBox>
+                                <TextBlock Text="{loc:Tr 'Shredding rewrites every file, so cleaning takes longer the more passes you choose.'}"
+                                           FontSize="12" Opacity="0.6" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </GroupBox>
+
                         <GroupBox Header="{loc:Tr 'Cleanup Log'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
 
