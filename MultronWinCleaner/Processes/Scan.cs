@@ -44,6 +44,7 @@ namespace MultronWinCleaner.Processes
         int customAccessDays;
         int customAgeDays;
         static readonly EnumerationOptions ScanEnumeration = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        static readonly EnumerationOptions DeepScanEnumeration = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.Hidden | FileAttributes.System | FileAttributes.ReparsePoint };
         CancellationTokenSource cts = new CancellationTokenSource();
         List<(string file, long size, string path, int days, string date, string modified)> checkboxData = new List<(string file, long size, string path, int days, string date, string modified)>();
 
@@ -943,12 +944,12 @@ namespace MultronWinCleaner.Processes
             {
                 if (Directory.Exists(path))
                 {
-                    foreach (string dir in Directory.GetDirectories(path))
+                    foreach (string dir in Directory.EnumerateDirectories(path, "*", DeepScanEnumeration))
                     {
                         if (main.cancelstatus.IsCancellationRequested) break;
                         await ScanCDirectoryAsync(dir);
                     }
-                    foreach (string file in Directory.GetFiles(path))
+                    foreach (string file in Directory.EnumerateFiles(path, "*", DeepScanEnumeration))
                     {
                         if (main.cancelstatus.IsCancellationRequested) break;
 
