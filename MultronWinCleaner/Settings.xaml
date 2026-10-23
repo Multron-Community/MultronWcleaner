@@ -877,7 +877,7 @@ Cursor="Hand"/>
                                     </Border>
 
                                     <TextBlock Text="{loc:Tr 'Deep Log Scanner — File Extensions'}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                    <TextBlock Text="{loc:Tr 'Extra extensions the deep scan should also treat as log/temp files.'}"
+                                    <TextBlock Text="{loc:Tr 'File extensions the deep log scan treats as log, dump, temporary or backup files. The default list also covers old copies (.old), CHKDSK fragments (.chk), mini and heap dumps (.mdmp, .hdmp), Windows Error Reporting files (.wer), error logs (.err) and help index caches (.gid).'}"
                                                FontSize="12" Opacity="0.55"
                                                Margin="0,0,0,8" TextWrapping="Wrap"/>
                                     <Grid>
@@ -889,7 +889,7 @@ Cursor="Hand"/>
                                         <TextBox x:Name="txtNewExtension" Grid.Column="0"
                                                  Height="34" VerticalContentAlignment="Center" FontSize="14" Padding="8,0"
                                                  Style="{DynamicResource RoundedTextBox}"
-                                                 Text=".log.etl.dmp.trace.tmp.temp.bak.swp"
+                                                 Text=".log.etl.dmp.trace.tmp.temp.bak.swp.old.chk.mdmp.hdmp.wer.err.gid"
                                                  ToolTip="{loc:Tr 'Example: .crash'}"
                                                  Margin="0,0,10,0"/>
                                         <Button Grid.Column="1" Content="{loc:Tr 'Add'}" Width="70" Height="34"
@@ -898,6 +898,27 @@ Cursor="Hand"/>
                                         <Button Grid.Column="2" Content="{loc:Tr 'Reset'}" Width="70" Height="34"
                                                 Click="ResetExtensions_Click"
                                                 Style="{DynamicResource CancelButtonStyle}"/>
+                                    </Grid>
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Tr 'Skip files changed in the last'}" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,6"/>
+                                        <TextBox x:Name="txtLogMinAge" Grid.Row="0" Grid.Column="1" Height="30" VerticalContentAlignment="Center" FontSize="13" Padding="6,0"
+                                                 Style="{DynamicResource RoundedTextBox}" Text="0" Margin="0,0,8,6" LostFocus="LogFilter_LostFocus"
+                                                 ToolTip="{loc:Tr 'Logs a program is still writing are usually recent. 0 = off.'}"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="{loc:Tr 'days (0 = off)'}" FontSize="13" Opacity="0.7" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Tr 'Skip files smaller than'}" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBox x:Name="txtLogMinSize" Grid.Row="1" Grid.Column="1" Height="30" VerticalContentAlignment="Center" FontSize="13" Padding="6,0"
+                                                 Style="{DynamicResource RoundedTextBox}" Text="0" Margin="0,0,8,0" LostFocus="LogFilter_LostFocus"
+                                                 ToolTip="{loc:Tr 'Leaves out tiny files that free almost no space. 0 = off.'}"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="{loc:Tr 'KB (0 = off)'}" FontSize="13" Opacity="0.7" VerticalAlignment="Center"/>
                                     </Grid>
                                 </StackPanel>
 

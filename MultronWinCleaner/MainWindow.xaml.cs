@@ -72,7 +72,7 @@ namespace Multron_Win_Cleaner
         public byte onclean = 0;
         public byte killer = 0;
         public readonly TrayIconAnimator _trayAnimator ;
-        public string extensions = ".log.etl.dmp.trace.tmp.temp.bak.swp";
+        public string extensions = MultronWinCleaner.Processes.DeepLogOptions.DefaultExtensions;
         string settingsPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Settings.txt");
         private DispatcherTimer diskSpaceTimer;
         public MainWindow()
@@ -908,7 +908,7 @@ namespace Multron_Win_Cleaner
                 IsEnabled = malscan.IsChecked == true,
                 ItemsSource = new List<string> { Loc.T("Quick Scan"), Loc.T("Full Scan"), Loc.T("Custom Scan") },
                 SelectedIndex = (int)MultronWinCleaner.MalwareScan.GetSavedMode(),
-                ToolTip = Loc.T("Quick: running processes, startup items, Downloads, Desktop and temp folders.\nFull: Quick + the whole Windows drive.\nCustom: the drives, folders and files set in the Malware Scan window.")
+                ToolTip = Loc.T("Quick: running programs and the modules they load, startup items, services, drivers, scheduled tasks and other autostart entries, the Windows and System32 folders, AppData and ProgramData, Downloads, Desktop and temp folders.\nFull: Quick + the whole Windows drive.\nCustom: the drives, folders and files set in the Malware Scan window.")
             };
 
             TextBlock malwareSettingsLink = new TextBlock { Margin = new Thickness(12, 0, 10, 10), FontSize = 12 };

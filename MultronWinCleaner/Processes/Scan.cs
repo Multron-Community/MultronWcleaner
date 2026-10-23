@@ -44,6 +44,7 @@ namespace MultronWinCleaner.Processes
         int customAccessDays;
         int customAgeDays;
         static readonly EnumerationOptions ScanEnumeration = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        static readonly EnumerationOptions DeepScanEnumeration = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
         CancellationTokenSource cts = new CancellationTokenSource();
         List<(string file, long size, string path, int days, string date, string modified)> checkboxData = new List<(string file, long size, string path, int days, string date, string modified)>();
 
@@ -613,6 +614,8 @@ namespace MultronWinCleaner.Processes
                             main.progressBar1.BeginAnimation(ProgressBar.ValueProperty, animation);
                         });
 
+                        DeepLogOptions.Load();
+                        main.extensions = DeepLogOptions.Extensions;
                         await ScanCDirectoryAsync(path);
                         await main.Dispatcher.InvokeAsync(() =>
                         {
@@ -864,6 +867,8 @@ namespace MultronWinCleaner.Processes
                  
                 double modifiedDays = (DateTime.Now - modifiedDate).TotalDays;
                 double accessDays = (DateTime.Now - accessDate).TotalDays;
+                if (process.Contains("Deep Log Scanner Result") && !DeepLogOptions.PassesFilters(fSize, modifiedDays))
+                    return;
                  
                 bool isAccessChecked = filterByAccess;
                 bool isOldChecked = filterByAge;
@@ -943,18 +948,18 @@ namespace MultronWinCleaner.Processes
             {
                 if (Directory.Exists(path))
                 {
-                    foreach (string dir in Directory.GetDirectories(path))
+                    foreach (string dir in Directory.EnumerateDirectories(path, "*", DeepScanEnumeration))
                     {
                         if (main.cancelstatus.IsCancellationRequested) break;
                         await ScanCDirectoryAsync(dir);
                     }
-                    foreach (string file in Directory.GetFiles(path))
+                    foreach (string file in Directory.EnumerateFiles(path, "*", DeepScanEnumeration))
                     {
                         if (main.cancelstatus.IsCancellationRequested) break;
 
                         if (!main.settings.IsExcluded(file))
                         {
-                            if (main.extensions.Split('.').Any(ext => file.EndsWith($".{ext}", StringComparison.OrdinalIgnoreCase)))
+                            if (DeepLogOptions.Matches(file, main.extensions))
                             {
                                 await addtocheckbox(file, path, "Deep Log Scanner Result");
                             }

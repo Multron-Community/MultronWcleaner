@@ -218,6 +218,12 @@ namespace MultronWinCleaner.Processes
                 {
                     (result.Sha256, result.Size) = await HashFileAsync(path, ct);
                 }
+                catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+                {
+                    result.Verdict = "skipped";
+                    result.Detail = Loc.T("The file was removed before it could be checked.");
+                    return result;
+                }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
                     result.Verdict = "error";
@@ -364,6 +370,12 @@ namespace MultronWinCleaner.Processes
                     try
                     {
                         data = await ReadFileAsync(path, beforeSend);
+                    }
+                    catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+                    {
+                        result.Verdict = "skipped";
+                        result.Detail = Loc.T("The file was removed before it could be checked.");
+                        return result;
                     }
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                     {
@@ -698,7 +710,7 @@ namespace MultronWinCleaner.Processes
             public long CheckMessagesSent;
             public long MessagesReceived;
             public long LastReceiveTicks = DateTime.UtcNow.Ticks;
-            public static readonly TimeSpan SilenceLimit = TimeSpan.FromSeconds(120);
+            public static readonly TimeSpan SilenceLimit = TimeSpan.FromSeconds(300);
             private long lastRefill = System.Diagnostics.Stopwatch.GetTimestamp();
 
             private async Task PaceChecksAsync(int count)

@@ -1,3 +1,43 @@
+## Multron Win Cleaner 1.27.1 Update
+
+### Malware Scan: choose the file types to scan
+The **Only executables & scripts** option is now **Only these file types**, with a box for each kind of file:
+- **Programs and libraries** (`.exe`, `.dll`, `.sys`, `.scr`, `.cpl`, `.ocx`, `.drv`, `.efi`...) — also finds programs renamed to another extension by checking the file header.
+- **Scripts** (`.ps1`, `.bat`, `.cmd`, `.vbs`, `.js`, `.hta`, `.wsf`, `.jar`, `.reg`, `.py`...)
+- **Installers and packages** (`.msi`, `.msp`, `.msix`, `.appx` and their bundles)
+- **Shortcuts** (`.lnk`, `.url`, `.pif`, `.scf`)
+- **Office documents with macros** (`.docm`, `.xlsm`, `.pptm`...)
+- **Archives and disk images** (`.zip`, `.rar`, `.7z`, `.cab`, `.iso`, `.img`, `.vhd`...)
+- **PDF documents**
+
+The first four are on by default, which is what the scan checked before. Documents, archives and PDFs can be personal files, so they are off until you turn them on, and even then a file is uploaded only when the cloud does not know it yet. Quick and Full scans use the same choice. The scan log lists the file types that were used.
+
+### Malware Scan: Quick Scan checks the critical places
+Quick Scan now also checks where malware usually hides or starts from:
+- **Every module (DLL) loaded by running programs**, not only the programs themselves.
+- **Services and drivers**, **scheduled tasks**, Winlogon `Shell`/`Userinit`/`Taskman`, `AppInit_DLLs`, Image File Execution Options `Debugger`, `RunOnceEx`, Active Setup, `RunServices` and policy `Run` keys. Files named inside a command line are found too (for example the DLL in `rundll32 C:\x\a.dll,Entry`).
+- **Windows system folders:** the top level of `Windows`, `System32`, `System32\drivers` and `SysWOW64`.
+- **AppData, LocalAppData, ProgramData and the Public folder**, two folder levels deep (where dropped programs usually sit, without walking browser caches).
+
+Downloads, Desktop and the temp folders are scanned as before.
+
+Files that Windows deletes while the scan runs (for example the recovery image Windows Update mounts in `C:\$WinREAgent`) are no longer shown as errors: they are listed as skipped ("The file was removed before it could be checked"). The temporary Windows update and reset folders `$WinREAgent`, `$Windows.~BT`, `$Windows.~WS`, `$GetCurrent` and `$SysReset` are not scanned at all, like `WinSxS` and `SoftwareDistribution` already were.
+ Most of the new files are signed Windows files that the cloud answers by fingerprint, and the fingerprint cache makes the next Quick Scan skip re-reading them.
+
+### Deep log scan: more file types and new filters
+- **More log and junk file types by default:** old copies (`.old`), CHKDSK fragments (`.chk`), mini and heap dumps (`.mdmp`, `.hdmp`), Windows Error Reporting files (`.wer`), error logs (`.err`) and help index caches (`.gid`), in addition to `.log .etl .dmp .trace .tmp .temp .bak .swp`. Files Windows itself depends on (registry `.LOG1`/`.LOG2`, `.blf`, `.evtx`) are not on the list.
+- **Skip files changed in the last N days:** leaves out logs that a program is probably still writing.
+- **Skip files smaller than N KB:** leaves out tiny files that free almost no space.
+- Both filters are in Settings next to the deep log extensions; 0 turns them off (the default).
+- **Your extension list is now remembered** after the app restarts.
+- **Links are no longer followed:** the scan no longer walks into junctions and symbolic links. The files in `C:\ProgramData` used to be listed and counted twice (once more through the `C:\Users\All Users` link), a junction pointing to another drive could pull that drive's files into a "C:" scan, and the scan is noticeably faster. Hidden and system files are still scanned as before.
+
+### Updating
+- **From 1.27 or earlier:** the app updates itself to 1.27.1 as usual (Settings > App Updates).
+- **New installs:** download `mwc_setup.exe` (installer) or `mwc.zip` (portable) below.
+
+---
+
 ## Multron Win Cleaner 1.27 Update
 
 > **Test release:** the cloud malware scan and its new disinfection are published for testing, so results and behavior may still change. Please report problems in [Issues](https://github.com/Multron-Community/MultronWcleaner/issues).
@@ -16,7 +56,7 @@ The malware scan no longer checks files one by one:
 
 Fingerprinting and checking now **run at the same time**: the first fingerprints go to the server while the rest of the disk is still being hashed. **Identical files** (the same content in several places) are checked only once, and the result is applied to every copy.
 
-New options in the scan settings: **Connections**, **Remember fingerprints of unchanged files** (rescans skip re-reading files whose size and modification time did not change — the server still checks every file) and **Compress uploads** (Brotli, for slow links). The server now tells the client its check rate so the client never exceeds it; with a server that does not say it yet, the client starts at a safe 500 checks per second, sends small check messages (at most 50 hashes, at most 40 messages per second per connection), keeps at most 256 checks waiting per connection so replies keep flowing, and halves its rate on its own when the server asks it to slow down.
+New options in the scan settings: **Connections**, **Remember fingerprints of unchanged files** (rescans skip re-reading files whose size and modification time did not change — the server still checks every file) and **Compress uploads** (Brotli, for slow links). The server now tells the client its check rate so the client never exceeds it; with a server that does not say it yet, the client starts at a safe 500 checks per second, sends small check messages (at most 50 hashes, at most 40 messages per second per connection), keeps at most 64 checks waiting per connection so replies keep flowing, and halves its rate on its own when the server asks it to slow down.
 
 ### New: Live upload view in the main window  
 The malware scan no longer opens a second progress window; it runs in the **main window**. Under the progress bar ("Classifying (45%)...") and the current file it shows **Scanned, Threats, Uploaded, Elapsed and Remaining** (estimated time left), then a scrollable **scan activity** list that is the centre of the scan: every **unknown file sent to the cloud** (name and path, a green fill that grows with the upload, the **upload speed** and the **compression** achieved, then "Classifying in Scan Cloud..." and finally its verdict), plus skipped files (for example over the size limit), files that could not be read and threats as they are found. Clicking the **Threats** count opens a separate window with the threats found so far; the results list with the per-file **actions** appears when the scan finishes. Files still in the queue are counted above the list. A **Cancel** link skips that one file without stopping the scan (a file already being sent finishes its transfer first, so the connection is never broken). The same view is shown in the Malware Scan window, in sync.
@@ -28,7 +68,7 @@ The malware scan no longer opens a second progress window; it runs in the **main
 - **Small unknown files first:** unknown files are uploaded smallest first, so many more verdicts arrive in the same time and large files are sent at the end.
 - **Tray icon (optional):** a new **Show a tray icon while scanning** option (off by default) shows an animated tray icon with the scan progress and a notification when it finishes; with it on, closing the Malware Scan window during a scan keeps the scan running in the tray.
 - **Much faster scans with unknown files:** the connections now have separate jobs — some only check fingerprints (half of them from 4 connections up, otherwise one), the others only upload unknown files. Before, a single file waiting for the server to accept its upload held up the checks of thousands of known files on the same connection; now known files keep being answered while uploads wait. The client also stays within the server's upload window, and up to **8 connections** can be used.
-- **A scan no longer hangs when the server goes quiet:** if a connection gets no reply for 2 minutes while checks are waiting, the client drops it and reconnects on its own ("The cloud server stopped answering" in the scan log) instead of waiting forever. Every 15 seconds the scan log also lists, for each connection, how many checks were sent and in how many messages, how many replies came back and when the last one arrived, the check rate in use and whether the server asked to slow down — so a slow scan can be explained.
+- **A scan no longer hangs when the server goes quiet:** if a connection gets no reply for 5 minutes while checks are waiting, the client drops it and reconnects on its own ("The cloud server stopped answering" in the scan log) instead of waiting forever. Every 15 seconds the scan log also lists, for each connection, how many checks were sent and in how many messages, how many replies came back and when the last one arrived, the check rate in use and whether the server asked to slow down — so a slow scan can be explained.
 - **Clear message when the server is limiting you:** if the server refuses new connections because too many scans were started in a short time, the scan retries a few times (3, 6 and 12 seconds apart) and then says so in plain words instead of showing a raw "status code 429" error.
 - **Fewer "could not be read" errors:** files that Windows protects even from administrators (for example Defender's update files in `C:\Windows\SystemTemp`) are now read with backup privileges.
 

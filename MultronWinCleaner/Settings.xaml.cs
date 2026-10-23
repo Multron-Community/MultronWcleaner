@@ -70,6 +70,7 @@ namespace MultronWinCleaner
             MainWindow.NotifySecuritySettingKey, MainWindow.NotifyFirewallSettingKey, MainWindow.NotifyDuplicatesSettingKey,
             MainWindow.NotifyMalwareSettingKey, Notify.PositionSettingKey, Notify.LayoutSettingKey,
             "accessscanindex", "oldscanindex", "scheduletype", "postaction", "shredmode",
+            MultronWinCleaner.Processes.DeepLogOptions.ExtensionsKey, MultronWinCleaner.Processes.DeepLogOptions.MinAgeKey, MultronWinCleaner.Processes.DeepLogOptions.MinSizeKey,
             "day1", "day2", "day3", "day4", "day5", "day6", "day7", "limitweeks", "week1", "week2", "week3", "week4", "week5",
             MultronWinCleaner.Processes.Updater.AppUpdateSettingKey, MultronWinCleaner.Processes.Updater.AutoUpdateSettingKey,
             MultronWinCleaner.Processes.Updater.AutoUpdateHoursSettingKey, MultronWinCleaner.Processes.Updater.AutoReloadSettingKey,
@@ -457,6 +458,14 @@ namespace MultronWinCleaner
             SetComboBoxSelection(cmbAgePreset, GetString("oldscanindex"));
             SetComboBoxSelection(cmbScheduleType, GetString("scheduletype"));
             SetComboBoxSelection(cmbPostCleanupAction, GetString("postaction"));
+
+            string logExtensions = GetString(MultronWinCleaner.Processes.DeepLogOptions.ExtensionsKey);
+            txtNewExtension.Text = MultronWinCleaner.Processes.DeepLogOptions.IsValidExtensionList(logExtensions)
+                ? logExtensions : MultronWinCleaner.Processes.DeepLogOptions.DefaultExtensions;
+            if (mainWindow != null)
+                mainWindow.extensions = txtNewExtension.Text;
+            txtLogMinAge.Text = int.TryParse(GetString(MultronWinCleaner.Processes.DeepLogOptions.MinAgeKey), out int logAge) ? Math.Max(0, logAge).ToString() : "0";
+            txtLogMinSize.Text = int.TryParse(GetString(MultronWinCleaner.Processes.DeepLogOptions.MinSizeKey), out int logKb) ? Math.Max(0, logKb).ToString() : "0";
 
             shredModeLoading = true;
             cmbShredMode.SelectedIndex = int.TryParse(GetString("shredmode"), out int shredMode) ? Math.Clamp(shredMode, 0, 4) : 0;
@@ -1267,7 +1276,19 @@ namespace MultronWinCleaner
 
         private void ResetExtensions_Click(object sender, RoutedEventArgs e)
         {
-            txtNewExtension.Text = ".log.etl.dmp.trace.tmp.temp.bak.swp";
+            txtNewExtension.Text = MultronWinCleaner.Processes.DeepLogOptions.DefaultExtensions;
+            mainWindow.extensions = txtNewExtension.Text;
+            Utilities?.savesettings($"{MultronWinCleaner.Processes.DeepLogOptions.ExtensionsKey}:{txtNewExtension.Text}");
+        }
+
+        private void LogFilter_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is not TextBox box) return;
+            if (!int.TryParse(box.Text.Trim(), out int value) || value < 0)
+                value = 0;
+            box.Text = value.ToString();
+            string key = box == txtLogMinAge ? MultronWinCleaner.Processes.DeepLogOptions.MinAgeKey : MultronWinCleaner.Processes.DeepLogOptions.MinSizeKey;
+            Utilities?.savesettings($"{key}:{value}");
         }
 
         private void AddExtension_Click(object sender, RoutedEventArgs e)
@@ -1297,6 +1318,7 @@ namespace MultronWinCleaner
             if (result == System.Windows.MessageBoxResult.Yes)
             {
                 mainWindow.extensions = txtNewExtension.Text;
+                Utilities?.savesettings($"{MultronWinCleaner.Processes.DeepLogOptions.ExtensionsKey}:{txtNewExtension.Text}");
                 AppDialog.Show(Loc.F("Changes applied. {0} > {1}", mainWindow.extensions, txtNewExtension.Text), Loc.T("Information"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
             }
         }
