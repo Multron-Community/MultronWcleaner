@@ -1,0 +1,41 @@
+name: Download Stats
+
+on:
+  schedule:
+    - cron: '30 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: download-stats
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Update README download counts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: beta
+
+      - name: Count release downloads
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .github/scripts/update_downloads.py README.md
+
+      - name: Commit and push
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "Download counts are unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "Update download stats"
+          git pull --rebase origin beta
+          git push origin HEAD:beta
