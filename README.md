@@ -13,7 +13,7 @@
     </a>
     <!-- downloads-badge:start -->
     <a href="#downloads">
-      <img src="https://img.shields.io/badge/Downloads-13.8k-c2410c?style=for-the-badge&logo=github&logoColor=white" alt="Downloads: 13,759" />
+      <img src="https://img.shields.io/badge/Downloads-13.8k-c2410c?style=for-the-badge&logo=github&logoColor=white" alt="Downloads: 13,794" />
     </a>
 <!-- downloads-badge:end -->
     <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Platform" />
@@ -197,7 +197,7 @@ The application is fully localized into **12 languages**: English, Turkish, Germ
 ## Downloads
 
 <!-- downloads:start -->
-**13,759** downloads across **77** releases · latest [v1.27.1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.1): **374** · updated 2026-10-29
+**13,794** downloads across **77** releases · latest [v1.27.1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.1): **409** · updated 2026-10-30
 
 Counts the installer and portable archive downloads of every release. Update checks made by the app are not counted.
 
@@ -206,7 +206,7 @@ Counts the installer and portable archive downloads of every release. Update che
 
 | Release | Date | Downloads |
 |---|---|---:|
-| [v1.27.1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.1) | 2026-10-23 | 374 |
+| [v1.27.1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.1) | 2026-10-23 | 409 |
 | [v1.27](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27) | 2026-10-22 | 242 |
 | [v1.26.6](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.6) | 2026-10-19 | 433 |
 | [v1.26.5](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.5) | 2026-10-18 | 707 |
