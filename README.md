@@ -35,7 +35,7 @@
 
 <div align="center">
   <a href="https://www.youtube.com/watch?v=dEVvZb2j_eY" target="_blank">
-    <img src=".github/assets/WinCleaner_Kapak_Animasyon.gif" width="500" alt="Installation Preview">
+    <img src=".github/assets/WinCleaner_Kapak_Animasyon.gif" width="700" alt="Installation Preview">
   </a>
   <p><i>Click the image to watch the full version on YouTube.</i></p>
 </div>
