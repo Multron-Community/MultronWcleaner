@@ -31,6 +31,17 @@
 
   [Download Release](https://github.com/Multron-Community/MultronWcleaner/releases/latest) • [Database Repo](https://github.com/Multron-Community/MultronWcleaner-Database) • [Engine Repo](https://github.com/HydraDragonAntivirus/HydraDragonAntivirus) • [Report Issue](https://github.com/Multron-Community/MultronWcleaner/issues) • [Support on Patreon](https://www.patreon.com/cw/multron)
 
+---
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=dEVvZb2j_eY" target="_blank">
+    <img src=".github/assets/WinCleaner_Kapak_Animasyon.gif" width="500" alt="Installation Preview">
+  </a>
+  <p><i>Click the image to watch the full version on YouTube.</i></p>
+</div>
+
+---
+
 </div>
 
 > [!WARNING]
