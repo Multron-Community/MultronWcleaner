@@ -34,23 +34,9 @@
 ---
 
 <div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <a href="https://www.youtube.com/watch?v=FW3Ok223CQM" target="_blank">
-          <img src=".github/assets/WinCleaner_Preview_EN.gif" width="420" alt="Walkthrough video (English)">
-        </a>
-        <br><b>🇬🇧 English</b>
-      </td>
-      <td align="center">
-        <a href="https://www.youtube.com/watch?v=dEVvZb2j_eY" target="_blank">
-          <img src=".github/assets/WinCleaner_Preview_TR.gif" width="420" alt="Tanıtım videosu (Türkçe)">
-        </a>
-        <br><b>🇹🇷 Türkçe</b>
-      </td>
-    </tr>
-  </table>
-  <p><i>Click an image to watch the full video on YouTube.</i></p>
+  <a href="https://www.youtube.com/watch?v=FW3Ok223CQM" target="_blank"><img src=".github/assets/WinCleaner_Preview_EN.gif" width="48%" alt="Walkthrough video (English)"></a>
+  <a href="https://www.youtube.com/watch?v=dEVvZb2j_eY" target="_blank"><img src=".github/assets/WinCleaner_Preview_TR.gif" width="48%" alt="Tanıtım videosu (Türkçe)"></a>
+  <p><b>🇬🇧 English</b> &nbsp;·&nbsp; <b>🇹🇷 Türkçe</b><br><i>Click an image to watch the full video on YouTube.</i></p>
 </div>
 
 ---
