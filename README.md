@@ -34,10 +34,23 @@
 ---
 
 <div align="center">
-  <a href="https://www.youtube.com/watch?v=dEVvZb2j_eY" target="_blank">
-    <img src=".github/assets/WinCleaner_Kapak_Animasyon.gif" width="700" alt="Installation Preview">
-  </a>
-  <p><i>Click the image to watch the full version on YouTube.</i></p>
+  <table>
+    <tr>
+      <td align="center">
+        <a href="https://www.youtube.com/watch?v=FW3Ok223CQM" target="_blank">
+          <img src=".github/assets/WinCleaner_Preview_EN.gif" width="420" alt="Walkthrough video (English)">
+        </a>
+        <br><b>🇬🇧 English</b>
+      </td>
+      <td align="center">
+        <a href="https://www.youtube.com/watch?v=dEVvZb2j_eY" target="_blank">
+          <img src=".github/assets/WinCleaner_Preview_TR.gif" width="420" alt="Tanıtım videosu (Türkçe)">
+        </a>
+        <br><b>🇹🇷 Türkçe</b>
+      </td>
+    </tr>
+  </table>
+  <p><i>Click an image to watch the full video on YouTube.</i></p>
 </div>
 
 ---
