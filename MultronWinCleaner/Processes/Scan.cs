@@ -47,9 +47,10 @@ namespace MultronWinCleaner.Processes
         static readonly EnumerationOptions ScanEnumeration = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
         static readonly EnumerationOptions DeepScanEnumeration = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
         CancellationTokenSource cts = new CancellationTokenSource();
-        List<(string file, long size, string path, int days, string date, string modified)> checkboxData = new List<(string file, long size, string path, int days, string date, string modified)>();
-        // Database entries can overlap (e.g. LocalTemp and LocalTemp\Zoom), so a file is listed and counted only once.
+        List<(string file, long size, string path, int days, string date, string modified, int createdDays, string accessed)> checkboxData = new List<(string file, long size, string path, int days, string date, string modified, int createdDays, string accessed)>();
         readonly HashSet<string> addedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        volatile bool showingLive;
+        readonly Stopwatch liveTimer = Stopwatch.StartNew();
 
         public Scan(MainWindow main)
         {
@@ -209,6 +210,7 @@ namespace MultronWinCleaner.Processes
                     if (main.cancelstatus.IsCancellationRequested)
                         break;
                     await main.Dispatcher.InvokeAsync(() => {
+                        if (showingLive) return;
                         main.label1_Copy.Text = text + ".";
                         main.label1_Copy.Foreground = System.Windows.Media.Brushes.Blue;
                     });
@@ -216,12 +218,14 @@ namespace MultronWinCleaner.Processes
                     await Task.Delay(1000, cancellationToken);
 
                     await main.Dispatcher.InvokeAsync(() => {
+                        if (showingLive) return;
                         main.label1_Copy.Text = text + "..";
                     });
 
                     await Task.Delay(1000, cancellationToken);
 
                     await main.Dispatcher.InvokeAsync(() => {
+                        if (showingLive) return;
                         main.label1_Copy.Text = text + "...";
                     });
 
@@ -508,7 +512,7 @@ namespace MultronWinCleaner.Processes
         {
             try
             {
-                long size = main.database.Count();
+                long size = Math.Max(1, main.database.Count(d => !IsCommandEntry(main.stringtokenizer(d, "=", 0) ?? "")));
                 long nowscanning = 0;
                 MainWindow.scanstatus = 2;
                 main.onclean = 1;
@@ -516,7 +520,8 @@ namespace MultronWinCleaner.Processes
 
                 await main.Dispatcher.InvokeAsync(() =>
                 {
-
+                    main.paths.Clear();
+                    main.logfiles.Clear();
                     olderindex = main.settings.cmbAgePreset.SelectedIndex;
                     accessindex = main.settings.cmbAccessPreset.SelectedIndex;
                     filterByAccess = main.settings.AccessScan.IsChecked == true;
@@ -533,6 +538,7 @@ namespace MultronWinCleaner.Processes
                 foreach (string directory in main.database)
                 {
                     if (main.cancelstatus.IsCancellationRequested) break;
+                    showingLive = false;
 
                     string? name = main.stringtokenizer(directory, "=", 0);
                     string? path = main.stringtokenizer(directory, "=", 1);
@@ -693,6 +699,7 @@ namespace MultronWinCleaner.Processes
 
                 }
                
+                showingLive = false;
                 await main.Dispatcher.InvokeAsync(async () =>
                 {
                     GC.Collect();
@@ -723,7 +730,7 @@ namespace MultronWinCleaner.Processes
 
                         var allFiles = items.Select(item => new FileItem
                         {
-                            FileName = Loc.F("{0}={1} | Created: {2} ({3} days) | Last Access: {4}", item.file, main.formatsize(item.size), item.date, item.days, item.modified),
+                            FileName = Loc.F("{0}={1} | Created: {2} ({3} days) | Last Access: {4}", item.file, main.formatsize(item.size), item.date, item.createdDays, item.accessed),
                             SizeBytes = item.size,
                             IsChecked = true,
                             Path = item.file,
@@ -751,7 +758,6 @@ namespace MultronWinCleaner.Processes
                     main.label1_Copy.Text = Loc.T("Loading Completed!");
                     main.progressBar1.Value = 100;
                     main.label1_Copy.Foreground = System.Windows.Media.Brushes.Goldenrod;
-                    main.buttonReset.Visibility = Visibility.Visible;
                     main.buttonStartScan.IsEnabled = true;
                     main.buttonStartScan.Content = Loc.T("Clean");
 
@@ -770,6 +776,8 @@ namespace MultronWinCleaner.Processes
 
                     if (!main.cancelstatus.IsCancellationRequested)
                         await main.RunQueuedMalwareScanAsync();
+
+                    main.buttonReset.Visibility = Visibility.Visible;
 
                     if (main.startupscan == 1)
                     {
@@ -927,7 +935,7 @@ namespace MultronWinCleaner.Processes
                         deeplogscantotal += fSize;
                     }
                      
-                    checkboxData.Add((file, fSize, path, (int)modifiedDays, creationTime.ToString(), modifiedDate.ToString()));
+                    checkboxData.Add((file, fSize, path, (int)modifiedDays, creationTime.ToString(), modifiedDate.ToString(), (int)(DateTime.Now - creationTime).TotalDays, accessDate.ToString()));
                 }
             }
             catch (Exception ex)
@@ -942,10 +950,40 @@ namespace MultronWinCleaner.Processes
 
         public void catchexception(string message)
         {
-            using (StreamWriter writer = new StreamWriter(Environment.CurrentDirectory + "\\exceptions.txt"))
+            try
             {
-                writer.WriteLine(message);
+                File.AppendAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "exceptions.txt"), message + Environment.NewLine);
             }
+            catch { }
+        }
+
+        private bool LiveUpdateDue()
+        {
+            if (liveTimer.ElapsedMilliseconds < 100)
+                return false;
+            liveTimer.Restart();
+            return true;
+        }
+
+        private void ShowLive(string text)
+        {
+            showingLive = true;
+            main.Dispatcher.BeginInvoke(() =>
+            {
+                main.label1_Copy.Text = text;
+                main.label1_Copy.Foreground = System.Windows.Media.Brushes.Blue;
+            });
+        }
+
+        private static string ShortPath(string path)
+        {
+            const int max = 70;
+            return path.Length <= max ? path : path.Substring(0, 25) + "…" + path.Substring(path.Length - (max - 26));
+        }
+
+        private static bool IsCommandEntry(string name)
+        {
+            return name.Contains("cleanmgr.exe") || name.Contains("Dism.exe") || name.Contains("Deep Log Files Scan") || name.Contains("sfc.exe", StringComparison.OrdinalIgnoreCase);
         }
 
 
@@ -976,16 +1014,8 @@ namespace MultronWinCleaner.Processes
                         }
 
                         current++;
-                        if (current % 100 == 0)
-                        {
-                            await main.Dispatcher.InvokeAsync(() =>
-                            {
-                                main.label1_Copy.Text = Loc.F("Scanning C:\\ — {0} files checked, {1} found", current, main.formatsize(deeplogscantotal));
-                                 
-                                var converter = new System.Windows.Media.BrushConverter();
-                                main.label1_Copy.Foreground = (System.Windows.Media.Brush)converter.ConvertFromString("#1e88e5")!;
-                            });
-                        }
+                        if (LiveUpdateDue())
+                            ShowLive(Loc.F("Scanning C:\\ — {0} files checked, {1} found", current, main.formatsize(deeplogscantotal)) + "\n" + ShortPath(path));
                     }
 
                 }
@@ -1007,6 +1037,8 @@ namespace MultronWinCleaner.Processes
                     foreach (string file in Directory.EnumerateFiles(path, "*", ScanEnumeration))
                     {
                         if (main.cancelstatus.IsCancellationRequested) break;
+                        if (LiveUpdateDue())
+                            ShowLive(Loc.F("Scanning: {0}: {1}", name, ShortPath(file)));
                         if (!main.settings.IsExcluded(file))
                         {
                             await addtocheckbox(file, path, name);

@@ -1569,9 +1569,12 @@ namespace Multron_Win_Cleaner
                     scanStepStop = null;
                 if (owner)
                 {
-                    buttonStartScan.Content = Loc.T("Clean");
-                    buttonStartScan.IsEnabled = wasEnabled;
                     buttonStartScan.ToolTip = null;
+                    if (Equals(buttonStartScan.Content, Loc.T("Cancel")))
+                    {
+                        buttonStartScan.Content = Loc.T("Clean");
+                        buttonStartScan.IsEnabled = wasEnabled;
+                    }
                 }
             }
         }
@@ -1931,9 +1934,11 @@ namespace Multron_Win_Cleaner
             if (!duplicateCancelMode)
                 return;
             duplicateCancelMode = false;
+            buttonStartScan.ToolTip = null;
+            if (!Equals(buttonStartScan.Content, Loc.T("Cancel")))
+                return;
             buttonStartScan.Content = Loc.T("Clean");
             buttonStartScan.IsEnabled = duplicateCancelWasEnabled;
-            buttonStartScan.ToolTip = null;
         }
 
         private void ShowDuplicateProgress(string status)
@@ -3321,8 +3326,11 @@ namespace Multron_Win_Cleaner
         {
             if (malwareCancelRestore == null)
                 return;
-            buttonStartScan.Content = Loc.T(malwareCancelRestore);
-            buttonStartScan.IsEnabled = malwareCancelWasEnabled;
+            if (Equals(buttonStartScan.Content, Loc.T("Cancel")))
+            {
+                buttonStartScan.Content = Loc.T(malwareCancelRestore);
+                buttonStartScan.IsEnabled = malwareCancelWasEnabled;
+            }
             buttonStartScan.ToolTip = null;
             malwareCancelRestore = null;
         }

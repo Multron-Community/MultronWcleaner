@@ -1,3 +1,29 @@
+## Multron Win Cleaner 1.27.3 Update
+
+### New: See what the scan is looking at
+While scanning, the status under the Scan button now shows the location and the file being checked, for example *Scanning: LocalTemp: C:\Users\…\Temp\setup.log*, instead of only "Scanning...". The Deep Log Files Scan shows the folder it is in under its file counter. Long paths are shortened in the middle.
+
+### Malware Scan: every file is checked, only big unknown files stay local
+- **Large files are no longer skipped unchecked.** The old 50 MB limit was applied before the fingerprint, so bigger files were never even asked about. Now every file up to 2 GB is fingerprinted and checked with the cloud, and most large installers and game files are answered at once by their fingerprint.
+- **The limit now applies to the upload, after compression.** An unknown file is compressed first and sent only when the compressed data fits in the **Max upload size** (12 MB by default, in the scan settings). Otherwise it is listed as *Not uploaded: larger than the 12 MB upload limit after compression*. Files that cannot shrink below the limit (more than 8 times its size, or not compressible) are not even read for upload.
+- **LZMA or Brotli, chosen by upload speed.** Unknown files can now be compressed with LZMA (16 MB dictionary), the method 7-Zip uses, or with stronger Brotli (level 9 with a 16 MB window instead of level 5 with 4 MB). In our test a 5.7 MB program became 1.15 MB with LZMA against 1.30 MB with Brotli, but LZMA took about 1 second longer to compress, so it only pays off on slow connections. The new **Compression method** setting has three choices: **Automatic** (the default) measures how fast uploads go and uses LZMA below about 150 KB/s (1.2 Mbit/s) and Brotli above it; **LZMA** always gives the smallest uploads; **Brotli** always compresses fastest. If the cloud server does not support the chosen method, the other one is used.
+
+### Fixes
+- **The app could get stuck with a Clean button and no Reset button.** The Reset button appeared as soon as the scan results were listed, while the Firewall, Shortcuts, Security, Duplicate Files and Malware checks were still running. Pressing Reset then cleared the results, and the check that finished afterwards turned the button back into **Clean**, with no results and no Reset button left; closing the window to the tray did not help. Reset now appears when all checks have finished, and a check that ends after a Reset no longer changes the button.
+- **The "Your system cleaned!" notification shows the space really freed.** Under the size of the deleted files it now also shows how much free space drive C: gained, for example *Free space on C: +719.21 MB*. This includes the Dism.exe component cleanup, which the deleted-files size does not.
+- **Deep Log Files Scan runs on every scan again.** After the first cleaning, the option was quietly dropped from the list while its box stayed ticked, so later scans in the same session (including Auto Clean while the app stays in the tray) skipped the deep log scan.
+- **Locked file counts no longer pile up.** The locked files of earlier cleanings, and the deep log files of earlier scans, were kept until the app was closed, so "Locked Files Found!" and "Found Log Files (N files)" could include files from previous runs. Each scan now starts with empty lists.
+- **Locations inside another location are reported correctly.** A location whose files were already cleaned with the location around it (for example a Zoom temp folder inside LocalTemp) now shows in green as *Cleaned with LocalTemp* instead of a yellow *Folder Empty*.
+- **Correct dates in the scan results.** The number of days next to "Created" now counts from the creation date, and "Last Access" shows the last access date (both showed the last modification before).
+- **Scan errors are kept.** `exceptions.txt` used to keep only the last scan error, and could be written to another folder when the app was started with Windows. Scan errors are now added to the file in the app folder.
+- The startup clean message no longer says "Locked Files Found! 0" when nothing was locked, and the scan progress bar now reaches the end.
+
+### Updating
+- **From 1.27.2 or earlier:** the app updates itself to 1.27.3 as usual (Settings > App Updates).
+- **New installs:** download `mwc_setup.exe` (installer) or `mwc.zip` (portable) below.
+
+---
+
 ## Multron Win Cleaner 1.27.2 Update
 
 ### Fixes

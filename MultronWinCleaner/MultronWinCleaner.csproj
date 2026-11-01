@@ -74,6 +74,7 @@
     <PackageReference Include="Hardcodet.Wpf.TaskbarNotification" Version="1.0.5" NoWarn="NU1701" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Octokit" Version="14.0.0" />
+    <PackageReference Include="SharpCompress" Version="0.50.4" />
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="9.0.6" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.6" />

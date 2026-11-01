@@ -224,8 +224,8 @@ namespace MultronWinCleaner.Processes
             cleanTimer.Restart();
             shredModeCache = null;
             var task = ScandotsAsync(Shredding ? Loc.T("Shredding & Cleaning") : Loc.T("Cleaning"), cts.Token);
-            main.database.RemoveAll(item => item.EndsWith("=logscan"));
-            int totalCount = main.database.Count;
+            var items = main.database.Where(item => !item.EndsWith("=logscan")).ToList();
+            int totalCount = items.Count;
             int cleanedCount = 0;
             totalsize = new DriveInfo("C:\\").AvailableFreeSpace;
 
@@ -254,10 +254,9 @@ namespace MultronWinCleaner.Processes
                 });
             }
 
-            for (int i = 0; i < main.database.Count; i++)
+            var cleanedFolders = new List<(string Path, string Name)>();
+            foreach (string item in items)
             {
-                string item = main.database[i];
-
                 if (main.cancelclean == 2) break;
 
                 cleanedCount++;
@@ -334,6 +333,7 @@ namespace MultronWinCleaner.Processes
                     dotsText = Loc.F(Shredding ? "Shredding & Cleaning: {0}" : "Cleaning: {0}", name);
                     var statusBlock = await AddStatusTextBlock(Loc.F(Shredding ? "Shredding & Cleaning: {0}: {1}" : "Cleaning: {0}: {1}", name, path));
                     StartItem(name);
+                    string parentName = "";
 
                     if (File.Exists(path))
                     {
@@ -353,13 +353,15 @@ namespace MultronWinCleaner.Processes
 
                         if (targetGroup == null || targetGroup.allFiles == null || targetGroup.allFiles.Count == 0)
                         {
-                            iscleaned = 2;
+                            parentName = cleanedFolders.FirstOrDefault(c => path.StartsWith(c.Path.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)).Name ?? "";
+                            iscleaned = parentName.Length > 0 ? 8 : 2;
                         }
                         else if (targetGroup.allFiles.Any(f => f.IsChecked))
                         {
                             var groupFiles = targetGroup.allFiles.Where(f => f.IsChecked).Select(f => f.Path).ToList();
                             await DeleteFilesAsync(groupFiles, name, null);
                             await Task.Run(() => DeleteEmptyDirectories(path));
+                            cleanedFolders.Add((path, name));
                             iscleaned = itemLocked > 0 || itemDenied > 0 ? 6 : 1;
                         }
                     }
@@ -380,6 +382,11 @@ namespace MultronWinCleaner.Processes
                         {
                             statusBlock.Text = Loc.F("Folder Empty: {0}: {1}", name, path);
                             statusBlock.Foreground = Brushes.Goldenrod;
+                        }
+                        else if (iscleaned == 8)
+                        {
+                            statusBlock.Text = Loc.F("Cleaned with {0}: {1}: {2}", parentName, name, path);
+                            statusBlock.Foreground = GREEN;
                         }
                         else if (iscleaned == 1)
                         {
@@ -802,7 +809,7 @@ namespace MultronWinCleaner.Processes
                 return;
             try
             {
-                File.WriteAllLines(System.IO.Path.Combine(Environment.CurrentDirectory, "exceptions.txt"), exceptionLog);
+                File.WriteAllLines(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "exceptions.txt"), exceptionLog);
             }
             catch { }
             exceptionLog.Clear();
@@ -950,7 +957,7 @@ namespace MultronWinCleaner.Processes
             }
             else
             {
-                resultMessage = main.autoclean == 1   ? Loc.F("Auto Clean done! {0} cleaned. {1}", main.formatsize(freedSpace), DateTime.Now) : main.startupclean == 1   ? Loc.F("Startup Clean done! {0} cleaned. {1} Locked Files Found! {2}", main.formatsize(freedSpace), DateTime.Now, main.paths.Count)    : Loc.F("Cleaning done! {0} cleaned. {1}", main.formatsize(freedSpace), DateTime.Now);
+                resultMessage = main.autoclean == 1   ? Loc.F("Auto Clean done! {0} cleaned. {1}", main.formatsize(freedSpace), DateTime.Now) : main.startupclean == 1   ? Loc.F("Startup Clean done! {0} cleaned. {1}", main.formatsize(freedSpace), DateTime.Now)    : Loc.F("Cleaning done! {0} cleaned. {1}", main.formatsize(freedSpace), DateTime.Now);
             }
         
             await main.Dispatcher.InvokeAsync(() =>
@@ -976,7 +983,8 @@ namespace MultronWinCleaner.Processes
 
                 if (main.settings.chkEnableNotifyClean.IsChecked == true && (main.Visibility != Visibility.Visible || main.WindowState == WindowState.Minimized))
                 {
-                    Notify notify = new Notify(Loc.T("Clean Information"), Loc.T("Your system cleaned!") + "\r\n", $"{main.formatsize(freedSpace)}");
+                    string diskFreed = Loc.F("Free space on C: {0}", (freeDelta >= 0 ? "+" : "-") + main.formatsize(Math.Abs(freeDelta)));
+                    Notify notify = new Notify(Loc.T("Clean Information"), Loc.T("Your system cleaned!") + "\r\n" + diskFreed, $"{main.formatsize(freedSpace)}");
                     notify.Show();
                 }
                 var action = automatic ? Loc.En((main.settings.cmbPostCleanupAction.SelectedItem as ComboBoxItem)?.Content) : null;

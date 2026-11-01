@@ -13,6 +13,8 @@ namespace MultronWinCleaner.Processes
 {
     public enum UploadStage { Waiting, Uploading, Analyzing, Done }
 
+    public enum UploadCompression { Automatic, Lzma, Brotli }
+
     [Flags]
     public enum ActivityFilter { None = 0, Uploads = 1, Threats = 2, Skipped = 4, Errors = 8, All = Uploads | Threats | Skipped | Errors }
 

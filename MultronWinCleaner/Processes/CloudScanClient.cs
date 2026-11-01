@@ -53,6 +53,10 @@ namespace MultronWinCleaner.Processes
         public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(15);
         public TimeSpan ResultTimeout { get; set; } = TimeSpan.FromMinutes(10);
         public bool CompressUploads { get; set; } = true;
+        public UploadCompression Compression { get; set; } = UploadCompression.Automatic;
+        public long MaxUploadBytes { get; set; } = DefaultMaxUploadBytes;
+        public const long DefaultMaxUploadBytes = 12L * 1024 * 1024;
+        private const int MaxRawToUploadFactor = 8;
 
         public bool IsConnected => current?.IsUsable == true;
 
@@ -357,6 +361,9 @@ namespace MultronWinCleaner.Processes
             CloudScanResult result, IProgress<double>? uploadProgress, CancellationToken ct, bool rescan = false,
             Func<UploadStage, double, long, CancellationToken>? uploadStatus = null)
         {
+            bool mayCompress = CompressUploads && (connection.SupportsLzma || connection.SupportsBrotli) && ShouldTryCompress(path, (int)Math.Min(result.Size, int.MaxValue));
+            if (result.Size > MaxUploadBytes * MaxRawToUploadFactor || (result.Size > MaxUploadBytes && !mayCompress))
+                return NotUploaded(result);
             CancellationToken skip = uploadStatus?.Invoke(UploadStage.Waiting, 0, 0) ?? CancellationToken.None;
             using var skipCts = CancellationTokenSource.CreateLinkedTokenSource(ct, skip);
             CancellationToken beforeSend = skipCts.Token;
@@ -388,14 +395,26 @@ namespace MultronWinCleaner.Processes
                     result.Sha256 = Convert.ToHexString(SHA256.HashData(data));
 
                     byte[] payload = data;
-                    if (CompressUploads && connection.SupportsBrotli && ShouldTryCompress(path, data.Length))
+                    string encoding = "";
+                    if (CompressUploads && ShouldTryCompress(path, data.Length) && (connection.SupportsLzma || connection.SupportsBrotli))
                     {
                         byte[] source = data;
-                        byte[]? packed = await Task.Run(() => TryBrotli(source), beforeSend);
+                        bool useLzma = connection.SupportsLzma && (!connection.SupportsBrotli || Compression switch
+                        {
+                            UploadCompression.Lzma => true,
+                            UploadCompression.Brotli => false,
+                            _ => SlowUploads
+                        });
+                        byte[]? packed = await Task.Run(() => useLzma ? TryLzma(source) : TryBrotli(source), beforeSend);
                         if (packed != null)
+                        {
                             payload = packed;
+                            encoding = useLzma ? "lzma" : "br";
+                        }
                     }
-                    bool compressed = !ReferenceEquals(payload, data);
+                    bool compressed = encoding.Length > 0;
+                    if (payload.Length > MaxUploadBytes)
+                        return NotUploaded(result);
 
                     await connection.SendLock.WaitAsync(beforeSend);
                     try
@@ -414,7 +433,7 @@ namespace MultronWinCleaner.Processes
                             scanMsg["rescan"] = true;
                         if (compressed)
                         {
-                            scanMsg["encoding"] = "br";
+                            scanMsg["encoding"] = encoding;
                             scanMsg["csize"] = payload.Length;
                         }
                         await connection.SendJsonAsync(scanMsg, ct);
@@ -426,7 +445,9 @@ namespace MultronWinCleaner.Processes
                             uploadStatus?.Invoke(UploadStage.Uploading, 0, payloadLength);
                             IProgress<double>? progress = uploadStatus == null ? uploadProgress
                                 : new InlineProgress(f => { uploadProgress?.Report(f); uploadStatus(UploadStage.Uploading, f * 100, payloadLength); });
+                            long sendStarted = System.Diagnostics.Stopwatch.GetTimestamp();
                             await connection.SendBytesAsync(payload, progress, ct);
+                            RecordUploadSpeed(payloadLength, System.Diagnostics.Stopwatch.GetElapsedTime(sendStarted));
                             uploadStatus?.Invoke(UploadStage.Analyzing, 100, payload.Length);
                         }
                         else
@@ -465,6 +486,14 @@ namespace MultronWinCleaner.Processes
             {
                 connection.UploadWindow.Release();
             }
+        }
+
+        private CloudScanResult NotUploaded(CloudScanResult result)
+        {
+            result.Uploaded = false;
+            result.Verdict = "skipped";
+            result.Detail = Loc.F("Not uploaded: larger than the {0} MB upload limit after compression", MaxUploadBytes / (1024 * 1024));
+            return result;
         }
 
         private sealed class InlineProgress : IProgress<double>
@@ -607,11 +636,58 @@ namespace MultronWinCleaner.Processes
         private static byte[]? TryBrotli(byte[] data)
         {
             var dest = new byte[BrotliEncoder.GetMaxCompressedLength(data.Length)];
-            if (!BrotliEncoder.TryCompress(data, dest, out int written, quality: 5, window: 22))
+            if (!BrotliEncoder.TryCompress(data, dest, out int written, quality: 9, window: 24))
                 return null;
             if (written >= data.Length - data.Length / 10)
                 return null;
             return dest.AsSpan(0, written).ToArray();
+        }
+
+        private const double LzmaBelowBytesPerSecond = 150 * 1024;
+        private const int MinTimedUploadBytes = 256 * 1024;
+        private readonly object uploadSpeedLock = new();
+        private double uploadBytesPerSecond;
+
+        private bool SlowUploads
+        {
+            get
+            {
+                lock (uploadSpeedLock)
+                    return uploadBytesPerSecond > 0 && uploadBytesPerSecond < LzmaBelowBytesPerSecond;
+            }
+        }
+
+        private void RecordUploadSpeed(int bytes, TimeSpan elapsed)
+        {
+            if (bytes < MinTimedUploadBytes || elapsed <= TimeSpan.Zero)
+                return;
+            double speed = bytes / elapsed.TotalSeconds;
+            lock (uploadSpeedLock)
+                uploadBytesPerSecond = uploadBytesPerSecond <= 0 ? speed : uploadBytesPerSecond * 0.7 + speed * 0.3;
+        }
+
+        private const int LzmaDictionarySize = 1 << 24;
+        private const int LzmaHeaderSize = 13;
+
+        private static byte[]? TryLzma(byte[] data)
+        {
+            var body = new MemoryStream(data.Length / 2);
+            byte[] properties;
+            using (var encoder = SharpCompress.Compressors.LZMA.LzmaStream.Create(
+                new SharpCompress.Compressors.LZMA.LzmaEncoderProperties(false, LzmaDictionarySize, 64), false, body))
+            {
+                encoder.Write(data, 0, data.Length);
+                properties = encoder.Properties;
+            }
+            byte[] stream = body.ToArray();
+            long packedLength = LzmaHeaderSize + stream.LongLength;
+            if (packedLength >= data.Length - data.Length / 10)
+                return null;
+            var packed = new byte[packedLength];
+            properties.AsSpan(0, 5).CopyTo(packed);
+            System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(packed.AsSpan(5, 8), data.Length);
+            stream.CopyTo(packed.AsSpan(LzmaHeaderSize));
+            return packed;
         }
 
         private static async Task<byte[]> ReadFileAsync(string path, CancellationToken ct)
@@ -690,6 +766,7 @@ namespace MultronWinCleaner.Processes
 
             public bool SupportsCheck { get; private set; }
             public bool SupportsBrotli { get; private set; }
+            public bool SupportsLzma { get; private set; }
             public bool SupportsFalsePositiveReports { get; private set; }
             public bool SupportsFalseNegativeReports { get; private set; }
             public int CheckBatchSize { get; private set; } = 256;
@@ -816,10 +893,15 @@ namespace MultronWinCleaner.Processes
                     : DefaultChecksPerSecond;
                 checkTokens = ChecksPerSecond;
                 SupportsBrotli = false;
+                SupportsLzma = false;
                 if (reply["encodings"] is JArray encodings)
                     foreach (JToken e in encodings)
+                    {
                         if ((string?)e == "br")
                             SupportsBrotli = true;
+                        else if ((string?)e == "lzma")
+                            SupportsLzma = true;
+                    }
                 SupportsFalsePositiveReports = false;
                 SupportsFalseNegativeReports = false;
                 if (reply["features"] is JArray features)
