@@ -31,6 +31,7 @@ namespace MultronWinCleaner.Processes
     {
         MainWindow main;
         long totalsize = 0;
+        long componentStoreReclaimable = 0;
         long deeplogscantotal;
         long currentscan = 0;
         int winsxs = 0;
@@ -47,6 +48,8 @@ namespace MultronWinCleaner.Processes
         static readonly EnumerationOptions DeepScanEnumeration = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
         CancellationTokenSource cts = new CancellationTokenSource();
         List<(string file, long size, string path, int days, string date, string modified)> checkboxData = new List<(string file, long size, string path, int days, string date, string modified)>();
+        // Database entries can overlap (e.g. LocalTemp and LocalTemp\Zoom), so a file is listed and counted only once.
+        readonly HashSet<string> addedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         public Scan(MainWindow main)
         {
@@ -475,6 +478,12 @@ namespace MultronWinCleaner.Processes
 
             return (backups, cache);
         }
+        private string ComponentStoreNote()
+        {
+            return componentStoreReclaimable > 0
+                ? " " + Loc.F("(+ {0} can be reclaimed from the Windows component store by Dism.exe)", main.formatsize(componentStoreReclaimable))
+                : "";
+        }
         public async void dropscanmessage(string name, string Color)
         {
             await main.Dispatcher.InvokeAsync(() =>
@@ -550,7 +559,7 @@ namespace MultronWinCleaner.Processes
                                 await System.IO.File.WriteAllTextAsync(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dism_scan.log"), output);
                                 var info = SystemChecks.ParseAnalyze(output);
                                 if (info.Parsed)
-                                    totalsize += info.Reclaimable;
+                                    componentStoreReclaimable = info.Reclaimable;
                                 await main.Dispatcher.InvokeAsync(() => main.ShowComponentStoreResult(info));
                                 dropscanmessage(info.Parsed
                                     ? Loc.F("Component store analyzed: {0} can be reclaimed.", main.formatsize(info.Reclaimable))
@@ -766,13 +775,13 @@ namespace MultronWinCleaner.Processes
                     {
                         if (main.cancelstatus.IsCancellationRequested == true)
                         {
-                           main.label1_Copy.Text = Loc.F("Startup scan canceled! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now);
+                           main.label1_Copy.Text = Loc.F("Startup scan canceled! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now) + ComponentStoreNote();
 
                         }
                         else
                         {
                           
-                            main.label1_Copy.Text = Loc.F("Startup scan completed! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now);
+                            main.label1_Copy.Text = Loc.F("Startup scan completed! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now) + ComponentStoreNote();
                             main.Dispatcher.Invoke(() =>
                             {
                                 if (main.settings.chkEnableNotifyScan.IsChecked == true && (main.Visibility != Visibility.Visible || main.WindowState == WindowState.Minimized))
@@ -791,13 +800,13 @@ namespace MultronWinCleaner.Processes
                             if (main.cancelstatus.IsCancellationRequested == true)
                             {
                              
-                                main.label1_Copy.Text = Loc.F("Auto scan canceled! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now);
+                                main.label1_Copy.Text = Loc.F("Auto scan canceled! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now) + ComponentStoreNote();
 
                             }
                             else
                             {
                            
-                                main.label1_Copy.Text = Loc.F("Auto scan completed! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now);
+                                main.label1_Copy.Text = Loc.F("Auto scan completed! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now) + ComponentStoreNote();
                                 main.Dispatcher.Invoke(() =>
                                 {
                                     if (main.settings.chkEnableNotifyScan.IsChecked == true && main.Visibility == Visibility.Hidden)
@@ -814,12 +823,12 @@ namespace MultronWinCleaner.Processes
                         {
                             if (main.cancelstatus.IsCancellationRequested == true)
                             {
-                                main.label1_Copy.Text = Loc.F("Scan canceled! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now);
+                                main.label1_Copy.Text = Loc.F("Scan canceled! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now) + ComponentStoreNote();
 
                             }
                             else
                             {
-                                main.label1_Copy.Text = Loc.F("Scan completed! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now);
+                                main.label1_Copy.Text = Loc.F("Scan completed! + {0}  Useless file found! {1}", main.formatsize(totalsize), DateTime.Now) + ComponentStoreNote();
                                 await main.Dispatcher.InvokeAsync(() =>
                                 {
                                     if (main.settings.chkEnableNotifyScan.IsChecked == true && main.Visibility == Visibility.Hidden)
@@ -853,7 +862,7 @@ namespace MultronWinCleaner.Processes
             try
             {
          
-                if (!System.IO.File.Exists(file))
+                if (addedFiles.Contains(file) || !System.IO.File.Exists(file))
                 {
                     return;
                 }
@@ -908,6 +917,7 @@ namespace MultronWinCleaner.Processes
                 } 
                 if (shouldAdd)
                 {
+                    addedFiles.Add(file);
                     totalsize += fSize;
                     currentscan += fSize;
 

@@ -923,6 +923,7 @@
   "The cleanmgr.exe command will run after the scan is completed and you click the Clean button!": "Der cleanmgr.exe-Befehl wird ausgeführt, nachdem der Scan abgeschlossen ist und Sie auf „Bereinigen“ klicken!",
   "Analyzing the Windows component store (Dism.exe /AnalyzeComponentStore)...": "Windows-Komponentenspeicher wird analysiert (Dism.exe /AnalyzeComponentStore)...",
   "Component store analyzed: {0} can be reclaimed.": "Komponentenspeicher analysiert: {0} können freigegeben werden.",
+  "(+ {0} can be reclaimed from the Windows component store by Dism.exe)": "(+ {0} können von Dism.exe aus dem Windows-Komponentenspeicher freigegeben werden)",
   "Dism.exe did not report the component store size (see dism_scan.log).": "Dism.exe hat die Größe des Komponentenspeichers nicht gemeldet (siehe dism_scan.log).",
   "Checking the component store for corruption (Dism.exe /ScanHealth)...": "Komponentenspeicher wird auf Beschädigungen geprüft (Dism.exe /ScanHealth)...",
   "No component store corruption detected.": "Keine Beschädigung des Komponentenspeichers erkannt.",

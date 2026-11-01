@@ -922,6 +922,7 @@
   "The cleanmgr.exe command will run after the scan is completed and you click the Clean button!": "扫描完成并点击\"清理\"按钮后,将运行 cleanmgr.exe 命令!",
   "Analyzing the Windows component store (Dism.exe /AnalyzeComponentStore)...": "正在分析 Windows 组件存储 (Dism.exe /AnalyzeComponentStore)...",
   "Component store analyzed: {0} can be reclaimed.": "组件存储已分析: 可回收 {0}。",
+  "(+ {0} can be reclaimed from the Windows component store by Dism.exe)": "(+ 可由 Dism.exe 从 Windows 组件存储中回收 {0})",
   "Dism.exe did not report the component store size (see dism_scan.log).": "Dism.exe 未报告组件存储大小 (请参阅 dism_scan.log)。",
   "Checking the component store for corruption (Dism.exe /ScanHealth)...": "正在检查组件存储是否损坏 (Dism.exe /ScanHealth)...",
   "No component store corruption detected.": "未检测到组件存储损坏。",

@@ -922,6 +922,7 @@
   "The cleanmgr.exe command will run after the scan is completed and you click the Clean button!": "cleanmgr.exe コマンドは、スキャン完了後に [クリーン] ボタンをクリックすると実行されます!",
   "Analyzing the Windows component store (Dism.exe /AnalyzeComponentStore)...": "Windows コンポーネント ストアを分析しています (Dism.exe /AnalyzeComponentStore)...",
   "Component store analyzed: {0} can be reclaimed.": "コンポーネント ストアを分析しました: {0} を回復できます。",
+  "(+ {0} can be reclaimed from the Windows component store by Dism.exe)": "(+ Dism.exe により Windows コンポーネント ストアから {0} を回収可能)",
   "Dism.exe did not report the component store size (see dism_scan.log).": "Dism.exe がコンポーネント ストアのサイズを報告しませんでした (dism_scan.log を参照)。",
   "Checking the component store for corruption (Dism.exe /ScanHealth)...": "コンポーネント ストアの破損を確認しています (Dism.exe /ScanHealth)...",
   "No component store corruption detected.": "コンポーネント ストアの破損は検出されませんでした。",

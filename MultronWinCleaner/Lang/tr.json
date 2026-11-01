@@ -927,6 +927,7 @@
   "The cleanmgr.exe command will run after the scan is completed and you click the Clean button!": "cleanmgr.exe komutu tarama tamamlandıktan ve Temizle düğmesine tıkladıktan sonra çalışacak!",
   "Analyzing the Windows component store (Dism.exe /AnalyzeComponentStore)...": "Windows bileşen deposu analiz ediliyor (Dism.exe /AnalyzeComponentStore)...",
   "Component store analyzed: {0} can be reclaimed.": "Bileşen deposu analiz edildi: {0} geri kazanılabilir.",
+  "(+ {0} can be reclaimed from the Windows component store by Dism.exe)": "(+ {0} Dism.exe ile Windows bileşen deposundan geri kazanılabilir)",
   "Dism.exe did not report the component store size (see dism_scan.log).": "Dism.exe bileşen deposu boyutunu bildirmedi (bkz. dism_scan.log).",
   "Checking the component store for corruption (Dism.exe /ScanHealth)...": "Bileşen deposu bozulmaya karşı denetleniyor (Dism.exe /ScanHealth)...",
   "No component store corruption detected.": "Bileşen deposunda bozulma algılanmadı.",

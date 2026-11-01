@@ -923,6 +923,7 @@
   "The cleanmgr.exe command will run after the scan is completed and you click the Clean button!": "Команда cleanmgr.exe будет выполнена после завершения сканирования и нажатия кнопки «Очистить»!",
   "Analyzing the Windows component store (Dism.exe /AnalyzeComponentStore)...": "Анализ хранилища компонентов Windows (Dism.exe /AnalyzeComponentStore)...",
   "Component store analyzed: {0} can be reclaimed.": "Хранилище компонентов проанализировано: можно освободить {0}.",
+  "(+ {0} can be reclaimed from the Windows component store by Dism.exe)": "(+ {0} можно освободить в хранилище компонентов Windows с помощью Dism.exe)",
   "Dism.exe did not report the component store size (see dism_scan.log).": "Dism.exe не сообщил размер хранилища компонентов (см. dism_scan.log).",
   "Checking the component store for corruption (Dism.exe /ScanHealth)...": "Проверка хранилища компонентов на повреждения (Dism.exe /ScanHealth)...",
   "No component store corruption detected.": "Повреждений хранилища компонентов не обнаружено.",

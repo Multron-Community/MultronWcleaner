@@ -922,6 +922,7 @@
   "The cleanmgr.exe command will run after the scan is completed and you click the Clean button!": "검사가 끝나고 [정리] 버튼을 클릭하면 cleanmgr.exe 명령이 실행됩니다!",
   "Analyzing the Windows component store (Dism.exe /AnalyzeComponentStore)...": "Windows 구성 요소 저장소를 분석하는 중 (Dism.exe /AnalyzeComponentStore)...",
   "Component store analyzed: {0} can be reclaimed.": "구성 요소 저장소 분석 완료: {0}을(를) 확보할 수 있습니다.",
+  "(+ {0} can be reclaimed from the Windows component store by Dism.exe)": "(+ Dism.exe로 Windows 구성 요소 저장소에서 {0} 회수 가능)",
   "Dism.exe did not report the component store size (see dism_scan.log).": "Dism.exe가 구성 요소 저장소 크기를 보고하지 않았습니다 (dism_scan.log 참조).",
   "Checking the component store for corruption (Dism.exe /ScanHealth)...": "구성 요소 저장소 손상을 확인하는 중 (Dism.exe /ScanHealth)...",
   "No component store corruption detected.": "구성 요소 저장소 손상이 감지되지 않았습니다.",

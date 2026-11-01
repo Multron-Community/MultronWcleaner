@@ -1,3 +1,15 @@
+## Multron Win Cleaner 1.27.2 Update
+
+### Fixes
+- **The scan no longer counts the same file twice.** Some cleaning locations sit inside others (for example **LocalTemp** and the Zoom, Steam, Adobe or Telegram temp folders inside it, or **WindowsLogs** and its sub-folders), and the scan walks into sub-folders. A file in such a folder was listed and counted under both locations, so the "Useless file found" total could be much higher than what cleaning could free: for example 9 GB found, 3 GB cleaned. Each file is now listed and counted once, under the first location that finds it; the inner location then shows as empty.
+- **The Windows component store estimate is shown separately.** The space `Dism.exe /AnalyzeComponentStore` reports as reclaimable used to be added to the found file total, although it is freed by the Dism.exe component cleanup and not by deleting the listed files (and only when that cleanup is selected). The scan result now shows it on its own, for example *+ 2.1 GB can be reclaimed from the Windows component store by Dism.exe*. After cleaning, the **Free space on C: before / after** line shows how much space was really freed, including the component cleanup.
+
+### Updating
+- **From 1.27.1 or earlier:** the app updates itself to 1.27.2 as usual (Settings > App Updates).
+- **New installs:** download `mwc_setup.exe` (installer) or `mwc.zip` (portable) below.
+
+---
+
 ## Multron Win Cleaner 1.27.1 Update
 
 ### Malware Scan: choose the file types to scan

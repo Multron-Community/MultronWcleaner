@@ -923,6 +923,7 @@
   "The cleanmgr.exe command will run after the scan is completed and you click the Clean button!": "La commande cleanmgr.exe sera exécutée une fois l'analyse terminée et après avoir cliqué sur le bouton Nettoyer !",
   "Analyzing the Windows component store (Dism.exe /AnalyzeComponentStore)...": "Analyse du magasin de composants Windows (Dism.exe /AnalyzeComponentStore)...",
   "Component store analyzed: {0} can be reclaimed.": "Magasin de composants analysé : {0} peuvent être récupérés.",
+  "(+ {0} can be reclaimed from the Windows component store by Dism.exe)": "(+ {0} peuvent être récupérés dans le magasin de composants Windows par Dism.exe)",
   "Dism.exe did not report the component store size (see dism_scan.log).": "Dism.exe n'a pas indiqué la taille du magasin de composants (voir dism_scan.log).",
   "Checking the component store for corruption (Dism.exe /ScanHealth)...": "Vérification de l'intégrité du magasin de composants (Dism.exe /ScanHealth)...",
   "No component store corruption detected.": "Aucune corruption du magasin de composants détectée.",
