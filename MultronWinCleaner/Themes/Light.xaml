@@ -2,6 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/MultronWinCleaner;component/Themes/ScrollBars.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/MultronWinCleaner;component/Themes/ComboBoxes.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/MultronWinCleaner;component/Themes/Controls.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="ToggleDayStyle" TargetType="ToggleButton">
@@ -116,30 +118,30 @@
     </Style>
 
     <Style x:Key="RoundedButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="#1E88E5"/>
+        <Setter Property="Background" Value="#FF1E88E5"/>
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="Padding" Value="10,5"/>
         <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="6"
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}">
+                    <Grid>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
+                        <Border x:Name="overlay" CornerRadius="8" Background="Transparent"/>
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="#1976D2"/>
+                            <Setter TargetName="overlay" Property="Background" Value="#1FFFFFFF"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="#1565C0"/>
+                            <Setter TargetName="overlay" Property="Background" Value="#26000000"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="#777"/>
-                            <Setter Property="Foreground" Value="#CCC"/>
+                            <Setter Property="Opacity" Value="0.45"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -405,43 +407,39 @@
     <SolidColorBrush x:Key="ExceptionListBackground" Color="#FFF9F9FC" />
     <SolidColorBrush x:Key="ExceptionListForeground" Color="#FF222222" />
     <Style x:Key="ModernButtonStyle" TargetType="Button">
-        <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}" />
-        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Background" Value="{DynamicResource ButtonBackground}"/>
-        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Padding" Value="10,5"/>
         <Setter Property="Margin" Value="4"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid>
-                
-                        <Border x:Name="shadow"
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="6"
-                            Margin="0">
-                            <Border.Effect>
-                                <DropShadowEffect Color="#000000" BlurRadius="10" ShadowDepth="2" Opacity="0.15" />
-                            </Border.Effect>
-                        </Border>
- 
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
+                        <Border x:Name="overlay" CornerRadius="8" Background="Transparent"/>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="overlay" Property="Background" Value="#0F000000"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="overlay" Property="Background" Value="#1F000000"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource ButtonHoverBackground}"/>
-            </Trigger>
-        </Style.Triggers>
     </Style>
     <Style x:Key="AccentButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource AccentColor}" />
@@ -537,16 +535,10 @@
 
     <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource RoundedButtonStyle}">
         <Setter Property="Foreground" Value="White"/>
-        <Setter Property="Background" Value="#B61423"/>
+        <Setter Property="Background" Value="#FFC42B1C"/>
     </Style>
 
     
-    <Style TargetType="DataGridColumnHeader">
-        <Setter Property="Background" Value="#EEE"/>
-        <Setter Property="Foreground" Value="#444"/>
-        <Setter Property="BorderBrush" Value="#CCC"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-    </Style>
 
     <Style TargetType="DataGridCell">
         <Setter Property="Foreground" Value="#444"/>

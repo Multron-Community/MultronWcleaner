@@ -41,6 +41,11 @@ namespace MultronWinCleaner.Processes
         int winsxs = 0;
         private volatile string dotsText = "";
         private HashSet<string> checkedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private List<string> browserTargets = new List<string>();
+        private List<(string Name, string Path)> riskyTargets = new List<(string Name, string Path)>();
+        private List<string> extraTargets = new List<string>();
+        private readonly HashSet<string> skippedRiskyPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> skippedBrowserPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> lockedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private string currentItem = "";
         private int itemFiles;
@@ -214,6 +219,23 @@ namespace MultronWinCleaner.Processes
                 checkedPaths = new HashSet<string>(
                     main.viewModel.Groups.Where(g => g.allFiles != null).SelectMany(g => g.allFiles).Where(f => f.IsChecked).Select(f => f.Path),
                     StringComparer.OrdinalIgnoreCase);
+                browserTargets = main.viewModel.Groups
+                    .Where(g => g.Path != null && g.allFiles != null && g.allFiles.Any(f => f.IsChecked) && main.browserPaths.ContainsKey(g.Path))
+                    .Select(g => g.Path)
+                    .ToList();
+                var pathsWithFiles = new HashSet<string>(
+                    main.viewModel.Groups.Where(g => g.Path != null && g.allFiles != null && g.allFiles.Any(f => f.IsChecked)).Select(g => g.Path),
+                    StringComparer.OrdinalIgnoreCase);
+                riskyTargets = main.database
+                    .Select(item => (Name: GetToken(item, 0), Path: GetToken(item, 1)))
+                    .Where(e => main.warningPaths.ContainsKey(e.Path) && (pathsWithFiles.Contains(e.Path) || checkedPaths.Contains(e.Path)))
+                    .Distinct()
+                    .ToList();
+                extraTargets = main.database
+                    .Select(item => GetToken(item, 1))
+                    .Where(p => main.extraDatabasePaths.ContainsKey(p) && (pathsWithFiles.Contains(p) || checkedPaths.Contains(p)))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
             });
 
             automaticRun = main.autoclean == 1 || main.startupclean == 1;
@@ -221,6 +243,11 @@ namespace MultronWinCleaner.Processes
             runComponentCleanup = repairChoices.Cleanup;
             runRestoreHealth = repairChoices.Restore;
             runSfc = repairChoices.Sfc;
+            await ConfirmRiskyItemsAsync();
+            if (automaticRun)
+                await SkipExtraDatabaseItemsAsync();
+            else
+                await HandleOpenBrowsersAsync();
             cleanTimer.Restart();
             shredModeCache = null;
             var task = ScandotsAsync(Shredding ? Loc.T("Shredding & Cleaning") : Loc.T("Cleaning"), cts.Token);
@@ -335,7 +362,15 @@ namespace MultronWinCleaner.Processes
                     StartItem(name);
                     string parentName = "";
 
-                    if (File.Exists(path))
+                    if (skippedRiskyPaths.Contains(path))
+                    {
+                        iscleaned = 10;
+                    }
+                    else if (skippedBrowserPaths.Contains(path))
+                    {
+                        iscleaned = 9;
+                    }
+                    else if (File.Exists(path))
                     {
                         if (!checkedPaths.Contains(path) || main.settings.IsExcluded(path))
                         {
@@ -367,7 +402,7 @@ namespace MultronWinCleaner.Processes
                     }
 
                     FinishItem();
-                    if (iscleaned == 0)
+                    if (iscleaned == 0 || iscleaned == 9 || iscleaned == 10)
                         skippedItems++;
                     string detail = DetailText();
 
@@ -377,6 +412,16 @@ namespace MultronWinCleaner.Processes
                         {
                             statusBlock.Text = Loc.F("Ignored: {0}: {1}", name, path);
                             statusBlock.Foreground = GREEN;
+                        }
+                        else if (iscleaned == 10)
+                        {
+                            statusBlock.Text = Loc.F("Skipped, not confirmed: {0}: {1}", name, path);
+                            statusBlock.Foreground = Brushes.Goldenrod;
+                        }
+                        else if (iscleaned == 9)
+                        {
+                            statusBlock.Text = Loc.F("Skipped, the program is open: {0}: {1}", name, path);
+                            statusBlock.Foreground = Brushes.Goldenrod;
                         }
                         else if (iscleaned == 2)
                         {
@@ -434,6 +479,82 @@ namespace MultronWinCleaner.Processes
             await ShowRebootFilesAsync();
             await FinalizeCleaning();
         }
+        private async Task SkipExtraDatabaseItemsAsync()
+        {
+            if (extraTargets.Count == 0)
+                return;
+            foreach (string path in extraTargets)
+                skippedRiskyPaths.Add(path);
+            var status = await AddStatusTextBlock(Loc.F("Skipped {0} selected item(s) from additional databases; automatic cleaning only uses the official database.", extraTargets.Count));
+            await main.Dispatcher.InvokeAsync(() => status.Foreground = Brushes.Goldenrod);
+        }
+
+        private async Task ConfirmRiskyItemsAsync()
+        {
+            if (riskyTargets.Count == 0 || (!automaticRun && !MainWindow.ConfirmRiskyItems()))
+                return;
+
+            bool clean = false;
+            if (!automaticRun)
+            {
+                string list = string.Join("\n", riskyTargets.Select(r => $"- {r.Name}: {r.Path}\n   {Loc.T(main.warningPaths[r.Path])}"));
+                clean = AppDialog.Show(main,
+                    Loc.F("These selected items can harm Windows or delete your own files:\n\n{0}\n\nClean them too? If you choose No, only these items are skipped.", list),
+                    Loc.T("Check before cleaning"), MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes;
+            }
+            if (clean)
+                return;
+            foreach (var item in riskyTargets)
+                skippedRiskyPaths.Add(item.Path);
+            if (automaticRun)
+            {
+                var status = await AddStatusTextBlock(Loc.F("Skipped {0} selected item(s) that can harm Windows or delete your own files; automatic cleaning never cleans them.", riskyTargets.Count));
+                await main.Dispatcher.InvokeAsync(() => status.Foreground = Brushes.Goldenrod);
+            }
+        }
+
+        private async Task HandleOpenBrowsersAsync()
+        {
+            var decided = new Dictionary<int, OpenBrowsers.Choice>();
+            foreach (var browser in browserTargets.GroupBy(p => main.browserPaths[p].Key))
+            {
+                BrowserTag tag = main.browserPaths[browser.First()];
+                List<Process> running = await Task.Run(() => OpenBrowsers.Running(tag));
+                if (running.Count == 0)
+                    continue;
+
+                OpenBrowsers.Choice choice = running.All(p => decided.ContainsKey(p.Id)) ? decided[running[0].Id] : OpenBrowsers.SavedChoice;
+                if (choice == OpenBrowsers.Choice.Ask)
+                {
+                    var (answer, remember) = AppDialog.AskWithOption(main,
+                        tag.IsBrowser
+                            ? Loc.F("Close {0} to clean all of its files found by the scan? Its open tabs come back the next time you start it.", tag.Name)
+                            : Loc.F("Close {0} to clean all of its files found by the scan?", tag.Name),
+                        Loc.F("{0} is open", tag.Name), Loc.T("Yes, close"), Loc.T("No, skip"), Loc.T("Don't ask again"));
+                    choice = answer == MessageBoxResult.Yes ? OpenBrowsers.Choice.Close : OpenBrowsers.Choice.Skip;
+                    if (remember)
+                        OpenBrowsers.SavedChoice = choice;
+                }
+                foreach (Process p in running)
+                    decided[p.Id] = choice;
+
+                if (choice == OpenBrowsers.Choice.Skip)
+                {
+                    foreach (string path in browser)
+                        skippedBrowserPaths.Add(path);
+                    continue;
+                }
+
+                var status = await AddStatusTextBlock(Loc.F("Closing {0}...", tag.Name));
+                bool closed = await Task.Run(() => OpenBrowsers.Close(running, TimeSpan.FromSeconds(10)));
+                await main.Dispatcher.InvokeAsync(() =>
+                {
+                    status.Text = closed ? Loc.F("Closed: {0}", tag.Name) : Loc.F("{0} could not be closed completely; files it still uses are listed at the end.", tag.Name);
+                    status.Foreground = closed ? GREEN : Brushes.Goldenrod;
+                });
+            }
+        }
+
         private async Task RemoveMalwareThreatsAsync()
         {
             var malwareScan = main.utilities?.malwarescan;
@@ -912,9 +1033,10 @@ namespace MultronWinCleaner.Processes
             string resultMessage = "";
             await cts.CancelAsync();
             WriteExceptionLog();
-            long freedSpace = totalBytes;
             long freeAfter = new DriveInfo("C:\\").AvailableFreeSpace;
             long freeDelta = freeAfter - totalsize;
+            long freedSpace = Math.Max(0, freeDelta);
+            string deletedLine = Loc.F("Files deleted: {0} in {1} files.", main.formatsize(totalBytes), totalFiles);
             string diskLine = Loc.F("Free space on C: before {0}, after {1} ({2})",
                 main.formatsize(totalsize), main.formatsize(freeAfter),
                 (freeDelta >= 0 ? "+" : "-") + main.formatsize(Math.Abs(freeDelta)));
@@ -966,11 +1088,11 @@ namespace MultronWinCleaner.Processes
                 {
                     if(File.Exists(main.settings.logfilepath))
                     {
-                        System.IO.File.AppendAllText(main.settings.logfilepath, resultMessage + " " + diskLine + "(last scan)" + Environment.NewLine);
+                        System.IO.File.AppendAllText(main.settings.logfilepath, resultMessage + " " + deletedLine + " " + diskLine + "(last scan)" + Environment.NewLine);
                     }
-                 
+
                 }
-                main.label1_Copy.Text = resultMessage + Environment.NewLine + diskLine;
+                main.label1_Copy.Text = resultMessage + Environment.NewLine + deletedLine + Environment.NewLine + diskLine;
                 main.label1_Copy.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FF9800"));
                 main.reset = 1;
                
@@ -983,8 +1105,7 @@ namespace MultronWinCleaner.Processes
 
                 if (main.settings.chkEnableNotifyClean.IsChecked == true && (main.Visibility != Visibility.Visible || main.WindowState == WindowState.Minimized))
                 {
-                    string diskFreed = Loc.F("Free space on C: {0}", (freeDelta >= 0 ? "+" : "-") + main.formatsize(Math.Abs(freeDelta)));
-                    Notify notify = new Notify(Loc.T("Clean Information"), Loc.T("Your system cleaned!") + "\r\n" + diskFreed, $"{main.formatsize(freedSpace)}");
+                    Notify notify = new Notify(Loc.T("Clean Information"), Loc.T("Your system cleaned!") + "\r\n", $"{main.formatsize(freedSpace)}");
                     notify.Show();
                 }
                 var action = automatic ? Loc.En((main.settings.cmbPostCleanupAction.SelectedItem as ComboBoxItem)?.Content) : null;

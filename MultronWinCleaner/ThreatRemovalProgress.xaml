@@ -40,8 +40,8 @@
                         </Border>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
-                        <Button Content="─" Style="{StaticResource ModernButtonStyle}" Width="28" Height="28" FontSize="12" Click="Minimize_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,4,0"/>
-                        <Button x:Name="CloseButton" Content="✕" Style="{StaticResource DangerButtonStyle}" Width="28" Height="28" FontSize="12" Click="Close_Click" ToolTip="{loc:Tr 'Close'}" IsEnabled="False"/>
+                        <Button Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}" Click="Minimize_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,4,0"/>
+                        <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" x:Name="CloseButton" Click="Close_Click" ToolTip="{loc:Tr 'Close'}" IsEnabled="False"/>
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -150,10 +150,10 @@
                         Style="{StaticResource ModernButtonStyle}" Margin="0,0,8,0" ToolTip="{loc:Tr 'Opens the log file of this operation.'}"/>
                 <Button DockPanel.Dock="Left" Content="{loc:Tr 'Copy Details'}" Height="34" Padding="14,0" Click="CopyDetails_Click"
                         Style="{StaticResource ModernButtonStyle}"/>
-                <Button x:Name="DoneButton" DockPanel.Dock="Right" Content="{loc:Tr 'Close'}" Width="90" Height="34" Click="Close_Click"
-                        Style="{StaticResource RoundedButtonStyle}" Visibility="Collapsed"/>
-                <Button x:Name="StopButton" DockPanel.Dock="Right" Content="{loc:Tr 'Stop'}" Width="100" Height="34" Click="Stop_Click"
-                        Style="{StaticResource DangerButtonStyle}" ToolTip="{loc:Tr 'Stops after the current file. Files already removed stay removed.'}"/>
+                <Button x:Name="DoneButton" DockPanel.Dock="Right" MinWidth="90" HorizontalAlignment="Center" Height="34" Click="Close_Click"
+                        Style="{StaticResource RoundedButtonStyle}" Visibility="Collapsed"><TextBlock Text="{loc:Tr 'Close'}" Margin="10,0"/></Button>
+                <Button x:Name="StopButton" DockPanel.Dock="Right" MinWidth="100" HorizontalAlignment="Center" Height="34" Click="Stop_Click"
+                        Style="{StaticResource DangerButtonStyle}" ToolTip="{loc:Tr 'Stops after the current file. Files already removed stay removed.'}"><TextBlock Text="{loc:Tr 'Stop'}" Margin="10,0"/></Button>
             </DockPanel>
         </Grid>
     </Border>

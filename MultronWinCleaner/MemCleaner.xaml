@@ -30,10 +30,8 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Grid.Column="1">
-                    <Button Width="30" Height="30" Content="-" FontSize="14" FontWeight="Bold"
-                            Style="{DynamicResource ModernButtonStyle}" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,8,0"/>
-                    <Button Width="30" Height="30" Content="─" FontSize="12" FontWeight="Bold"
-                            Style="{DynamicResource DangerButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}" />
+                    <Button Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,8,0"/>
+                    <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}" />
                 </StackPanel>
             </Grid>
 
@@ -139,7 +137,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{loc:Tr 'Every:'}" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" FontSize="12" Grid.Column="0" Margin="0,0,8,0" />
-                        <ComboBox x:Name="cbCleanInterval" Height="26" SelectedIndex="0" Grid.Column="1" FontSize="12" SelectionChanged="cbCleanInterval_SelectionChanged">
+                        <ComboBox x:Name="cbCleanInterval" Height="28" Style="{DynamicResource ModernComboBoxStyle}" SelectedIndex="0" Grid.Column="1" FontSize="12" SelectionChanged="cbCleanInterval_SelectionChanged">
                             <ComboBoxItem Content="{loc:Tr '1 Minute'}"/>
                             <ComboBoxItem Content="{loc:Tr '5 Minutes'}" />
                             <ComboBoxItem Content="{loc:Tr '10 Minutes'}" />

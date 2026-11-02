@@ -119,6 +119,56 @@ namespace MultronWinCleaner
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool GetFileInformationByHandle(Microsoft.Win32.SafeHandles.SafeFileHandle hFile, out BY_HANDLE_FILE_INFORMATION info);
 
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        private static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid rfid, uint dwFlags, IntPtr hToken, out string pszPath);
+
+        private static readonly Guid DownloadsFolderId = new Guid("374DE290-123F-4565-9164-39C4925E467B");
+
+        private static readonly HashSet<string> SkippedFolderNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "AppData", "Windows", "Program Files", "Program Files (x86)", "ProgramData", "$Recycle.Bin", "System Volume Information",
+            "Recovery", "PerfLogs", "$WinREAgent", "WindowsApps", "SteamLibrary", "steamapps", "XboxGames", "Epic Games", "Riot Games",
+            "EA Games", "GOG Games", "Ubisoft Game Launcher", "node_modules", ".git"
+        };
+
+        private static string DownloadsFolder()
+        {
+            try
+            {
+                if (SHGetKnownFolderPath(DownloadsFolderId, 0, IntPtr.Zero, out string path) == 0 && Directory.Exists(path))
+                    return path;
+            }
+            catch (Exception) { }
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        }
+
+        private static IEnumerable<string> PersonalFolders()
+        {
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            yield return DownloadsFolder();
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory);
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments);
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.CommonPictures);
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.CommonVideos);
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.CommonMusic);
+            foreach (string variable in new[] { "OneDrive", "OneDriveConsumer", "OneDriveCommercial" })
+                if (Environment.GetEnvironmentVariable(variable) is string oneDrive)
+                    yield return oneDrive;
+            string systemRoot = Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\";
+            foreach (DriveInfo drive in DriveInfo.GetDrives())
+            {
+                bool usable;
+                try { usable = drive.DriveType == DriveType.Fixed && drive.IsReady; }
+                catch (Exception) { usable = false; }
+                if (usable && !drive.RootDirectory.FullName.Equals(systemRoot, StringComparison.OrdinalIgnoreCase))
+                    yield return drive.RootDirectory.FullName;
+            }
+        }
+
         private string duplicatesFilePath = Path.Combine(Environment.CurrentDirectory, "duplicates.json");
 
         private bool _isScanning = false;
@@ -128,6 +178,7 @@ namespace MultronWinCleaner
         public Duplicate_File_Finder()
         {
             InitializeComponent();
+            ExtensionCheckBox_CheckedChanged(this, new RoutedEventArgs());
 
             DuplicatesTreeView.ItemsSource = ExplorerTree;
             this.Loaded += Window_Loaded;
@@ -357,15 +408,7 @@ namespace MultronWinCleaner
             if (_isScanning)
                 return (0, 0, 0);
 
-            var folders = new List<string>
-            {
-                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
-                Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
-                Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
-                Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)
-            };
+            var folders = PersonalFolders().ToList();
             FolderListBox.Items.Clear();
             foreach (string folder in folders.Where(f => !string.IsNullOrEmpty(f) && Directory.Exists(f)).Distinct(StringComparer.OrdinalIgnoreCase))
                 FolderListBox.Items.Add(folder);
@@ -560,6 +603,9 @@ namespace MultronWinCleaner
                             string dir = stack.Pop();
                             string key = dir.TrimEnd('\\') + "\\";
                             if (!visited.Add(key) || key.StartsWith(windowsFolder, StringComparison.OrdinalIgnoreCase))
+                                continue;
+                            if (!rootFolders.Any(r => key.Equals(r.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase))
+                                && SkippedFolderNames.Contains(Path.GetFileName(dir.TrimEnd('\\'))))
                                 continue;
 
                             List<string> subDirs = new List<string>();
@@ -1160,6 +1206,7 @@ namespace MultronWinCleaner
 
                 StatusText.Text = Loc.F("Cleanup Complete! Successfully deleted {0} of {1} files. Total freed space: {2}", deletedCount, totalFiles, FormatSize(freedBytes));
                 MainStatus?.EndMirrorToolStatus(StatusText, failedFilesList.Count > 0);
+                MainStatus?.ShowDuplicatesDeleted(deletedCount, totalFiles, freedBytes, failedFilesList.Count);
 
                 if (failedFilesList.Count > 0)
                 {
@@ -1455,20 +1502,15 @@ namespace MultronWinCleaner
             ResetToScanState();
         }
 
-        private void AdvancedToggle_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private ToolSettingsWindow? settingsWindow;
+
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            if (AdvancedPanel.Visibility == Visibility.Collapsed)
-            {
-                AdvancedPanel.Visibility = Visibility.Visible;
-                AdvancedToggleText.Text = Loc.T("▲ Hide Properties");
-            }
-            else
-            {
-                AdvancedPanel.Visibility = Visibility.Collapsed;
-                AdvancedToggleText.Text = Loc.T("▼ Properties");
-            }
+            AdvancedPanel.Visibility = Visibility.Visible;
+            settingsWindow ??= new ToolSettingsWindow(this, Loc.T("Duplicate File Finder Settings"), AdvancedPanel, 960);
+            settingsWindow.ShowOrActivate();
         }
-        
+
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new VistaFolderBrowserDialog { Description = Loc.T("Select folder") };

@@ -165,6 +165,7 @@ namespace MultronWinCleaner.Processes
             public string Name = "";
             public string SubPath = "";
             public bool Recommended;
+            public string? Warning;
         }
 
         private sealed class LoadGroup
@@ -176,6 +177,8 @@ namespace MultronWinCleaner.Processes
             public int ProfileIndex;
             public List<ProfileLine> ProfileLines = new List<ProfileLine>();
             public List<System.Windows.Controls.CheckBox> ProfileCheckBoxes = new List<System.Windows.Controls.CheckBox>();
+            public BrowserTag? Browser;
+            public string? Source;
         }
 
         private readonly bool allBrowserProfiles = MainWindow.IsCleanAllBrowserProfilesEnabled();
@@ -187,6 +190,8 @@ namespace MultronWinCleaner.Processes
         }
 
         private Dictionary<string, bool> selections = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        private Dictionary<string, string> extraHeaderSources = new Dictionary<string, string>(StringComparer.Ordinal);
 
         public static string SelectionsPath => System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "selections.txt");
 
@@ -266,6 +271,9 @@ namespace MultronWinCleaner.Processes
                     });
 
                     List<string> originalLines = System.IO.File.ReadAllLines(filePath).ToList();
+                    var headerSources = new Dictionary<string, string>(StringComparer.Ordinal);
+                    originalLines.AddRange(ExtraDatabases.ReadEnabledLines(headerSources));
+                    extraHeaderSources = headerSources;
                     List<string> linesToProcess = BuildLinesToProcess(originalLines, targetUsers);
                     selections = ReadSelections();
 
@@ -450,6 +458,9 @@ namespace MultronWinCleaner.Processes
         {
             var sections = new List<LoadSection>();
             var pending = new List<(LoadGroup Group, LoadEntry Entry, string CheckPath)>();
+            main.browserPaths.Clear();
+            main.warningPaths.Clear();
+            main.extraDatabasePaths.Clear();
 
             LoadSection? section = null;
             LoadGroup? group = null;
@@ -479,7 +490,12 @@ namespace MultronWinCleaner.Processes
                         section = new LoadSection();
                         sections.Add(section);
                     }
-                    group = new LoadGroup { Header = main.stringtokenizer(line, "=", 1) ?? "" };
+                    group = new LoadGroup
+                    {
+                        Header = main.stringtokenizer(line, "=", 1) ?? "",
+                        Browser = BrowserTag.FromHeader(line),
+                        Source = extraHeaderSources.TryGetValue(line.Trim(), out string? source) ? source : null
+                    };
                     section.Groups.Add(group);
                     profileTargets = null;
                     continue;
@@ -506,6 +522,11 @@ namespace MultronWinCleaner.Processes
                             {
                                 group.ProfileRoot = root;
                                 group.ProfileFolders = folders;
+                                if (group.Browser != null)
+                                {
+                                    group.Browser.ProfileRoot = root;
+                                    group.Browser.ProfileFolders = folders;
+                                }
                                 group.ProfileIndex = PickDefaultProfile(folders);
                                 profileTargets = allBrowserProfiles ? folders : new List<string> { folders[group.ProfileIndex] };
                             }
@@ -528,11 +549,13 @@ namespace MultronWinCleaner.Processes
                             continue;
                         }
 
-                        group.ProfileLines.Add(new ProfileLine { Name = name, SubPath = subPath, Recommended = profileRecommended });
+                        string? profileWarning = main.stringtokenizer(line, "=", 4);
+                        if (string.IsNullOrWhiteSpace(profileWarning)) profileWarning = null;
+                        group.ProfileLines.Add(new ProfileLine { Name = name, SubPath = subPath, Recommended = profileRecommended, Warning = profileWarning });
                         foreach (string folder in profileTargets)
                         {
                             string profilePath = group.ProfileRoot + folder + subPath;
-                            pending.Add((group, new LoadEntry { Name = name, Path = profilePath, Recommended = profileRecommended, IsProfile = true }, profilePath));
+                            pending.Add((group, new LoadEntry { Name = name, Path = profilePath, Recommended = profileRecommended, Warning = profileWarning, IsProfile = true }, profilePath));
                         }
                         continue;
                     }
@@ -564,9 +587,23 @@ namespace MultronWinCleaner.Processes
                 exists[i] = PathExists(pending[i].CheckPath);
             });
 
+            var officialPaths = new HashSet<string>(
+                pending.Where((p, i) => exists[i] && p.Group.Source == null).Select(p => p.Entry.Path),
+                StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < pending.Count; i++)
             {
-                if (exists[i]) pending[i].Group.Entries.Add(pending[i].Entry);
+                if (!exists[i]) continue;
+                pending[i].Group.Entries.Add(pending[i].Entry);
+                if (pending[i].Group.Source is { } extraSource && !officialPaths.Contains(pending[i].Entry.Path))
+                    main.extraDatabasePaths[pending[i].Entry.Path] = extraSource;
+                if (pending[i].Entry.Warning is { } warning && !MainWindow.IsInfoNote(warning))
+                    main.warningPaths[pending[i].Entry.Path] = warning;
+                if (pending[i].Group.Browser is { } browser)
+                {
+                    main.browserPaths[pending[i].Entry.Path] = browser;
+                    if (browser.ReferencePaths.Count < 5)
+                        browser.ReferencePaths.Add(pending[i].Entry.Path);
+                }
             }
 
             return sections;
@@ -878,14 +915,19 @@ namespace MultronWinCleaner.Processes
                 List<string> paths = row.Boxes.Select(b => main.stringtokenizer(b.Content?.ToString() ?? "", "=", 1) ?? "").Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 string tip = string.Join("\n", paths.Take(12));
                 if (paths.Count > 12) tip += "\n" + Loc.F("...and {0} more", paths.Count - 12);
-                string? warning = group.Items.Where(i => row.Boxes.Contains(i.Box)).Select(i => i.Entry.Warning).FirstOrDefault(w => !string.IsNullOrEmpty(w));
-                if (warning != null) tip = Loc.F("Warning: {0}", warning) + "\n\n" + tip;
+                string? note = MainWindow.ShowEntryNotes()
+                    ? group.Items.Where(i => row.Boxes.Contains(i.Box)).Select(i => i.Entry.Warning).FirstOrDefault(w => !string.IsNullOrEmpty(w))
+                    : null;
+                bool info = note != null && MainWindow.IsInfoNote(note);
+                string? warning = note == null ? null : Loc.T(note);
+                if (warning != null)
+                    tip = (info ? warning : Loc.F("Warning: {0}", warning)) + "\n\n" + tip;
 
-                object content = Prettify(row.Name) + (warning != null ? " ⚠" : "");
+                object content = warning != null ? WithWarningButton(Prettify(row.Name), warning, info) : Prettify(row.Name);
                 if (group.Detailed)
                 {
                     var lines = new StackPanel();
-                    lines.Children.Add(new TextBlock { Text = row.Name + (warning != null ? "  ⚠ " + warning : "") });
+                    lines.Children.Add(warning != null ? WithWarningButton(row.Name, warning, info) : new TextBlock { Text = row.Name });
                     var pathText = new TextBlock { Text = string.Join("\n", paths), FontSize = 11, Opacity = 0.65, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1, 0, 0) };
                     lines.Children.Add(pathText);
                     content = lines;
@@ -910,6 +952,34 @@ namespace MultronWinCleaner.Processes
             }
 
             RefreshSimpleGroup(group);
+        }
+
+        private static StackPanel WithWarningButton(string text, string warning, bool info)
+        {
+            var orange = (Color)ColorConverter.ConvertFromString(info ? "#1E88E5" : "#FF9800");
+            var button = new Button
+            {
+                Content = info ? "ⓘ " + Loc.T("Info") : "⚠ " + Loc.T("Warning"),
+                FontSize = 11,
+                Padding = new Thickness(6, 0, 6, 1),
+                Margin = new Thickness(8, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Background = new SolidColorBrush(Color.FromArgb(0x26, orange.R, orange.G, orange.B)),
+                BorderBrush = new SolidColorBrush(orange),
+                BorderThickness = new Thickness(1),
+                Foreground = new SolidColorBrush(orange),
+                ToolTip = warning
+            };
+            button.Click += (s, e) =>
+            {
+                e.Handled = true;
+                AppDialog.Show(warning, text, MessageBoxButton.OK, info ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            };
+            var panel = new StackPanel { Orientation = Orientation.Horizontal };
+            panel.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+            panel.Children.Add(button);
+            return panel;
         }
 
         private System.Windows.Controls.ComboBox CreateSimpleProfileList(SimpleGroup group, LoadGroup part)
@@ -943,7 +1013,13 @@ namespace MultronWinCleaner.Processes
                     {
                         string path = part.ProfileRoot + folder + line.SubPath;
                         if (!PathExists(path)) continue;
-                        var entry = new LoadEntry { Name = line.Name, Path = path, Recommended = line.Recommended, IsProfile = true };
+                        var entry = new LoadEntry { Name = line.Name, Path = path, Recommended = line.Recommended, Warning = line.Warning, IsProfile = true };
+                        if (entry.Warning != null && !MainWindow.IsInfoNote(entry.Warning))
+                            main.warningPaths[path] = entry.Warning;
+                        if (part.Browser != null)
+                            main.browserPaths[path] = part.Browser;
+                        if (part.Source != null)
+                            main.extraDatabasePaths[path] = part.Source;
                         var box = CreateEntryCheckBox(entry, group.GroupId);
                         part.ProfileCheckBoxes.Add(box);
                         AddSimpleItem(group, box, entry);

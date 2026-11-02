@@ -138,7 +138,7 @@ namespace MultronWinCleaner
             WindowFrame.CornerRadius = new CornerRadius(maximized ? 0 : 22);
             if (System.Windows.Shell.WindowChrome.GetWindowChrome(this) is System.Windows.Shell.WindowChrome chrome)
                 chrome.ResizeBorderThickness = new Thickness(maximized ? 0 : 24);
-            MaximizeButton.Content = maximized ? "❐" : "□";
+            MaximizeButton.Content = maximized ? "\uE923" : "\uE922";
         }
 
         private bool languageLoading;
@@ -359,6 +359,8 @@ namespace MultronWinCleaner
                 rbAdvancedInterface.IsChecked = true;
             else
                 rbSimpleInterface.IsChecked = true;
+            chkShowEntryNotes.IsChecked = MainWindow.ShowEntryNotes();
+            chkConfirmRisky.IsChecked = MainWindow.ConfirmRiskyItems();
             interfaceModeLoading = false;
             OnlyLowCPU.IsChecked = GetBool("onlylowcpu");
             RunIfInactive.IsChecked = GetBool("runifactive");
@@ -469,6 +471,7 @@ namespace MultronWinCleaner
 
             shredModeLoading = true;
             cmbShredMode.SelectedIndex = int.TryParse(GetString("shredmode"), out int shredMode) ? Math.Clamp(shredMode, 0, 4) : 0;
+            cmbOpenProgramAction.SelectedIndex = (int)MultronWinCleaner.Processes.OpenBrowsers.SavedChoice;
             shredModeLoading = false;
 
             for (int i = 1; i <= 7; i++)
@@ -525,6 +528,22 @@ namespace MultronWinCleaner
             if (advanced == MainWindow.IsAdvancedInterface()) return;
             SaveSettingNow(MainWindow.AdvancedInterfaceSettingKey, advanced, "interface mode");
             mainWindow?.ApplyInterfaceMode();
+        }
+
+        private void EntryNotes_Changed(object sender, RoutedEventArgs e)
+        {
+            if (interfaceModeLoading || chkShowEntryNotes == null || chkConfirmRisky == null) return;
+            if (sender == chkShowEntryNotes)
+            {
+                bool show = chkShowEntryNotes.IsChecked == true;
+                if (show == MainWindow.ShowEntryNotes()) return;
+                SaveSettingNow(MainWindow.ShowEntryNotesSettingKey, show, "warning buttons");
+                mainWindow?.ApplyInterfaceMode();
+            }
+            else
+            {
+                SaveSettingNow(MainWindow.ConfirmRiskySettingKey, chkConfirmRisky.IsChecked == true, "confirmation before cleaning");
+            }
         }
 
         private bool databaseUpdateLoading = true;
@@ -1110,6 +1129,12 @@ namespace MultronWinCleaner
             if (shredModeLoading || cmbShredMode == null) return;
             Utilities?.savesettings($"shredmode:{Math.Max(0, cmbShredMode.SelectedIndex)}");
             mainWindow?.UpdateShredBadge();
+        }
+
+        private void OpenProgramAction_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (shredModeLoading || cmbOpenProgramAction == null || cmbOpenProgramAction.SelectedIndex < 0) return;
+            MultronWinCleaner.Processes.OpenBrowsers.SavedChoice = (MultronWinCleaner.Processes.OpenBrowsers.Choice)cmbOpenProgramAction.SelectedIndex;
         }
 
         private void LoadTransparencySettings()

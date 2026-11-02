@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "1.27.3"
+  #define AppVersion "1.28"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\MultronWinCleaner\bin\Release\net8.0-windows"

@@ -36,7 +36,7 @@
                 <TextBlock Text="{loc:Tr 'Threats found'}" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
                 <TextBlock x:Name="SubtitleText" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0" TextWrapping="Wrap"/>
             </StackPanel>
-            <Button Grid.Column="1" Content="&#xE8BB;" Style="{StaticResource CloseWindowButtonStyle}" Click="Close_Click" ToolTip="{loc:Tr 'Close'}" VerticalAlignment="Top"/>
+            <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" Grid.Column="1" Click="Close_Click" ToolTip="{loc:Tr 'Close'}" VerticalAlignment="Top"/>
         </Grid>
 
         <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="20,0,20,0" Padding="14,10">

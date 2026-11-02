@@ -27,15 +27,11 @@
                            MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"/>
 
                
-                <Button Grid.Column="1" Width="36" Height="36" Content="-" FontSize="16" 
-                        Background="Transparent" BorderBrush="Transparent" Foreground="{DynamicResource TitleBarText}" 
-                        Cursor="Hand" Click="Minimize_Click"
+                <Button Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}" Grid.Column="1" Click="Minimize_Click"
                         ToolTip="{loc:Tr 'Minimize'}"/>
 
              
-                <Button Grid.Column="2" Width="36" Height="36" Content="−" FontSize="16" 
-                        Background="Transparent" BorderBrush="Transparent" Foreground="{DynamicResource TitleBarText}" 
-                        Cursor="Hand" Click="Close_Click"
+                <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" Grid.Column="2" Click="Close_Click"
                         ToolTip="{loc:Tr 'Close'}"/>
             </Grid>
 
@@ -69,12 +65,12 @@
 
                
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                    <Button Content="{loc:Tr 'Save'}" Width="80" Margin="5" Click="Save_Click"
+                    <Button Content="{loc:Tr 'Save'}" MinWidth="80" HorizontalAlignment="Center" Padding="10,2" Margin="5" Click="Save_Click"
                             Background="{DynamicResource ButtonBackground}" 
                             Foreground="{DynamicResource ButtonForeground}"
                             BorderBrush="{DynamicResource ButtonBorder}"
                             Cursor="Hand"/>
-                    <Button Content="{loc:Tr 'Cancel'}" Width="80" Margin="5" Click="Cancel_Click"
+                    <Button Content="{loc:Tr 'Cancel'}" MinWidth="80" HorizontalAlignment="Center" Padding="10,2" Margin="5" Click="Cancel_Click"
                             Background="{DynamicResource ButtonBackground}" 
                             Foreground="{DynamicResource ButtonForeground}"
                             BorderBrush="{DynamicResource ButtonBorder}"

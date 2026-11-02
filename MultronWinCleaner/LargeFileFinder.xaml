@@ -25,9 +25,9 @@
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,12,0">
-                <Button Content="-" Style="{StaticResource ModernButtonStyle}" Width="30" Height="30" FontSize="14" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,6,0"/>
-                <Button x:Name="buttonMaximize" Content="⤢" Style="{StaticResource ModernButtonStyle}" Width="30" Height="30" FontSize="14" Click="MaximizeButton_Click" ToolTip="{loc:Tr 'Maximize/Restore'}" Margin="0,0,6,0"/>
-                <Button Content="─" Style="{StaticResource DangerButtonStyle}" Width="30" Height="30" FontSize="14" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
+                <Button Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,6,0"/>
+                <Button Content="&#xE922;" Style="{DynamicResource ChromeButtonStyle}" x:Name="buttonMaximize" Click="MaximizeButton_Click" ToolTip="{loc:Tr 'Maximize/Restore'}" Margin="0,0,6,0"/>
+                <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
             </StackPanel>
         </DockPanel>
 
@@ -89,8 +89,8 @@
                                  BorderBrush="{DynamicResource BorderBrush}" Margin="0,0,0,8"/>
 
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="{loc:Tr '+ Add Folder'}" Click="AddFolder_Click" Width="100" Height="28" Margin="0,0,6,0" Style="{DynamicResource ModernButtonStyle}"/>
-                            <Button Content="{loc:Tr 'Remove'}" Click="RemoveSelectedFolder_Click" Width="80" Height="28" Style="{DynamicResource DangerButtonStyle}"/>
+                            <Button Click="AddFolder_Click" MinWidth="100" HorizontalAlignment="Center" Height="28" Margin="0,0,6,0" Style="{DynamicResource ModernButtonStyle}"><TextBlock Text="{loc:Tr '+ Add Folder'}" Margin="10,0"/></Button>
+                            <Button Click="RemoveSelectedFolder_Click" MinWidth="80" HorizontalAlignment="Center" Height="28" Style="{DynamicResource DangerButtonStyle}"><TextBlock Text="{loc:Tr 'Remove'}" Margin="10,0"/></Button>
                         </StackPanel>
                     </StackPanel>
 
@@ -102,8 +102,8 @@
                                  BorderBrush="{DynamicResource BorderBrush}" Margin="0,0,0,8"/>
 
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="{loc:Tr '+ Exclude Folder'}" Click="AddExcludedFolder_Click" Width="110" Height="28" Margin="0,0,6,0" Style="{DynamicResource ModernButtonStyle}"/>
-                            <Button Content="{loc:Tr 'Remove'}" Click="RemoveSelectedExcludedFolder_Click" Width="80" Height="28" Style="{DynamicResource DangerButtonStyle}"/>
+                            <Button Click="AddExcludedFolder_Click" MinWidth="110" HorizontalAlignment="Center" Height="28" Margin="0,0,6,0" Style="{DynamicResource ModernButtonStyle}"><TextBlock Text="{loc:Tr '+ Exclude Folder'}" Margin="10,0"/></Button>
+                            <Button Click="RemoveSelectedExcludedFolder_Click" MinWidth="80" HorizontalAlignment="Center" Height="28" Style="{DynamicResource DangerButtonStyle}"><TextBlock Text="{loc:Tr 'Remove'}" Margin="10,0"/></Button>
                         </StackPanel>
                     </StackPanel>
 
@@ -119,18 +119,18 @@
                                 <TextBlock Text="{loc:Tr 'Min Size Threshold:'}" FontWeight="Bold" Margin="0,0,0,6" Foreground="{DynamicResource Text}"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="75"/>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <TextBlock Text="{loc:Tr 'Min Size:'}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
+                                    <TextBlock Text="{loc:Tr 'Min Size:'}" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
                                     <TextBox x:Name="SizeThresholdTextBox" Grid.Column="1" Text="100" Height="28"
                                              FontSize="13" FontWeight="Bold" Padding="5,2,5,2" VerticalContentAlignment="Center"
                                              Background="{DynamicResource TextBoxBackground}" Foreground="{DynamicResource Text}" 
                                              BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1.5"/>
 
-                                    <ComboBox x:Name="SizeUnitComboBox" Grid.Column="2" Width="70" Height="28" Margin="6,0,0,0" SelectedIndex="1" VerticalContentAlignment="Center">
+                                    <ComboBox x:Name="SizeUnitComboBox" Grid.Column="2" Width="70" Style="{DynamicResource ModernComboBoxStyle}" Height="28" Margin="6,0,0,0" SelectedIndex="1" VerticalContentAlignment="Center">
                                         <ComboBoxItem Content="KB"/>
                                         <ComboBoxItem Content="MB"/>
                                         <ComboBoxItem Content="GB"/>
@@ -152,7 +152,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <ComboBox x:Name="DateTypeComboBox" Grid.Column="0" Height="28" SelectedIndex="0" VerticalContentAlignment="Center">
+                                    <ComboBox x:Name="DateTypeComboBox" Grid.Column="0" Height="28" Style="{DynamicResource ModernComboBoxStyle}" SelectedIndex="0" VerticalContentAlignment="Center">
                                         <ComboBoxItem Content="{loc:Tr 'Last Accessed'}"/>
                                         <ComboBoxItem Content="{loc:Tr 'Last Modified'}"/>
                                     </ComboBox>
@@ -173,8 +173,8 @@
                             <DockPanel Margin="0,0,0,8">
                                 <TextBlock Text="{loc:Tr 'File Types / Categories to Include:'}" FontWeight="Bold" Foreground="{DynamicResource Text}" VerticalAlignment="Center"/>
                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                                    <Button Content="{loc:Tr 'Select All'}" Click="SelectAllCategories_Click" Width="75" Height="22" FontSize="11" Margin="0,0,5,0" Style="{DynamicResource ModernButtonStyle}"/>
-                                    <Button Content="{loc:Tr 'Deselect All'}" Click="DeselectAllCategories_Click" Width="80" Height="22" FontSize="11" Style="{DynamicResource ModernButtonStyle}"/>
+                                    <Button Click="SelectAllCategories_Click" MinWidth="75" HorizontalAlignment="Center" Height="22" FontSize="11" Margin="0,0,5,0" Style="{DynamicResource ModernButtonStyle}"><TextBlock Text="{loc:Tr 'Select All'}" Margin="10,0"/></Button>
+                                    <Button Click="DeselectAllCategories_Click" MinWidth="80" HorizontalAlignment="Center" Height="22" FontSize="11" Style="{DynamicResource ModernButtonStyle}"><TextBlock Text="{loc:Tr 'Deselect All'}" Margin="10,0"/></Button>
                                 </StackPanel>
                             </DockPanel>
 
@@ -203,7 +203,7 @@
 
             <DockPanel Grid.Row="0" Margin="0,0,0,8">
                 <TextBlock Text="{loc:Tr 'Large Files Found'}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource Text}" VerticalAlignment="Center"/>
-                <Button Content="{loc:Tr 'Clear List'}" Click="ClearListButton_Click" Width="90" Height="26" DockPanel.Dock="Right" Style="{DynamicResource DangerButtonStyle}"/>
+                <Button Click="ClearListButton_Click" MinWidth="90" HorizontalAlignment="Center" Height="26" DockPanel.Dock="Right" Style="{DynamicResource DangerButtonStyle}"><TextBlock Text="{loc:Tr 'Clear List'}" Margin="10,0"/></Button>
             </DockPanel>
 
             <DataGrid x:Name="LargeFilesDataGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False"

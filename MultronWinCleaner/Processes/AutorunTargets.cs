@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.Win32;
@@ -50,24 +53,69 @@ namespace MultronWinCleaner.Processes
             return found.ToList();
         }
 
+        private const uint PROCESS_QUERY_INFORMATION = 0x0400;
+        private const uint PROCESS_VM_READ = 0x0010;
+        private const uint LIST_MODULES_ALL = 0x03;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr OpenProcess(uint access, bool inheritHandle, int processId);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool CloseHandle(IntPtr handle);
+
+        [DllImport("psapi.dll", SetLastError = true)]
+        private static extern bool EnumProcessModulesEx(IntPtr process, [Out] IntPtr[]? modules, int size, out int needed, uint filter);
+
+        [DllImport("psapi.dll", CharSet = CharSet.Unicode)]
+        private static extern uint GetModuleFileNameExW(IntPtr process, IntPtr module, StringBuilder fileName, int size);
+
+        private static string WithoutDevicePrefix(string path)
+        {
+            if (path.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
+                return @"\\" + path.Substring(8);
+            if (path.StartsWith(@"\\?\", StringComparison.Ordinal) || path.StartsWith(@"\??\", StringComparison.Ordinal))
+                return path.Substring(4);
+            return path;
+        }
+
         public static List<string> LoadedModules(CancellationToken ct)
         {
-            var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (Process process in Process.GetProcesses())
+            var found = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+            int[] ids = Process.GetProcesses().Select(p =>
             {
-                ct.ThrowIfCancellationRequested();
-                try
+                int id = p.Id;
+                p.Dispose();
+                return id;
+            }).ToArray();
+            System.Threading.Tasks.Parallel.ForEach(ids,
+                new System.Threading.Tasks.ParallelOptions { CancellationToken = ct, MaxDegreeOfParallelism = Environment.ProcessorCount },
+                id =>
                 {
-                    foreach (ProcessModule module in process.Modules)
+                    IntPtr handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, id);
+                    if (handle == IntPtr.Zero)
+                        return;
+                    try
                     {
-                        if (!string.IsNullOrEmpty(module.FileName))
-                            found.Add(module.FileName);
+                        if (!EnumProcessModulesEx(handle, null, 0, out int needed, LIST_MODULES_ALL) || needed <= 0)
+                            return;
+                        var modules = new IntPtr[needed / IntPtr.Size];
+                        if (!EnumProcessModulesEx(handle, modules, modules.Length * IntPtr.Size, out needed, LIST_MODULES_ALL))
+                            return;
+                        var name = new StringBuilder(1024);
+                        int count = Math.Min(modules.Length, needed / IntPtr.Size);
+                        for (int i = 0; i < count; i++)
+                        {
+                            name.Clear();
+                            if (GetModuleFileNameExW(handle, modules[i], name, name.Capacity) > 0)
+                                found.TryAdd(WithoutDevicePrefix(name.ToString()), 0);
+                        }
                     }
-                }
-                catch { }
-                finally { process.Dispose(); }
-            }
-            return found.ToList();
+                    finally
+                    {
+                        CloseHandle(handle);
+                    }
+                });
+            return found.Keys.ToList();
         }
 
         private static void Safe(System.Action action)

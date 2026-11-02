@@ -80,6 +80,28 @@ namespace MultronWinCleaner.Processes
             public List<RegistryBackup> Registry { get; set; } = new List<RegistryBackup>();
             public string? PreviousPowerScheme { get; set; }
             public string? CreatedPowerScheme { get; set; }
+            public string? PreviousAutoTuning { get; set; }
+            public Dictionary<string, int>? PreviousVisualEffects { get; set; }
+        }
+
+        private static string? TcpAutoTuningLevel()
+        {
+            string output = RunTool(@"WindowsPowerShell\v1.0\powershell.exe",
+                "-NoProfile -NonInteractive -Command \"(Get-NetTCPSetting -SettingName Internet).AutoTuningLevelLocal\"").Trim();
+            return Regex.IsMatch(output, "^[A-Za-z]+$") ? output : null;
+        }
+
+        private static void SetTcpAutoTuning(string level) =>
+            RunTool("netsh.exe", "interface tcp set global autotuninglevel=" + level.ToLowerInvariant());
+
+        private static bool FixTcpAutoTuning(Backup backup)
+        {
+            string? level = TcpAutoTuningLevel();
+            if (level == null || level.Equals("Normal", StringComparison.OrdinalIgnoreCase))
+                return false;
+            backup.PreviousAutoTuning ??= level;
+            SetTcpAutoTuning("normal");
+            return true;
         }
 
         private static ServiceItem Item(string id, string title, string description, bool selected) =>
@@ -97,8 +119,11 @@ namespace MultronWinCleaner.Processes
             Item("powerthrottling", "Turn off power throttling", "Stops Windows from slowing down background apps to save power. Uses more battery on laptops.", false),
             Item("mouseaccel", "Turn off mouse acceleration", "Turns off Enhance pointer precision for 1:1 mouse movement in games. Takes effect after signing out.", false),
             Item("transparency", "Turn off transparency effects", "Saves some GPU time on the taskbar, Start menu and windows.", false),
+            Item("visualeffects", "Visual effects for best performance", "Like Windows' Adjust for best performance: turns off animations, fades and shadows. Window contents while dragging, smooth screen fonts, thumbnails, Peek, sliding combo boxes and smooth scrolling stay on. Your previous settings come back on Undo.", true),
             Item("flushdns", "Flush the DNS cache", "Clears old cached DNS entries when you apply, and again every time Multron Win Cleaner starts while this optimization is on. Windows fills the cache again by itself, so nothing has to be restored on Undo.", true),
             Item("memory", "Automatic memory cleaning", "Turns on automatic cleaning in Memory Cleaner with its current settings and cleans memory once now. It stays on after restarting the app. Undo turns it off again if it was off before.", true),
+            Item("tcpautotuning", "Restore TCP auto-tuning", "When TCP receive window auto-tuning is turned off, downloads get slower. This sets it back to normal only when it was changed; your previous setting comes back on Undo.", true),
+            Item("networkreset", "Repair the network connection", "Resets Winsock and TCP/IP to the Windows defaults. Use it only when the internet does not work at all. Needs a restart and cannot be undone.", false),
         };
 
         private static RegistryKey Root(string hive) => hive == "HKLM" ? Registry.LocalMachine : Registry.CurrentUser;
@@ -236,8 +261,26 @@ namespace MultronWinCleaner.Processes
             ["transparency"] = new (string, string, string, object, RegistryValueKind)[]
             {
                 ("HKCU", @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "EnableTransparency", 0, RegistryValueKind.DWord)
+            },
+            ["visualeffects"] = new (string, string, string, object, RegistryValueKind)[]
+            {
+                ("HKCU", @"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", "VisualFXSetting", 3, RegistryValueKind.DWord),
+                ("HKCU", ExplorerAdvanced, "TaskbarAnimations", 0, RegistryValueKind.DWord),
+                ("HKCU", ExplorerAdvanced, "ListviewAlphaSelect", 0, RegistryValueKind.DWord),
+                ("HKCU", ExplorerAdvanced, "ListviewShadow", 0, RegistryValueKind.DWord),
+                ("HKCU", ExplorerAdvanced, "IconsOnly", 0, RegistryValueKind.DWord),
+                ("HKCU", @"Software\Microsoft\Windows\DWM", "EnableAeroPeek", 1, RegistryValueKind.DWord),
+                ("HKCU", @"Software\Microsoft\Windows\DWM", "AlwaysHibernateThumbnails", 0, RegistryValueKind.DWord)
             }
         };
+
+        private const string ExplorerAdvanced = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
+
+        private static void ApplyVisualEffects(Backup backup)
+        {
+            backup.PreviousVisualEffects ??= VisualEffects.Read();
+            VisualEffects.Write(VisualEffects.Wanted());
+        }
 
         private static bool HasValue(string hive, string key, string name, object value)
         {
@@ -261,6 +304,8 @@ namespace MultronWinCleaner.Processes
                     {
                         foreach (var value in values)
                             SetValue(backup, value.Hive, value.Key, value.Name, value.Value, value.Kind);
+                        if (tweak.ServiceName == "visualeffects")
+                            ApplyVisualEffects(backup);
                     }
                     else if (tweak.ServiceName == "powerplan")
                     {
@@ -280,6 +325,21 @@ namespace MultronWinCleaner.Processes
                     else if (tweak.ServiceName == "flushdns")
                     {
                         FlushDns();
+                    }
+                    else if (tweak.ServiceName == "tcpautotuning")
+                    {
+                        if (!FixTcpAutoTuning(backup))
+                        {
+                            messages.Add(Loc.F("Nothing to change: {0} (it is already normal)", tweak.DisplayName));
+                            continue;
+                        }
+                    }
+                    else if (tweak.ServiceName == "networkreset")
+                    {
+                        RunTool("netsh.exe", "winsock reset");
+                        RunTool("netsh.exe", "int ip reset");
+                        messages.Add(Loc.F("Applied: {0}. Restart the PC to finish the repair.", tweak.DisplayName));
+                        continue;
                     }
                     else
                     {
@@ -314,6 +374,11 @@ namespace MultronWinCleaner.Processes
                             SetValue(backup, value.Hive, value.Key, value.Name, value.Value, value.Kind);
                             changed = true;
                         }
+                        if (tweak.ServiceName == "visualeffects" && !VisualEffects.Matches(VisualEffects.Wanted()))
+                        {
+                            ApplyVisualEffects(backup);
+                            changed = true;
+                        }
                         if (changed)
                             messages.Add(Loc.F("Applied again at startup: {0} (it had been changed)", tweak.DisplayName));
                     }
@@ -330,6 +395,10 @@ namespace MultronWinCleaner.Processes
                     {
                         FlushDns();
                         messages.Add(Loc.T("DNS cache flushed automatically at startup"));
+                    }
+                    else if (tweak.ServiceName == "tcpautotuning" && FixTcpAutoTuning(backup))
+                    {
+                        messages.Add(Loc.F("Applied again at startup: {0} (it had been changed)", tweak.DisplayName));
                     }
                 }
                 catch (Exception ex)
@@ -369,6 +438,26 @@ namespace MultronWinCleaner.Processes
             catch (Exception ex)
             {
                 messages.Add(Loc.F("Could not restore the power plan: {0}", ex.Message));
+            }
+
+            try
+            {
+                if (backup.PreviousVisualEffects != null)
+                    VisualEffects.Write(backup.PreviousVisualEffects);
+            }
+            catch (Exception ex)
+            {
+                messages.Add(Loc.F("Could not restore {0}: {1}", Loc.T("Visual effects for best performance"), ex.Message));
+            }
+
+            try
+            {
+                if (backup.PreviousAutoTuning != null)
+                    SetTcpAutoTuning(backup.PreviousAutoTuning);
+            }
+            catch (Exception ex)
+            {
+                messages.Add(Loc.F("Could not restore {0}: {1}", Loc.T("Restore TCP auto-tuning"), ex.Message));
             }
 
             if (messages.Count == 0)

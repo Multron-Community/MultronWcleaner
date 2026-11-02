@@ -21,9 +21,7 @@
         <DockPanel Grid.Row="0" Background="{DynamicResource PanelBackground}" LastChildFill="False" MouseDown="TitleBar_MouseDown">
             <TextBlock Text="{loc:Tr 'Folder Duplicates'}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"
                        VerticalAlignment="Center" Margin="16,0,0,0" DockPanel.Dock="Left"/>
-            <Button Content="✕" Width="30" Height="30" DockPanel.Dock="Right" Margin="0,0,8,0"
-                    Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextPrimary}"
-                    Cursor="Hand" Click="CloseButton_Click"/>
+            <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" DockPanel.Dock="Right" Margin="0,0,8,0" Click="CloseButton_Click"/>
         </DockPanel>
  
         <TextBlock x:Name="HeaderText" Grid.Row="1" Margin="16,12,16,8"

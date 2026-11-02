@@ -46,7 +46,7 @@
 
             <StackPanel Margin="0,15,0,0" VerticalAlignment="Top">
 
-                <ComboBox x:Name="cmbOperationType" Margin="0,0,0,10" >
+                <ComboBox x:Name="cmbOperationType" Height="32" Margin="0,0,0,10" Style="{DynamicResource ModernComboBoxStyle}">
                     <ComboBoxItem Content="{loc:Tr 'Delete'}" />
                     <ComboBoxItem Content="{loc:Tr 'Move'}" />
                     <ComboBoxItem Content="{loc:Tr 'Rename'}" />
@@ -146,9 +146,9 @@
                
                 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
-                    <Button Content="{loc:Tr 'Run Command'}" Click="RunCommand_Click" Margin="0,0,10,0" Padding="6,2" Width="100"
+                    <Button Content="{loc:Tr 'Run Command'}" Click="RunCommand_Click" Margin="0,0,10,0" Padding="6,2" MinWidth="100" HorizontalAlignment="Center"
                             Background="{DynamicResource AccentColorBrush}" Foreground="{DynamicResource AccentTextBrush}" FontWeight="SemiBold" />
-                    <Button Content="{loc:Tr 'Add'}" Click="Add_Click" Width="80" Padding="6,2"
+                    <Button Content="{loc:Tr 'Add'}" Click="Add_Click" MinWidth="80" HorizontalAlignment="Center" Padding="6,2"
                             Background="{DynamicResource AccentColorBrush}" Foreground="{DynamicResource AccentTextBrush}" FontWeight="SemiBold" />
                 </StackPanel>
 

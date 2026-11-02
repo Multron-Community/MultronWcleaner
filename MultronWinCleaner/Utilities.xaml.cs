@@ -340,7 +340,7 @@ namespace MultronWinCleaner
                         }
                         else if (line.StartsWith("optimizationprofile:", StringComparison.OrdinalIgnoreCase))
                         {
-                            OptimizationProfile.SelectedIndex = line.Split(':')[1] == "1" ? 1 : 0;
+                            OptimizationProfile.SelectedIndex = int.TryParse(line.Split(':')[1], out int profile) && profile is >= 0 and <= 2 ? profile : 0;
                         }
                         else if (line.StartsWith("selectedtweak:", StringComparison.OrdinalIgnoreCase))
                         {
@@ -1009,6 +1009,10 @@ namespace MultronWinCleaner
 
         private bool IsNewProfile => OptimizationProfile.SelectedIndex == 1;
 
+        private bool IsAllProfiles => OptimizationProfile.SelectedIndex == 2;
+
+        private bool SelectedProfilesActive => IsAllProfiles ? newBoostActive && turboBoostActive : IsNewProfile ? newBoostActive : turboBoostActive;
+
         private void RefreshOptimizationLog()
         {
             if (OptimizationLog == null) return;
@@ -1082,9 +1086,10 @@ namespace MultronWinCleaner
         private void RefreshOptimizationCard()
         {
             RefreshOptimizationLog();
-            bool active = IsNewProfile ? newBoostActive : turboBoostActive;
-            Turbo.Content = Loc.T(active ? "Undo Optimization" : "Apply Optimization");
-            OptimizationDescription.Text = IsNewProfile
+            Turbo.Content = Loc.T(SelectedProfilesActive ? "Undo Optimization" : "Apply Optimization");
+            OptimizationDescription.Text = IsAllProfiles
+                ? Loc.T("Applies both: pauses background Windows services to free memory and CPU, and applies the performance settings (power plan, Game Mode, game and multimedia priority and more). Only the one that is not on yet is applied. Undo restores both.")
+                : IsNewProfile
                 ? Loc.T("Applies performance settings for modern PCs: power plan, Game Mode, game and multimedia priority and more. Every changed setting is saved first, so Undo restores your previous values. While it is on, settings that were changed back are applied again and the DNS cache is flushed every time the app starts.")
                 : Loc.T("Pauses background Windows services to free memory and CPU on older PCs. Windows starts them again after a restart, so while this is on they are paused again every time the app starts. Undo starts exactly the services that were paused.");
         }
@@ -1147,7 +1152,24 @@ namespace MultronWinCleaner
 
         private void ConfigureTurboBoost_Click(object sender, RoutedEventArgs e)
         {
-            if (IsNewProfile)
+            if (IsAllProfiles)
+            {
+                var menu = new ContextMenu { PlacementTarget = sender as UIElement ?? Turbo };
+                var services = new MenuItem { Header = Loc.T("Services to pause (old systems)...") };
+                services.Click += (s, a) => ConfigureProfile(false);
+                var tweaks = new MenuItem { Header = Loc.T("Performance settings (new systems)...") };
+                tweaks.Click += (s, a) => ConfigureProfile(true);
+                menu.Items.Add(services);
+                menu.Items.Add(tweaks);
+                menu.IsOpen = true;
+                return;
+            }
+            ConfigureProfile(IsNewProfile);
+        }
+
+        private void ConfigureProfile(bool newProfile)
+        {
+            if (newProfile)
                 configure.ShowItems(Loc.T("Configure Performance Boost"), Loc.T("Select the settings to apply. Undo restores your previous values:"), newSystemTweaks, "selectedtweak:");
             else
                 configure.ShowItems(Loc.T("Configure Optimization Services"), Loc.T("Select the services to pause during optimization:"), turboBoostServices, "selectedservice:");
@@ -1156,65 +1178,32 @@ namespace MultronWinCleaner
         private async void ActivateTurboBoost_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not System.Windows.Controls.Button btn) return;
-            bool newProfile = IsNewProfile;
-            bool active = newProfile ? newBoostActive : turboBoostActive;
+            bool active = SelectedProfilesActive;
+            var profiles = IsAllProfiles
+                ? new[] { false, true }.Where(p => (p ? newBoostActive : turboBoostActive) == active).ToList()
+                : new List<bool> { IsNewProfile };
             btn.IsEnabled = false;
             OptimizationProfile.IsEnabled = false;
             btn.Content = Loc.T(active ? "Undoing..." : "Applying...");
 
             try
             {
-                List<string> messages;
-                if (newProfile)
+                var allMessages = new List<string>();
+                foreach (bool newProfile in profiles)
                 {
-                    var tweaks = newSystemTweaks.ToList();
-                    messages = await Task.Run(() => active
-                        ? MultronWinCleaner.Processes.Optimizer.UndoNewSystemTweaks()
-                        : MultronWinCleaner.Processes.Optimizer.ApplyNewSystemTweaks(tweaks));
-                    bool memorySelected = tweaks.Any(t => t.ServiceName == "memory" && t.IsSelected);
-                    if (!active && memorySelected)
-                    {
-                        bool wasOn = memcleaner?.chkEnableAutoClean.IsChecked == true;
-                        newBoostAutoMemPrevious = wasOn ? 1 : 0;
-                        savesettings($"newboostautomem:{newBoostAutoMemPrevious}");
-                        if (memcleaner != null) memcleaner.chkEnableAutoClean.IsChecked = true;
-                        if (memcleaner != null) await memcleaner.cleanmemory();
-                        messages.Add(Loc.T("Applied: Automatic memory cleaning (Memory Cleaner)"));
-                    }
-                    else if (active)
-                    {
-                        if (newBoostAutoMemPrevious == 0)
-                        {
-                            if (memcleaner != null) memcleaner.chkEnableAutoClean.IsChecked = false;
-                            messages.Add(Loc.T("Automatic memory cleaning was turned off again."));
-                        }
-                        newBoostAutoMemPrevious = -1;
-                        savesettings("newboostautomem:-1");
-                    }
-                    newBoostActive = !active;
-                    savesettings($"newboost:{(newBoostActive ? "1" : "0")}");
-                }
-                else
-                {
-                    var services = turboBoostServices.ToList();
+                    var messages = await RunOptimizationProfileAsync(newProfile, active);
+                    string profileName = Loc.T(newProfile ? "new systems" : "old systems");
                     if (active)
-                    {
-                        var started = await Task.Run(MultronWinCleaner.Processes.Optimizer.StartStoppedServices);
-                        messages = new List<string> { started.Count == 0 ? Loc.T("No paused services had to be started again.") : Loc.F("Started again: {0}", string.Join(", ", started)) };
-                    }
+                        MultronWinCleaner.Processes.Optimizer.AppendLog(new[] { Loc.F("Undone: optimization for {0}", profileName) }.Concat(messages.Select(m => "   " + m)));
                     else
-                    {
-                        var stopped = await Task.Run(() => MultronWinCleaner.Processes.Optimizer.StopOldSystemServices(services));
-                        if (memcleaner != null) await memcleaner.cleanmemory();
-                        messages = new List<string> { stopped.Count == 0 ? Loc.T("No selected service was running, so nothing had to be paused. Memory was cleaned.") : Loc.F("Paused: {0}. Memory was cleaned.", string.Join(", ", stopped)) };
-                    }
-                    turboBoostActive = !active;
-                    savesettings($"turboboost:{(turboBoostActive ? "1" : "0")}");
+                        MultronWinCleaner.Processes.Optimizer.AppendLog(new[] { Loc.F("Applied: optimization for {0}", profileName) }.Concat(messages.Select(m => "   " + m)));
+                    if (profiles.Count > 1)
+                        allMessages.Add(Loc.F(active ? "Undone: optimization for {0}" : "Applied: optimization for {0}", profileName));
+                    allMessages.AddRange(profiles.Count > 1 ? messages.Select(m => "   " + m) : messages);
                 }
-
-                string profileName = Loc.T(newProfile ? "new systems" : "old systems");
-                if (active) MultronWinCleaner.Processes.Optimizer.ClearLog(); else MultronWinCleaner.Processes.Optimizer.AppendLog(new[] { Loc.F("Applied: optimization for {0}", profileName) }.Concat(messages.Select(m => "   " + m)));
-                AppDialog.Show(Loc.T(active ? "Optimization undone." : "Optimization applied.") + "\n\n" + string.Join("\n", messages), Loc.T("System Optimization"), MessageBoxButton.OK, MessageBoxImage.Information);
+                if (active && !newBoostActive && !turboBoostActive)
+                    MultronWinCleaner.Processes.Optimizer.ClearLog();
+                AppDialog.Show(Loc.T(active ? "Optimization undone." : "Optimization applied.") + "\n\n" + string.Join("\n", allMessages), Loc.T("System Optimization"), MessageBoxButton.OK, MessageBoxImage.Information);
                 if (!active)
                     await OfferStartupAsync();
             }
@@ -1229,6 +1218,58 @@ namespace MultronWinCleaner
                 OptimizationProfile.IsEnabled = true;
                 RefreshOptimizationCard();
             }
+        }
+
+        private async Task<List<string>> RunOptimizationProfileAsync(bool newProfile, bool active)
+        {
+            List<string> messages;
+            if (newProfile)
+            {
+                var tweaks = newSystemTweaks.ToList();
+                messages = await Task.Run(() => active
+                    ? MultronWinCleaner.Processes.Optimizer.UndoNewSystemTweaks()
+                    : MultronWinCleaner.Processes.Optimizer.ApplyNewSystemTweaks(tweaks));
+                bool memorySelected = tweaks.Any(t => t.ServiceName == "memory" && t.IsSelected);
+                if (!active && memorySelected)
+                {
+                    bool wasOn = memcleaner?.chkEnableAutoClean.IsChecked == true;
+                    newBoostAutoMemPrevious = wasOn ? 1 : 0;
+                    savesettings($"newboostautomem:{newBoostAutoMemPrevious}");
+                    if (memcleaner != null) memcleaner.chkEnableAutoClean.IsChecked = true;
+                    if (memcleaner != null) await memcleaner.cleanmemory();
+                    messages.Add(Loc.T("Applied: Automatic memory cleaning (Memory Cleaner)"));
+                }
+                else if (active)
+                {
+                    if (newBoostAutoMemPrevious == 0)
+                    {
+                        if (memcleaner != null) memcleaner.chkEnableAutoClean.IsChecked = false;
+                        messages.Add(Loc.T("Automatic memory cleaning was turned off again."));
+                    }
+                    newBoostAutoMemPrevious = -1;
+                    savesettings("newboostautomem:-1");
+                }
+                newBoostActive = !active;
+                savesettings($"newboost:{(newBoostActive ? "1" : "0")}");
+            }
+            else
+            {
+                var services = turboBoostServices.ToList();
+                if (active)
+                {
+                    var started = await Task.Run(MultronWinCleaner.Processes.Optimizer.StartStoppedServices);
+                    messages = new List<string> { started.Count == 0 ? Loc.T("No paused services had to be started again.") : Loc.F("Started again: {0}", string.Join(", ", started)) };
+                }
+                else
+                {
+                    var stopped = await Task.Run(() => MultronWinCleaner.Processes.Optimizer.StopOldSystemServices(services));
+                    if (memcleaner != null) await memcleaner.cleanmemory();
+                    messages = new List<string> { stopped.Count == 0 ? Loc.T("No selected service was running, so nothing had to be paused. Memory was cleaned.") : Loc.F("Paused: {0}. Memory was cleaned.", string.Join(", ", stopped)) };
+                }
+                turboBoostActive = !active;
+                savesettings($"turboboost:{(turboBoostActive ? "1" : "0")}");
+            }
+            return messages;
         }
 
         private void StopStartService(string serviceName, bool start)

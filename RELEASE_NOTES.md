@@ -1,177 +1,94 @@
-## Multron Win Cleaner 1.27.3 Update
+## Multron Win Cleaner 1.28 Update
 
-### New: See what the scan is looking at
-While scanning, the status under the Scan button now shows the location and the file being checked, for example *Scanning: LocalTemp: C:\Users\…\Temp\setup.log*, instead of only "Scanning...". The Deep Log Files Scan shows the folder it is in under its file counter. Long paths are shortened in the middle.
+### New: Close open browsers and apps before cleaning
+Browsers and apps such as Discord keep their cache files locked while they run, so those files could not be cleaned. Before cleaning, Multron Win Cleaner now checks whether a browser or app whose files the scan found is open and asks: **"Google Chrome is open. Close Google Chrome to clean all of its files found by the scan?"** with **Yes, close**, **No, skip** and **Don't ask again**.
+- **Yes, close** closes it normally first, so a browser brings its tabs back the next time you start it, and closes it for good after 10 seconds if it does not respond.
+- **No, skip** leaves its files alone; they are listed as *Skipped, the program is open*.
+- The right program is closed even when several browsers use the same program name (Google Chrome, Chromium and other Chromium browsers all run as `chrome.exe`): the app checks the browser's own profile lock and the folder the program runs from.
+- The choice can be changed in **Settings > Open Browsers and Apps**: ask every time, close without asking, or skip.
+- Background and startup cleanings never close programs.
+- This uses the browser and app tags of the cleaning database v1.15 (65 browsers, 35 apps such as Discord, Slack, Teams, Spotify, Telegram, WhatsApp, Zoom and Visual Studio Code).
 
-### Malware Scan: every file is checked, only big unknown files stay local
-- **Large files are no longer skipped unchecked.** The old 50 MB limit was applied before the fingerprint, so bigger files were never even asked about. Now every file up to 2 GB is fingerprinted and checked with the cloud, and most large installers and game files are answered at once by their fingerprint.
-- **The limit now applies to the upload, after compression.** An unknown file is compressed first and sent only when the compressed data fits in the **Max upload size** (12 MB by default, in the scan settings). Otherwise it is listed as *Not uploaded: larger than the 12 MB upload limit after compression*. Files that cannot shrink below the limit (more than 8 times its size, or not compressible) are not even read for upload.
-- **LZMA or Brotli, chosen by upload speed.** Unknown files can now be compressed with LZMA (16 MB dictionary), the method 7-Zip uses, or with stronger Brotli (level 9 with a 16 MB window instead of level 5 with 4 MB). In our test a 5.7 MB program became 1.15 MB with LZMA against 1.30 MB with Brotli, but LZMA took about 1 second longer to compress, so it only pays off on slow connections. The new **Compression method** setting has three choices: **Automatic** (the default) measures how fast uploads go and uses LZMA below about 150 KB/s (1.2 Mbit/s) and Brotli above it; **LZMA** always gives the smallest uploads; **Brotli** always compresses fastest. If the cloud server does not support the chosen method, the other one is used.
+### Confirmation before risky items are cleaned
+Some cleaning locations delete files Windows needs or your own files: the Downloads, Screenshots and Captures folders, the driver store, System Restore data, scheduled tasks, the page, swap and hibernation files and a few more. They are never selected by default, but Select All selects them too.
+- When any of them is selected, cleaning now first lists them with what each one deletes and asks **Clean them too?** If you choose No, only these items are skipped (*Skipped, not confirmed*); everything else is cleaned as usual.
+- Automatic and startup cleanings never clean them, since nobody is there to confirm.
+- Every item with a warning now has a **⚠ Warning** button next to it in the list; press it to read what the item deletes. Besides the Windows items above, this covers everything that deletes personal data: saved passwords, cookies, history, open tabs, form and payment data, website data and program settings.
+- The same confirmation is asked when you select any of these and clean.
+- Every item that is not selected by default now has a blue **ⓘ Info** button that says why, for example *Not selected by default: logs help to find the cause of problems*. Info notes are only shown; they never ask for confirmation.
+- **Settings > Warnings and Notes** has two options, both on by default: show the warning and info buttons, and ask before cleaning items with a warning. Background and startup cleanings never clean items with a warning either way.
+
+### Better shortcut fixer
+- **More places:** taskbar pins and the Send To menu are checked too, besides the Desktop and the Start menu.
+- **Smarter repair:** a shortcut to a program that moved to another folder is now pointed to its new place when Windows lists the program as installed (App Paths and installed programs), and only when the new place belongs to the same program.
+- **Backup:** a repaired shortcut is saved first to `ShortcutBackup` in the app folder; removed ones still go to the Recycle Bin.
+- **No empty folders:** Start menu folders left empty after removing broken shortcuts are removed too.
+
+### Duplicate File Finder finds more
+- **Smaller files too:** the default minimum size is now 100 KB instead of 1 MB, so most documents and many photos are compared as well.
+- **The file types you see are the ones scanned:** the ticked file types were not applied when the window opened, so the first scan looked at every file type. The filter now matches the ticked boxes, and more types are ticked by default: older Office and OpenDocument files, RTF, camera RAW photos (`.cr2`, `.nef`, `.arw`, `.dng`), TIFF, more audio and video formats, e-books, installers (`.exe`, `.msi`, `.apk`) and `.tar`/`.gz` archives.
+- **More places in the main scan:** besides Desktop, Documents, Downloads, Pictures, Videos and Music, the duplicate step now also checks the Public folders, your OneDrive folders and your other fixed drives. Downloads is found where Windows keeps it, also when you moved it to another drive.
+- **Less noise:** program and system folders are skipped (`AppData`, Program Files, ProgramData, game libraries such as Steam and Epic, `node_modules`, `.git`), so their own files are not offered as duplicates. A folder you add yourself is always scanned.
+
+### Apply both system optimizations at once
+System Optimization has a third choice, **All: old and new system optimizations**. It pauses the background services and applies the performance settings together; only the one that is not on yet is applied, and Undo restores both. **Configure** then lets you pick which list to change. Undoing one optimization no longer clears the activity log of the other one that stays on.
+
+### Visual effects for best performance
+The performance boost for new systems has a new setting, on by default: **Visual effects for best performance**. Like *Adjust for best performance* in Windows, it turns off the animations, fades and shadows (window animations, menu and tooltip fades, taskbar animations, shadows under windows and the mouse pointer, the translucent selection rectangle and icon label shadows), but it keeps what makes Windows comfortable to use: window contents while dragging, smooth screen fonts, thumbnails instead of icons, Peek, sliding combo boxes and smooth scrolling. It takes effect at once, without signing out, and Undo brings back exactly the effects you had before.
+
+### New network optimizations
+Two new items under System Optimizations:
+- **Restore TCP auto-tuning:** when TCP receive window auto-tuning is turned off, downloads get slower. This sets it back to normal only when it was changed, checks it again at startup, and Undo brings your previous setting back.
+- **Repair the network connection** (off by default): resets Winsock and TCP/IP for when the internet does not work at all. It needs a restart and cannot be undone.
+
+### Faster Malware Scan
+- **Up to twice as many fingerprint checks per second.** Half of the connections only upload unknown files, so on a rescan, when almost nothing is unknown, they sat idle while the other half checked every fingerprint. They now help with the checks whenever nothing is waiting to be uploaded, and go back to uploading as soon as an unknown file is found, so uploads still never hold up the checks. The server limits checks per connection, so this doubles the check speed with 4 connections; up to 8 connections can be set in the scan settings.
+- **Quick Scan collects its files sooner.** Running programs, the modules they loaded, startup items, services and scheduled tasks, and the system folders are now collected at the same time instead of one after another. The loaded modules are read straight from Windows and from all programs in parallel: in our test 1,591 modules in 0.18 s instead of 1.3 s, the same list as before.
+- **Fingerprinting is up to 7 times faster with many small files.** Every file used to get a new 1 MB read buffer and was buffered twice. Buffers are now reused and read only once, so in our test 20,000 small files were fingerprinted in 0.16 s instead of 1.16 s, with about 12 MB of memory allocated instead of 20 GB. Large files go at the speed of the disk as before. The fingerprints are exactly the same.
+- **Remember clean results (smart caching):** a new setting, **1 month** by default (Off, 6 hours, 1 day, 3 days, 1 week or 1 month). A file that was clean at a recent scan and has not changed is not asked again during this time, so rescans finish much sooner and the server gets fewer checks. Results are remembered by the file's content (SHA-256), so every copy and a renamed file use them too. Only clean results are remembered; files that were new to the cloud are trusted for a quarter of the time, packed or encrypted files are always checked, and a file you report as a missed threat is forgotten at once. Choose **Off** to have every file checked by the server on every scan.
+- **Disk type:** on a hard disk (HDD) only 2 files are read at a time, since reading many at once makes the disk head jump back and forth. **Automatic** asks Windows which drives are hard disks; SSDs keep reading many files in parallel.
+- **Scan priority:** **Low** keeps the PC responsive by lowering the CPU and disk priority of the scan, **High** gives it more CPU time. Normal is the default.
+- **Clear scan caches** forgets the saved fingerprints and remembered results, so the next scan reads and checks every file again.
+- **Largest file to check:** 256 MB, 512 MB, 1 GB or 2 GB (the default, as before). Larger files are listed as skipped without being read; big game, video and disk image files are rarely malware, so a lower limit makes Full Scans faster.
+- **Find programs renamed to another extension** can now be turned off. It opens every file with an unknown extension to look for a program header, which is the slowest part of collecting files in a Full Scan. When it is on, the answer is now remembered until the file changes, so a file is opened for this only once.
+- **Unchanged files cost almost nothing.** The size and date of a file are taken from the folder listing instead of being asked from Windows again, so a file whose fingerprint is saved is not touched at all.
+- **The results list no longer slows the scan down.** Every new result made the window count the whole list again, so with 100,000 files the window spent most of its time recounting. It is now updated once after each batch.
+- **The scan log is written in batches** twice a second instead of opening and closing the file under a lock for every line, so reading threads no longer wait for each other while writing skipped files and errors.
+- **Faster fingerprint cache:** it is saved in a compact binary file that loads several times faster, and entries for files not seen for 60 days are dropped. Before, once it held a million files no new file was remembered at all.
+
+### Developer mode: check a file on VirusTotal
+With the Malware Scan developer mode on, right-click files in the results and choose **Check on VirusTotal** (up to 4 at a time). Nothing is sent during a scan; only the files you pick are checked.
+- With your own **VirusTotal API key** (developer settings, saved encrypted for your Windows user with DPAPI) the app shows how many engines detect the file and their names, and can open the full report.
+- If VirusTotal does not know the file yet, the app asks before uploading it (up to 32 MB) and warns that uploaded files are shared with VirusTotal's partners.
+- Without a key the file's page opens on the VirusTotal website by its SHA-256.
+
+### New: Additional databases
+The official database is no longer the only one. Open **Database ▾** in the main window to use more databases next to it:
+- **From a file:** **Add from file...** lets you choose one or more `.txt` databases anywhere on your PC. They are checked, copied to the `Databases` folder next to the app and turned on. Databases you put in that folder yourself are listed too, and each one can be turned on or off with its check box.
+- **From an internet address:** **Add from internet address...** downloads a database from an `https://` address (up to 5 MB). It is downloaded again with **Update Database** and with the automatic database check.
+- The groups of an additional database are shown with its name, for example *Game Caches (mydb)*, and the official database is still updated as before without touching yours. Remove a database with the bin button next to it.
+- **Safety:** a database decides which files are deleted, so items that only come from additional databases are never cleaned by automatic or startup cleaning, and additional databases cannot run programs (cleanmgr, Dism.exe, sfc and the deep log scan lines are ignored in them).
+
+### A more consistent look
+- **The same title bar buttons in every window:** minimize, maximize and close now use the Windows 11 icons everywhere, and the close button turns red when you point at it. Before, every window had its own mix of `-`, `—`, `─` and `✕`, and in Memory Cleaner and Large File Finder the close button even showed a dash.
+- **A tidier main window toolbar:** the seven buttons that took up three rows are now one row: **Select All**, **Unselect All**, a **Selections** menu (Save, Write to Database, Reset) and a **Database** menu (Reload, Update), next to the search box.
+- **Modern buttons, check boxes and option buttons** in both themes: rounded buttons that light up when you point at them, and rounded check boxes and option buttons in place of the old white Windows ones (for example in Memory Cleaner).
+- **Cleaner tables:** column headers in Startup Manager, Large File Finder and other lists are plain text over a thin line instead of a grey bar, and the row under the mouse is highlighted.
+
+### Tidier tool windows
+- **Settings in their own window:** the Duplicate File Finder and Malware Scan windows no longer unfold their settings above the results. A new **Settings** button in the title bar opens them in a separate window, so the main window only shows the scan and its results. The settings window stays small enough for low screen resolutions and scrolls when its content does not fit.
+- **Modern dropdowns:** the System Optimization, Large File Finder, Memory Cleaner, Add Boot Operation and Duplicate File Finder dropdowns now have the rounded dark or light look of the Settings window instead of the plain white Windows box.
+- **No more cut-off buttons in other languages:** buttons such as *+ Klasörü Hariç Tut* or *Tüm Seçimi Kaldır* in Turkish, or longer German and French labels, were clipped because their width was fixed for English. They now grow with their text, and the Malware Scan progress window is a little wider so its buttons fit in every language.
 
 ### Fixes
-- **The app could get stuck with a Clean button and no Reset button.** The Reset button appeared as soon as the scan results were listed, while the Firewall, Shortcuts, Security, Duplicate Files and Malware checks were still running. Pressing Reset then cleared the results, and the check that finished afterwards turned the button back into **Clean**, with no results and no Reset button left; closing the window to the tray did not help. Reset now appears when all checks have finished, and a check that ends after a Reset no longer changes the button.
-- **The "Your system cleaned!" notification shows the space really freed.** Under the size of the deleted files it now also shows how much free space drive C: gained, for example *Free space on C: +719.21 MB*. This includes the Dism.exe component cleanup, which the deleted-files size does not.
-- **Deep Log Files Scan runs on every scan again.** After the first cleaning, the option was quietly dropped from the list while its box stayed ticked, so later scans in the same session (including Auto Clean while the app stays in the tray) skipped the deep log scan.
-- **Locked file counts no longer pile up.** The locked files of earlier cleanings, and the deep log files of earlier scans, were kept until the app was closed, so "Locked Files Found!" and "Found Log Files (N files)" could include files from previous runs. Each scan now starts with empty lists.
-- **Locations inside another location are reported correctly.** A location whose files were already cleaned with the location around it (for example a Zoom temp folder inside LocalTemp) now shows in green as *Cleaned with LocalTemp* instead of a yellow *Folder Empty*.
-- **Correct dates in the scan results.** The number of days next to "Created" now counts from the creation date, and "Last Access" shows the last access date (both showed the last modification before).
-- **Scan errors are kept.** `exceptions.txt` used to keep only the last scan error, and could be written to another folder when the app was started with Windows. Scan errors are now added to the file in the app folder.
-- The startup clean message no longer says "Locked Files Found! 0" when nothing was locked, and the scan progress bar now reaches the end.
+- **The Duplicate Files card in the main window follows Duplicate File Finder.** After deleting duplicates there, the card still said *2 duplicate copies of 2 files found (7.95 MB could be freed). Nothing was deleted.* It now shows how many copies were deleted and the space freed, and turns green, or names the files that could not be deleted.
+- **The status under the Scan button follows the Malware Scan window too.** After a Malware Scan started from Utilities, removing or quarantining its threats updated the Malware Scan card but left *threats found* under the Scan button. It now shows the threats that remain.
+- **"Cleaned" shows the space really freed again.** Since 1.27 the cleaned amount was the total size of the deleted files, which can be much more than the space drive C: actually gains (compressed or sparse files, hard links, cloud placeholders): for example 1.49 GB cleaned while drive C: gained 532 MB. It is again the difference in free space on C: before and after cleaning, as before 1.27, in the result line, the clean log and the "Your system cleaned!" notification. Programs writing to the disk at the same time (for example a download, or Windows at startup) can make it smaller. Because the free space can also change for other reasons (a program closed during cleaning may delete its own temporary files), the result line and the clean log now show the size of the deleted files on a line of its own as well, for example *Files deleted: 53 MB in 412 files.* next to *63 MB cleaned*.
 
 ### Updating
-- **From 1.27.2 or earlier:** the app updates itself to 1.27.3 as usual (Settings > App Updates).
+- **From 1.27.3 or earlier:** the app updates itself to 1.28 as usual (Settings > App Updates).
 - **New installs:** download `mwc_setup.exe` (installer) or `mwc.zip` (portable) below.
 
 ---
 
-## Multron Win Cleaner 1.27.2 Update
-
-### Fixes
-- **The scan no longer counts the same file twice.** Some cleaning locations sit inside others (for example **LocalTemp** and the Zoom, Steam, Adobe or Telegram temp folders inside it, or **WindowsLogs** and its sub-folders), and the scan walks into sub-folders. A file in such a folder was listed and counted under both locations, so the "Useless file found" total could be much higher than what cleaning could free: for example 9 GB found, 3 GB cleaned. Each file is now listed and counted once, under the first location that finds it; the inner location then shows as empty.
-- **The Windows component store estimate is shown separately.** The space `Dism.exe /AnalyzeComponentStore` reports as reclaimable used to be added to the found file total, although it is freed by the Dism.exe component cleanup and not by deleting the listed files (and only when that cleanup is selected). The scan result now shows it on its own, for example *+ 2.1 GB can be reclaimed from the Windows component store by Dism.exe*. After cleaning, the **Free space on C: before / after** line shows how much space was really freed, including the component cleanup.
-
-### Updating
-- **From 1.27.1 or earlier:** the app updates itself to 1.27.2 as usual (Settings > App Updates).
-- **New installs:** download `mwc_setup.exe` (installer) or `mwc.zip` (portable) below.
-
----
-
-## Multron Win Cleaner 1.27.1 Update
-
-### Malware Scan: choose the file types to scan
-The **Only executables & scripts** option is now **Only these file types**, with a box for each kind of file:
-- **Programs and libraries** (`.exe`, `.dll`, `.sys`, `.scr`, `.cpl`, `.ocx`, `.drv`, `.efi`...) — also finds programs renamed to another extension by checking the file header.
-- **Scripts** (`.ps1`, `.bat`, `.cmd`, `.vbs`, `.js`, `.hta`, `.wsf`, `.jar`, `.reg`, `.py`...)
-- **Installers and packages** (`.msi`, `.msp`, `.msix`, `.appx` and their bundles)
-- **Shortcuts** (`.lnk`, `.url`, `.pif`, `.scf`)
-- **Office documents with macros** (`.docm`, `.xlsm`, `.pptm`...)
-- **Archives and disk images** (`.zip`, `.rar`, `.7z`, `.cab`, `.iso`, `.img`, `.vhd`...)
-- **PDF documents**
-
-The first four are on by default, which is what the scan checked before. Documents, archives and PDFs can be personal files, so they are off until you turn them on, and even then a file is uploaded only when the cloud does not know it yet. Quick and Full scans use the same choice. The scan log lists the file types that were used.
-
-### Malware Scan: Quick Scan checks the critical places
-Quick Scan now also checks where malware usually hides or starts from:
-- **Every module (DLL) loaded by running programs**, not only the programs themselves.
-- **Services and drivers**, **scheduled tasks**, Winlogon `Shell`/`Userinit`/`Taskman`, `AppInit_DLLs`, Image File Execution Options `Debugger`, `RunOnceEx`, Active Setup, `RunServices` and policy `Run` keys. Files named inside a command line are found too (for example the DLL in `rundll32 C:\x\a.dll,Entry`).
-- **Windows system folders:** the top level of `Windows`, `System32`, `System32\drivers` and `SysWOW64`.
-- **AppData, LocalAppData, ProgramData and the Public folder**, two folder levels deep (where dropped programs usually sit, without walking browser caches).
-
-Downloads, Desktop and the temp folders are scanned as before.
-
-Files that Windows deletes while the scan runs (for example the recovery image Windows Update mounts in `C:\$WinREAgent`) are no longer shown as errors: they are listed as skipped ("The file was removed before it could be checked"). The temporary Windows update and reset folders `$WinREAgent`, `$Windows.~BT`, `$Windows.~WS`, `$GetCurrent` and `$SysReset` are not scanned at all, like `WinSxS` and `SoftwareDistribution` already were.
- Most of the new files are signed Windows files that the cloud answers by fingerprint, and the fingerprint cache makes the next Quick Scan skip re-reading them.
-
-### Deep log scan: more file types and new filters
-- **More log and junk file types by default:** old copies (`.old`), CHKDSK fragments (`.chk`), mini and heap dumps (`.mdmp`, `.hdmp`), Windows Error Reporting files (`.wer`), error logs (`.err`) and help index caches (`.gid`), in addition to `.log .etl .dmp .trace .tmp .temp .bak .swp`. Files Windows itself depends on (registry `.LOG1`/`.LOG2`, `.blf`, `.evtx`) are not on the list.
-- **Skip files changed in the last N days:** leaves out logs that a program is probably still writing.
-- **Skip files smaller than N KB:** leaves out tiny files that free almost no space.
-- Both filters are in Settings next to the deep log extensions; 0 turns them off (the default).
-- **Your extension list is now remembered** after the app restarts.
-- **Links are no longer followed:** the scan no longer walks into junctions and symbolic links. The files in `C:\ProgramData` used to be listed and counted twice (once more through the `C:\Users\All Users` link), a junction pointing to another drive could pull that drive's files into a "C:" scan, and the scan is noticeably faster. Hidden and system files are still scanned as before.
-
-### Updating
-- **From 1.27 or earlier:** the app updates itself to 1.27.1 as usual (Settings > App Updates).
-- **New installs:** download `mwc_setup.exe` (installer) or `mwc.zip` (portable) below.
-
----
-
-## Multron Win Cleaner 1.27 Update
-
-> **Test release:** the cloud malware scan and its new disinfection are published for testing, so results and behavior may still change. Please report problems in [Issues](https://github.com/Multron-Community/MultronWcleaner/issues).
-
-### New: Disinfect — recover a file a virus infected later
-A file that was clean and got infected by a virus *afterwards* can now be repaired instead of only deleted. Right-click a detected file in the Malware Scan results and choose **Disinfect (recover the original file)**:
-- The file is sent to the cloud server, which **scrapes the virus out and returns the recovered original**. All of this runs on the server, never on your PC.
-- The **infected original is kept in quarantine** as a backup before the recovered file is written back in its place.
-- The server decides per file whether it is a recoverable infection. A file that **is malware itself** cannot be disinfected; the app says so and you delete it instead. You can disinfect several selected files at once, so other files hit by the same virus are cleaned in one step.
-
-### New: Much faster cloud scans  
-The malware scan no longer checks files one by one:
-1. **Fingerprinting:** every file is hashed locally in parallel, with its entropy measured in the same read (no second read).
-2. **Bulk check:** fingerprints go to the server in batches of up to **512 per message**, paced to the server's own rate limit, so thousands of known files are answered in seconds.
-3. **Upload only the unknown:** only files the cloud has never seen are uploaded, over **1–8 parallel connections** (4 by default).
-
-Fingerprinting and checking now **run at the same time**: the first fingerprints go to the server while the rest of the disk is still being hashed. **Identical files** (the same content in several places) are checked only once, and the result is applied to every copy.
-
-New options in the scan settings: **Connections**, **Remember fingerprints of unchanged files** (rescans skip re-reading files whose size and modification time did not change — the server still checks every file) and **Compress uploads** (Brotli, for slow links). The server now tells the client its check rate so the client never exceeds it; with a server that does not say it yet, the client starts at a safe 500 checks per second, sends small check messages (at most 50 hashes, at most 40 messages per second per connection), keeps at most 64 checks waiting per connection so replies keep flowing, and halves its rate on its own when the server asks it to slow down.
-
-### New: Live upload view in the main window  
-The malware scan no longer opens a second progress window; it runs in the **main window**. Under the progress bar ("Classifying (45%)...") and the current file it shows **Scanned, Threats, Uploaded, Elapsed and Remaining** (estimated time left), then a scrollable **scan activity** list that is the centre of the scan: every **unknown file sent to the cloud** (name and path, a green fill that grows with the upload, the **upload speed** and the **compression** achieved, then "Classifying in Scan Cloud..." and finally its verdict), plus skipped files (for example over the size limit), files that could not be read and threats as they are found. Clicking the **Threats** count opens a separate window with the threats found so far; the results list with the per-file **actions** appears when the scan finishes. Files still in the queue are counted above the list. A **Cancel** link skips that one file without stopping the scan (a file already being sent finishes its transfer first, so the connection is never broken). The same view is shown in the Malware Scan window, in sync.
-
-- **Filters and search:** the scan activity list has filter buttons with counts — **Uploads, Threats, Skipped, Errors** — so you can show only, for example, the unknown files sent to the cloud, plus a search box for a file name or path; **Show all** puts it back. Your choice is remembered and is the same in the main window and the Malware Scan window. The results list after the scan has the same kind of buttons (**Threats, Clean, Uploads, Skipped, Errors**, replacing "Show threats only") and its own search box.
-- **Scanning starts at once:** collecting the files, fingerprinting them and checking them with the server now all run at the same time, instead of waiting for the whole disk to be listed first.
-- **Every stage is visible:** while the disk is being listed the title says **Collecting files: N found in M folders**, and a status line under the progress bar shows how many files were found, fingerprinted, answered by the cloud and still waiting for it, and how many connections are open (also written to the scan log every 15 seconds).
-- **Restart required after threat removal:** when a threat file is locked and can only be deleted at the next restart, the Malware Scan window shows a prominent **Restart required** panel with those files and a **Restart now** button (the same as after cleaning).
-- **Small unknown files first:** unknown files are uploaded smallest first, so many more verdicts arrive in the same time and large files are sent at the end.
-- **Tray icon (optional):** a new **Show a tray icon while scanning** option (off by default) shows an animated tray icon with the scan progress and a notification when it finishes; with it on, closing the Malware Scan window during a scan keeps the scan running in the tray.
-- **Much faster scans with unknown files:** the connections now have separate jobs — some only check fingerprints (half of them from 4 connections up, otherwise one), the others only upload unknown files. Before, a single file waiting for the server to accept its upload held up the checks of thousands of known files on the same connection; now known files keep being answered while uploads wait. The client also stays within the server's upload window, and up to **8 connections** can be used.
-- **A scan no longer hangs when the server goes quiet:** if a connection gets no reply for 5 minutes while checks are waiting, the client drops it and reconnects on its own ("The cloud server stopped answering" in the scan log) instead of waiting forever. Every 15 seconds the scan log also lists, for each connection, how many checks were sent and in how many messages, how many replies came back and when the last one arrived, the check rate in use and whether the server asked to slow down — so a slow scan can be explained.
-- **Clear message when the server is limiting you:** if the server refuses new connections because too many scans were started in a short time, the scan retries a few times (3, 6 and 12 seconds apart) and then says so in plain words instead of showing a raw "status code 429" error.
-- **Fewer "could not be read" errors:** files that Windows protects even from administrators (for example Defender's update files in `C:\Windows\SystemTemp`) are now read with backup privileges.
-
-### New: Per-file actions
-Every row in the scan results now has an **Action** dropdown next to the file — **No action, Quarantine, Delete, Disinfect** or **Remove at the root** — so you decide what happens to each file individually. Detected files default to **Quarantine**; change any of them, or use the header checkbox to select all, then press **Apply Actions** to carry out every chosen action in one go.
-
-### New: Remove at the root
-Right-click a threat and choose **Remove at the root (file + copies + startup)** to delete it *and* everything it left behind: the threat's **other copies** (identical files elsewhere on the disk) and its full **autostart footprint** — registry `Run`/`RunOnce`/`RunServices`/policy-`Run` keys, **Winlogon `Userinit`/`Shell`** (the malicious token is stripped and the real shell kept), **`AppInit_DLLs`**, **Image File Execution Options `Debugger`** hijacks, **services** pointing at the threat (stopped and removed), Startup-folder shortcuts and scheduled tasks — so it cannot come back after a restart.
-
-### New: Local packing pre-screen and Rootkit Check
-- **Packing pre-screen:** every scanned file's **Shannon entropy** is now measured locally, so packed or encrypted executables are flagged (entropy ≥ 7.2/8) even when the cloud verdict is clean — no upload needed. The value shows in the file's details.
-- **Rootkit Check:** a new button does a driver-free *cross-view* check for **hidden processes** (the normal process list versus a direct probe of every process id). It is a limited user-mode check — a kernel-mode rootkit still needs a signed driver — and the app says so.
-
-### Stronger deletion of stubborn files
-Files that resist a normal delete are now removed with stronger, driver-free techniques: **NTFS POSIX-semantics unlink** (removes a file even while it is open or locked), **extended-length `\\?\` paths** (for over-long names and names with trailing dots or spaces), and a tougher permission reset that strips the **Deny** entries malware adds, in addition to the existing ownership, PsExec-as-`SYSTEM` and delete-at-restart steps.
-
-### New: Secure deletion (shredding) for privacy
-A new **Secure Deletion (Shredding)** option in Settings makes the cleaner overwrite files before deleting them, so what it removes cannot be recovered. It is **SSD-aware**: on a solid-state drive, extra overwrite passes cannot target the same memory cells (wear levelling) and only wear the drive, so a single clearing pass is used and the drive's TRIM discards the blocks; spinning disks get a multi-pass wipe. Modes: Off, **Automatic (SSD-aware, recommended)**, 1 pass, 3 passes (DoD 5220.22-M) or 7 passes. The wipe uses a cryptographic random generator, overwrites **every data stream including alternate data streams**, never follows a symlink to its target, forces each pass to disk, and finally erases the file's name and size before removal. (As with any file-level shredder, data in Volume Shadow Copies/backups, or remapped by SSD wear levelling, is outside its reach — the setting explains this.)
-
-### Per-file actions and a cleaner results toolbar
-The Malware Scan results now have an **Action** dropdown next to every file — No action, Quarantine, Delete, Disinfect or Remove at the root — plus **Set all to…** to choose one action for the whole list and a green **Apply Actions** button that runs them. The old "Remove Selected" / "Quarantine Selected" buttons are gone (the per-file actions replace them), the action controls stay disabled until a scan finishes, and a new **Default action** setting pre-selects what detected files should do.
-
-### Changes
-- **System cleaning removes much more of what it finds.** When a junk file would not delete on the first try, the cleaner now escalates to the strong, driver-free delete (clears read-only/hidden/system attributes, uses extended-length paths, an NTFS POSIX unlink that removes files an app still holds open, and — for the few that resist even that — takes ownership and resets permissions) instead of giving up and marking it locked. This closes most of the old gap where, for example, 70 GB was found but only part of it was actually freed. It still never kills processes or forces a restart during cleaning.
-- **Faster cleaning.** Files are now deleted in parallel (about 3.5x faster on an SSD in our test with 20,000 files; 2 at a time when shredding), the selected files of each location are deleted directly instead of listing the whole folder tree again, deep log files no longer update the screen after every single file, and failures are written to `exceptions.txt` once at the end instead of rewriting the file for every file that could not be deleted.
-- **Stronger "Kill" for locked files.** Before closing any program, every locked file is first tried with the strong delete (it removes many files that are only open, without closing anything). Only the files that are still locked have their programs closed — each program once, together with its child processes, and never Windows system processes — and are then deleted again. A file that still cannot be deleted is marked to be deleted at the next restart instead of being left behind. **Windows services are never closed** (for example TrustedInstaller, TiWorker or VMware Tools); their files are deleted at the next restart instead.
-- **More locked files reach the Kill list.** When a file cannot be deleted, the cleaner now asks Windows which program holds it: if it is an ordinary program (a browser, Discord, an office app...), the file goes to the Kill list — also when shredding — instead of being quietly marked for the next restart; only files held by Windows itself or a Windows service are left to the restart.
-- **"Restart required" is impossible to miss.** When cleaning (or Kill) leaves files to be deleted at the next restart, the main window shows a highlighted **Cleaning done! Restart required.** box with the number of files and a **Restart now** button (it asks first), and the clean log ends with a highlighted banner. Each file is counted once, even when several cleaning locations point to it.
-- **See what is deleted at the next restart.** After cleaning, the files marked to be deleted at the next restart are listed one by one under the summary, and so are the files that could not be deleted at all, with the Windows error for each. Marking a file for deletion at the next restart is also more reliable now (it falls back to writing the restart list directly when Windows' own call refuses).
-- **Far fewer "access denied" files.** The cleaner now enables the backup/restore privileges an administrator already has (Windows ships them switched off), so files whose permissions block deletion are removed directly, without spawning takeown/icacls per file. A file that is still held by a running Windows service is handed to Windows to delete at the **next restart** and reported as such instead of "access denied".
-- **Shredding is visible while it runs.** With Secure Deletion on, the main window shows a green **Shred & Delete is on** line under the scan status, next to the Startup/Auto Clean status, with the chosen setting and how many passes it makes on drive C: (SSD/HDD), and the clean log says **Shredding & Cleaning / Shredded & Cleaned** for every location and **files shredded and deleted** in the summary.
-- **The Windows Disk Cleanup (cleanmgr) commands are now single-select.** Picking one of the Disk Cleanup options unchecks the others, since they all run the same tool.
-- **Microsoft MRT Scan is now off by default.** Turn it on in the Malware Scan group when you want it; your choice is remembered.
-- The scan now tells the server whether it **finished** or was **cancelled by the user**, so the server dashboard shows which it was instead of a bare dropped connection.
-
-### Updating
-- **From 1.26.7 or earlier:** the app updates itself to 1.27 as usual (Settings > App Updates).
-- **New installs:** download `mwc_setup.exe` (installer) or `mwc.zip` (portable) below.
-
----
-
-## Multron Win Cleaner 1.26.6 Update
-
-> [!WARNING]
-> **Antivirus false positives:** some antivirus programs may flag Multron Win Cleaner or one of its DLL files as suspicious when you download or run it. In particular, **Bitdefender** and engines that use it (for example Emsisoft, eScan, GData, Arcabit, VIPRE) may detect `MultronWinCleaner.dll` **heuristically as ransomware**, with a name such as `Gen:Heur.Ransom.Imps.3`. This is a false positive: a heuristic detection is based on behavior, not on a known malware signature, and it is triggered by what a system cleaner has to do (closing programs, deleting files, changing Windows settings). Multron Win Cleaner does not encrypt files, does not ask for a ransom and does not send your data anywhere except the optional cloud malware scan. The file has been reported to Bitdefender as a false positive again. The full source code is in this repository, and every release is built automatically by GitHub Actions. If your antivirus blocks the app, you can report the file to its vendor as a false positive or add an exception for the app folder.
->
-> * Bitdefender false positive form: <https://www.bitdefender.com/consumer/support/answer/29358/>
-> * Microsoft Defender file submission: <https://www.microsoft.com/en-us/wdsi/filesubmission>
-
-> **Test release:** the cloud malware scan is published for testing. It is released so it can be tried thoroughly and made stable, so results and behavior may still change. Wrong scan results can now be reported straight from the app (see below); please report any other problems in [Issues](https://github.com/Multron-Community/MultronWcleaner/issues).
-
-### New: Report wrong scan results
-Scan results that you believe are wrong can now be sent to the viruskov.com analysts from the Malware Scan results. Right-click one or more files:
-- **Report False Positive:** for a file detected as malicious or suspicious that you believe is clean.
-- **Report False Negative:** for a file the scan found clean that you believe is malicious (a missed threat).
-
-You can add an optional note (up to 500 characters), for example where the file comes from or why you think the result is wrong. The report sends the file's SHA-256, its name and your note; the note is only shown to the analysts. If the server does not have the file yet, the app scans it again so it is uploaded for the analysts, with the same rules as a normal cloud scan. If the result changes on that new scan, the file is not reported and the app shows the new result.
-
-The analysts check each reported file, and their verdict replaces the engine verdict for everyone: the next scan of the file shows it. If an analyst has already reviewed a file, the app shows that verdict instead of sending a new report. Every report is also written to the malware scan log.
-
-### Changes
-- The Malware Scan page no longer shows the server hosting information.
-
-### Updating
-- **From 1.26.5 or earlier:** the app updates itself to 1.26.6 as usual (Settings > App Updates). App updates are checked against their signature since 1.26.4.
-- **New installs:** download `mwc_setup.exe` (installer) or `mwc.zip` (portable) below.
-
-For signed database updates see the [v1.26.5 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.5), for signed app updates the [v1.26.4 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.4), and for the full list of what is new in 1.26 the [v1.26.3 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.3), the [v1.26.2 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.2), the [v1.26.1 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.1) and the [v1.26 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26).
+For earlier updates see the [v1.27.3 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.3) (live scan status, every file checked by Malware Scan, LZMA uploads), the [v1.27.2 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.2) (no file counted twice), the [v1.27.1 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.1) (file types to scan, Quick Scan of the critical places, deep log filters), the [v1.27 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27) (Disinfect, much faster cloud scans, per-file actions, secure deletion) and the [v1.26.6 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.6) (report wrong scan results). For signed database updates see the [v1.26.5 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.5), for signed app updates the [v1.26.4 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.4), and for the full list of what is new in 1.26 the [v1.26.3 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.3), the [v1.26.2 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.2), the [v1.26.1 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26.1) and the [v1.26 release](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26).

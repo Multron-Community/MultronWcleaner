@@ -47,6 +47,26 @@ namespace MultronWinCleaner
             return dialog.result;
         }
 
+        public static (MessageBoxResult Result, bool Option) AskWithOption(Window? owner, string message, string title, string yesText, string noText, string optionText)
+        {
+            var app = Application.Current;
+            if (app == null)
+                return (MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question), false);
+            if (!app.Dispatcher.CheckAccess())
+                return app.Dispatcher.Invoke(() => AskWithOption(owner, message, title, yesText, noText, optionText));
+
+            var dialog = new AppDialog();
+            dialog.Setup(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question);
+            dialog.ButtonsPanel.Children.Clear();
+            dialog.AddButton(noText, MessageBoxResult.No, primary: false);
+            dialog.AddButton(yesText, MessageBoxResult.Yes, primary: true);
+            dialog.OptionBox.Content = optionText;
+            dialog.OptionBox.Visibility = Visibility.Visible;
+            dialog.PlaceOver(owner ?? ActiveWindow());
+            dialog.ShowDialog();
+            return (dialog.result, dialog.OptionBox.IsChecked == true);
+        }
+
         public static string? Prompt(Window? owner, string message, string title, int maxLength)
         {
             var app = Application.Current;

@@ -480,30 +480,18 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,26">
-                        <Button Content="↺"
-                                Style="{DynamicResource ModernButtonStyle}"
-                                Width="30" Height="30" FontSize="15" Padding="0"
+                        <Button Content="&#xE777;" Style="{DynamicResource ChromeButtonStyle}" FontSize="12"
                                 Click="ResetToDefaults_Click"
-                                ToolTip="{loc:Tr 'Reset to defaults'}"
-                                Cursor="Hand" Margin="0,0,8,0"/>
-                        <Button Content="—"
-                                Style="{DynamicResource ModernButtonStyle}"
-                                Width="30" Height="30" FontSize="13" Padding="0"
+                                ToolTip="{loc:Tr 'Reset to defaults'}" Margin="0,0,8,0"/>
+                        <Button Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}"
                                 Click="MinimizeButton_Click"
-                                ToolTip="{loc:Tr 'Minimize'}"
-                                Cursor="Hand" Margin="0,0,8,0"/>
-                        <Button x:Name="MaximizeButton" Content="⤢"
-                                Style="{DynamicResource ModernButtonStyle}"
-                                Width="30" Height="30" FontSize="15" Padding="0"
+                                ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,8,0"/>
+                        <Button Content="&#xE922;" Style="{DynamicResource ChromeButtonStyle}" x:Name="MaximizeButton"
                                 Click="MaximizeButton_Click"
-                                ToolTip="{loc:Tr 'Maximize/Restore'}"
-                                Cursor="Hand" Margin="0,0,8,0"/>
-                        <Button Content="✕"
-                                Style="{DynamicResource DangerButtonStyle}"
-                                Width="30" Height="30" FontSize="14"
+                                ToolTip="{loc:Tr 'Maximize/Restore'}" Margin="0,0,8,0"/>
+                        <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}"
                                 Click="CloseButton_Click"
-                                ToolTip="{loc:Tr 'Close'}"
-                                Cursor="Hand"/>
+                                ToolTip="{loc:Tr 'Close'}"/>
                     </StackPanel>
                 </Grid>
 
@@ -585,6 +573,19 @@
                             </StackPanel>
                         </GroupBox>
 
+                        <GroupBox Header="{loc:Tr 'Warnings and Notes'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                            <StackPanel>
+                                <CheckBox x:Name="chkShowEntryNotes" Content="{loc:Tr 'Show warning and info buttons next to cleaning items'}" IsChecked="True"
+                                          Style="{DynamicResource CustomCheckBoxStyle}" Checked="EntryNotes_Changed" Unchecked="EntryNotes_Changed"/>
+                                <TextBlock Text="{loc:Tr 'Warnings tell what an item deletes; info notes tell why an item is not selected by default.'}"
+                                           FontSize="12" Opacity="0.55" TextWrapping="Wrap" Margin="26,2,0,12"/>
+                                <CheckBox x:Name="chkConfirmRisky" Content="{loc:Tr 'Ask before cleaning items with a warning'}" IsChecked="True"
+                                          Style="{DynamicResource CustomCheckBoxStyle}" Checked="EntryNotes_Changed" Unchecked="EntryNotes_Changed"/>
+                                <TextBlock Text="{loc:Tr 'Background and startup cleanings never clean items with a warning.'}"
+                                           FontSize="12" Opacity="0.55" TextWrapping="Wrap" Margin="26,2,0,0"/>
+                            </StackPanel>
+                        </GroupBox>
+
                         <GroupBox Header="{loc:Tr 'Theme'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <CheckBox x:Name="chkThemeFollowsWindows" Content="{loc:Tr 'Match the Windows theme'}"
@@ -660,7 +661,7 @@ Cursor="Hand"/>
                                     </ComboBox.Style>
                                 </ComboBox>
 
-                                <Button x:Name="ApplyButton" Content="{loc:Tr 'Apply Selection'}" Width="140" Height="34" Margin="0,12,0,0"
+                                <Button x:Name="ApplyButton" Content="{loc:Tr 'Apply Selection'}" MinWidth="140" Height="34" Margin="0,12,0,0"
                 HorizontalAlignment="Left"
                 Click="ApplyUserSelection_Click"
                 Style="{DynamicResource AccentButtonStyle}"
@@ -682,6 +683,22 @@ Cursor="Hand"/>
                                     <ComboBoxItem Content="{loc:Tr '7 passes (thorough)'}"/>
                                 </ComboBox>
                                 <TextBlock Text="{loc:Tr 'Shredding rewrites every file, so cleaning takes longer the more passes you choose.'}"
+                                           FontSize="12" Opacity="0.6" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="{loc:Tr 'Open Browsers and Apps'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr 'Before cleaning, Multron Win Cleaner checks whether a browser or an app whose files it found is open. Its files can only be cleaned once it is closed.'}"
+                                           FontSize="14" Opacity="0.75" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                                <ComboBox x:Name="cmbOpenProgramAction" Height="34" Width="460" HorizontalAlignment="Left" Padding="8"
+                                          FontSize="15" FontWeight="Medium" SelectionChanged="OpenProgramAction_Changed"
+                                          Style="{DynamicResource ModernComboBoxStyle}">
+                                    <ComboBoxItem Content="{loc:Tr 'Ask me every time'}"/>
+                                    <ComboBoxItem Content="{loc:Tr 'Close it without asking'}"/>
+                                    <ComboBoxItem Content="{loc:Tr 'Skip its files'}"/>
+                                </ComboBox>
+                                <TextBlock Text="{loc:Tr 'Background and startup cleanings never close programs.'}"
                                            FontSize="12" Opacity="0.6" Margin="0,8,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </GroupBox>
@@ -716,7 +733,7 @@ Cursor="Hand"/>
                                              Margin="0,0,10,0"
                                             />
                                     <Button Content="{loc:Tr 'Browse'}" Grid.Column="1"
-                                            Width="90" Height="40"
+                                            MinWidth="90" HorizontalAlignment="Center" Height="40"
                                             Click="BrowseLogPath_Click"
                                             Style="{DynamicResource ModernButtonStyle}"
                                             FontWeight="SemiBold" Cursor="Hand"/>
@@ -724,22 +741,22 @@ Cursor="Hand"/>
 
                                 <StackPanel Orientation="Horizontal">
                                     <Button x:Name="btnOpenLog" Content="{loc:Tr 'Open Log File'}"
-                                            Width="150" Height="34"
+                                            MinWidth="150" HorizontalAlignment="Center" Height="34"
                                             Click="OpenLogFile_Click"
                                             Style="{DynamicResource ModernButtonStyle}"
                                             FontWeight="SemiBold" Cursor="Hand" Margin="0,0,10,0"/>
                                     <Button x:Name="btnOpenAppFolder" Content="{loc:Tr 'Open Folder'}"
-                                            Width="150" Height="34"
+                                            MinWidth="150" HorizontalAlignment="Center" Height="34"
                                             Click="OpenAppFolder_Click"
                                             Style="{DynamicResource ModernButtonStyle}"
                                             FontWeight="SemiBold" Cursor="Hand" Margin="0,0,10,0"/>
                                     <Button x:Name="btnClearLog" Content="{loc:Tr 'Clear Log File'}"
-                                            Width="120" Height="34"
+                                            MinWidth="120" HorizontalAlignment="Center" Height="34"
                                             Click="ClearLog_Click"
                                             Style="{DynamicResource CancelButtonStyle}"
                                             FontWeight="SemiBold" Cursor="Hand" Margin="0,0,10,0"/>
                                     <Button x:Name="btnApplyLog" Content="{loc:Tr 'Apply'}"
-                                            Width="120" Height="34"
+                                            MinWidth="120" HorizontalAlignment="Center" Height="34"
                                             Click="ApplyLog_Click"
                                             Style="{DynamicResource AccentButtonStyle}"
                                             FontWeight="SemiBold" Cursor="Hand"/>
@@ -892,10 +909,10 @@ Cursor="Hand"/>
                                                  Text=".log.etl.dmp.trace.tmp.temp.bak.swp.old.chk.mdmp.hdmp.wer.err.gid"
                                                  ToolTip="{loc:Tr 'Example: .crash'}"
                                                  Margin="0,0,10,0"/>
-                                        <Button Grid.Column="1" Content="{loc:Tr 'Add'}" Width="70" Height="34"
+                                        <Button Grid.Column="1" Content="{loc:Tr 'Add'}" MinWidth="70" HorizontalAlignment="Center" Height="34"
                                                 Click="AddExtension_Click"
                                                 Style="{DynamicResource AccentButtonStyle}" Margin="0,0,10,0"/>
-                                        <Button Grid.Column="2" Content="{loc:Tr 'Reset'}" Width="70" Height="34"
+                                        <Button Grid.Column="2" Content="{loc:Tr 'Reset'}" MinWidth="70" HorizontalAlignment="Center" Height="34"
                                                 Click="ResetExtensions_Click"
                                                 Style="{DynamicResource CancelButtonStyle}"/>
                                     </Grid>
@@ -1333,15 +1350,15 @@ Cursor="Hand"/>
                                     <TextBox x:Name="txtExceptionPath" Grid.Column="0"
                                              Style="{DynamicResource ModernTextBoxStyle}"
                                              Height="34" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <Button Content="{loc:Tr 'Add'}" Grid.Column="1" Width="64" Height="34"
+                                    <Button Content="{loc:Tr 'Add'}" Grid.Column="1" MinWidth="64" HorizontalAlignment="Center" Height="34"
                                             Style="{DynamicResource AccentButtonStyle}"
                                             Click="AddException_Click" Margin="0,0,8,0"
                                             FontWeight="SemiBold" Cursor="Hand"/>
-                                    <Button Content="{loc:Tr 'Remove'}" Grid.Column="2" Width="75" Height="34"
+                                    <Button Content="{loc:Tr 'Remove'}" Grid.Column="2" MinWidth="75" HorizontalAlignment="Center" Height="34"
                                             Style="{DynamicResource ModernButtonStyle}"
                                             Click="RemoveException_Click" Margin="0,0,8,0"
                                             FontWeight="SemiBold" Cursor="Hand"/>
-                                    <Button Content="{loc:Tr 'Remove All'}" Grid.Column="3" Width="90" Height="34"
+                                    <Button Content="{loc:Tr 'Remove All'}" Grid.Column="3" MinWidth="90" HorizontalAlignment="Center" Height="34"
                                             Style="{DynamicResource CancelButtonStyle}"
                                             Click="RemoveExceptionAll_Click"
                                             FontWeight="SemiBold" Cursor="Hand"/>

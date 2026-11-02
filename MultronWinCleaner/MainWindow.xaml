@@ -215,6 +215,90 @@
             </Setter>
         </Style>
 
+        <Style x:Key="ToolbarDropDownStyle" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Background" Value="{DynamicResource ButtonBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="16,0,12,0"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="0,0,10,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Grid>
+                            <Border x:Name="bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8"/>
+                            <Border x:Name="overlay" CornerRadius="8" Background="{DynamicResource RowHoverBackground}" Opacity="0"/>
+                            <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}" VerticalAlignment="Center">
+                                <ContentPresenter VerticalAlignment="Center"/>
+                                <TextBlock x:Name="chevron" Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="10,1,0,0" VerticalAlignment="Center" Opacity="0.7"/>
+                            </StackPanel>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="overlay" Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#FF1E88E5"/>
+                                <Setter TargetName="chevron" Property="Text" Value="&#xE70E;"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ToolbarMenuPanelStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PanelBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Margin" Value="0,6,12,12"/>
+            <Setter Property="MinWidth" Value="260"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.3" Color="Black"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ToolbarMenuButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="10,9"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{TemplateBinding Tag}" FontFamily="Segoe MDL2 Assets" FontSize="14" Width="22" VerticalAlignment="Center" Opacity="0.85"/>
+                                <ContentPresenter Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource RowHoverBackground}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
             <Setter Property="Padding" Value="6" />
             <Setter Property="Width" Value="36" />
@@ -590,7 +674,7 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                                 <TextBlock Text="MULTRON WIN CLEANER" FontSize="15" FontFamily="Bahnschrift, Century Gothic, Segoe UI" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
                                 <Border Background="#201E88E5" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="v1.27.3 beta" FontSize="11" FontWeight="Bold" Foreground="#FF1E88E5" />
+                                    <TextBlock Text="v1.28 beta" FontSize="11" FontWeight="Bold" Foreground="#FF1E88E5" />
                                 </Border>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -621,9 +705,9 @@
                                 </Button>
 
                                 <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0" Margin="0,12,12,12" />
-                                <Button Content="─" Style="{StaticResource IconButtonStyle}" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}"/>
-                                <Button x:Name="buttonMaximize" Content="⤢" Style="{StaticResource IconButtonStyle}" Click="MaximizeButton_Click" ToolTip="{loc:Tr 'Maximize/Restore'}"/>
-                                <Button Content="✕" Style="{StaticResource DangerIconButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
+                                <Button Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}"/>
+                                <Button Content="&#xE922;" Style="{DynamicResource ChromeButtonStyle}" x:Name="buttonMaximize" Click="MaximizeButton_Click" ToolTip="{loc:Tr 'Maximize/Restore'}"/>
+                                <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -1145,14 +1229,58 @@
                                             <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
 
-                                        <WrapPanel Grid.Row="0" Margin="0,0,0,20">
+                                        <WrapPanel Grid.Row="0" Margin="0,0,0,16">
                                             <Button x:Name="SlctAll" Content="{loc:Tr 'Select All'}" Click="SelectAll_wpanel_Click" Style="{StaticResource PrimaryButtonStyle}" Background="#FF1E88E5" Foreground="White" Margin="0,0,10,10" Padding="16,10" />
-                                            <Button x:Name="UnScl" Content="{loc:Tr 'Unselect All'}" Click="UnselectAll_wpanel_Click" Style="{StaticResource ModernButtonStyle}" Background="Transparent" BorderThickness="1" BorderBrush="Gray" Foreground="{DynamicResource TextForeground}" Margin="0,0,10,10" Padding="16,10" />
-                                            <Button x:Name="SaveSettings" Content="{loc:Tr 'Save Selections'}" Click="SaveSettings_Click" Style="{StaticResource PrimaryButtonStyle}" Background="#FF28A745" Foreground="White" Margin="0,0,10,10" Padding="16,10" ToolTip="{loc:Tr 'Saves your choices to selections.txt. They are kept when the database is updated.'}" />
-                                            <Button x:Name="ApplySelections" Content="{loc:Tr 'Write Selections to Database'}" Click="ApplySelectionsToDatabase_Click" Style="{StaticResource ModernButtonStyle}" Background="Transparent" BorderThickness="1" BorderBrush="Gray" Foreground="{DynamicResource TextForeground}" Margin="0,0,10,10" Padding="16,10" ToolTip="{loc:Tr 'Optional: writes your saved choices into database.txt. They are lost when a newer database is downloaded.'}" />
-                                            <Button x:Name="ResetSelections" Content="{loc:Tr 'Reset Selections'}" Click="ResetSelections_Click" Style="{StaticResource ModernButtonStyle}" Background="Transparent" BorderThickness="1" BorderBrush="#FFDC3545" Foreground="{DynamicResource TextForeground}" Margin="0,0,10,10" Padding="16,10" ToolTip="{loc:Tr 'Deletes selections.txt so every entry goes back to its default from the database.'}" />
-                                            <Button x:Name="ReloadDb" Content="{loc:Tr 'Reload Database'}" Click="ReloadDatabase_Click" Style="{StaticResource ModernButtonStyle}" Background="{DynamicResource ButtonBackground}" Foreground="{DynamicResource TextForeground}" Margin="0,0,10,10" Padding="16,10" />
-                                            <Button x:Name="UpdateDb" Content="{loc:Tr 'Update Database'}" Click="UpdateDatabase_Click" Style="{StaticResource PrimaryButtonStyle}" Background="#FF1E88E5" Foreground="White" Margin="0,0,10,10" Padding="16,10" ToolTip="{loc:Tr 'Downloads the newest database from GitHub and loads it. In offline mode the GitHub download page opens instead.'}" />
+                                            <Button x:Name="UnScl" Content="{loc:Tr 'Unselect All'}" Click="UnselectAll_wpanel_Click" Style="{StaticResource ModernButtonStyle}" Background="{DynamicResource ButtonBackground}" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource TextPrimary}" Margin="0,0,10,10" Padding="16,10" />
+                                            <ToggleButton x:Name="SelectionsMenuToggle" Content="{loc:Tr 'Selections'}">
+                                                <ToggleButton.Style>
+                                                    <Style TargetType="ToggleButton" BasedOn="{StaticResource ToolbarDropDownStyle}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsOpen, ElementName=SelectionsPopup}" Value="True">
+                                                                <Setter Property="IsHitTestVisible" Value="False"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ToggleButton.Style>
+                                            </ToggleButton>
+                                            <Popup x:Name="SelectionsPopup" PlacementTarget="{Binding ElementName=SelectionsMenuToggle}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
+                                                   PopupAnimation="Fade" IsOpen="{Binding IsChecked, ElementName=SelectionsMenuToggle, Mode=TwoWay}">
+                                                <Border Style="{StaticResource ToolbarMenuPanelStyle}" ButtonBase.Click="ToolbarMenu_Click">
+                                                    <StackPanel>
+                                                        <Button x:Name="SaveSettings" Content="{loc:Tr 'Save Selections'}" Tag="&#xE74E;" Click="SaveSettings_Click" Style="{StaticResource ToolbarMenuButtonStyle}" ToolTip="{loc:Tr 'Saves your choices to selections.txt. They are kept when the database is updated.'}" />
+                                                        <Button x:Name="ApplySelections" Content="{loc:Tr 'Write Selections to Database'}" Tag="&#xE8F1;" Click="ApplySelectionsToDatabase_Click" Style="{StaticResource ToolbarMenuButtonStyle}" ToolTip="{loc:Tr 'Optional: writes your saved choices into database.txt. They are lost when a newer database is downloaded.'}" />
+                                                        <Button x:Name="ResetSelections" Content="{loc:Tr 'Reset Selections'}" Tag="&#xE72C;" Click="ResetSelections_Click" Style="{StaticResource ToolbarMenuButtonStyle}" Foreground="#FFE5534B" ToolTip="{loc:Tr 'Deletes selections.txt so every entry goes back to its default from the database.'}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </Popup>
+                                            <ToggleButton x:Name="DatabaseMenuToggle" Content="{loc:Tr 'Database'}">
+                                                <ToggleButton.Style>
+                                                    <Style TargetType="ToggleButton" BasedOn="{StaticResource ToolbarDropDownStyle}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsOpen, ElementName=DatabasePopup}" Value="True">
+                                                                <Setter Property="IsHitTestVisible" Value="False"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ToggleButton.Style>
+                                            </ToggleButton>
+                                            <Popup x:Name="DatabasePopup" PlacementTarget="{Binding ElementName=DatabaseMenuToggle}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" Opened="DatabasePopup_Opened" Closed="DatabasePopup_Closed"
+                                                   PopupAnimation="Fade" IsOpen="{Binding IsChecked, ElementName=DatabaseMenuToggle, Mode=TwoWay}">
+                                                <Border Style="{StaticResource ToolbarMenuPanelStyle}" ButtonBase.Click="ToolbarMenu_Click">
+                                                    <StackPanel>
+                                                        <Button x:Name="ReloadDb" Content="{loc:Tr 'Reload Database'}" Tag="&#xE72C;" Click="ReloadDatabase_Click" Style="{StaticResource ToolbarMenuButtonStyle}" />
+                                                        <Button x:Name="UpdateDb" Content="{loc:Tr 'Update Database'}" Tag="&#xE896;" Click="UpdateDatabase_Click" Style="{StaticResource ToolbarMenuButtonStyle}" ToolTip="{loc:Tr 'Downloads the newest database from GitHub and loads it. In offline mode the GitHub download page opens instead.'}" />
+                                                        <Border Height="1" Background="{DynamicResource SeparatorBrush}" Margin="6,6"/>
+                                                        <TextBlock Text="{loc:Tr 'Additional databases'}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.65" Margin="10,2,10,4" Foreground="{DynamicResource TextPrimary}"/>
+                                                        <StackPanel x:Name="ExtraDatabasesPanel"/>
+                                                        <TextBlock x:Name="NoExtraDatabasesText" Text="{loc:Tr 'None yet. Add one from a file or an internet address.'}"
+                                                                   TextWrapping="Wrap" MaxWidth="250" HorizontalAlignment="Left" FontSize="12" Opacity="0.6" Margin="10,2,10,6" Foreground="{DynamicResource TextPrimary}"/>
+                                                        <Button Content="{loc:Tr 'Add from file...'}" Tag="&#xE8E5;" Click="AddDatabaseFile_Click" Style="{StaticResource ToolbarMenuButtonStyle}"
+                                                                ToolTip="{loc:Tr 'Choose one or more .txt databases. They are copied to the Databases folder next to the app and turned on.'}"/>
+                                                        <Button Content="{loc:Tr 'Add from internet address...'}" Tag="&#xE774;" Click="AddDatabaseUrl_Click" Style="{StaticResource ToolbarMenuButtonStyle}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Popup>
 
                                             <Border Height="36" Width="240" Margin="0,0,0,10" CornerRadius="18" VerticalAlignment="Center"
                                                     Background="{DynamicResource TextBoxBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Opacity="0.85">

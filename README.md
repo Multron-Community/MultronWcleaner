@@ -31,6 +31,11 @@
 
   [Download Release](https://github.com/Multron-Community/MultronWcleaner/releases/latest) • [Database Repo](https://github.com/Multron-Community/MultronWcleaner-Database) • [Engine Repo](https://github.com/HydraDragonAntivirus/HydraDragonAntivirus) • [Report Issue](https://github.com/Multron-Community/MultronWcleaner/issues) • [Support on Patreon](https://www.patreon.com/cw/multron)
 
+  ### Please Select a Language
+
+  [![English](https://img.shields.io/badge/Language-English-blue.svg?style=for-the-badge)](README.md)
+  [![Türkçe](https://img.shields.io/badge/Dil-T%C3%BCrk%C3%A7e-red.svg?style=for-the-badge)](README.tr.md)
+
 ---
 
 <div align="center">

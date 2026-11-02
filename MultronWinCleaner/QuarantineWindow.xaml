@@ -39,8 +39,8 @@
                 <TextBlock x:Name="CountText" Text="" FontSize="13" Margin="10,2,0,0" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                <Button Content="&#xE921;" Style="{StaticResource WindowButtonStyle}" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,4,0"/>
-                <Button Content="&#xE8BB;" Style="{StaticResource CloseWindowButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
+                <Button Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,4,0"/>
+                <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
             </StackPanel>
         </Grid>
 

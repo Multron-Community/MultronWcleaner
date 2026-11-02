@@ -63,6 +63,9 @@ namespace Multron_Win_Cleaner
         public List<ListBox> listboxes = new List<ListBox>();
         public List<ComboBox> comboboxlist = new List<ComboBox>();
         public Dictionary<string, bool> databaseDefaults = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        public System.Collections.Concurrent.ConcurrentDictionary<string, MultronWinCleaner.Processes.BrowserTag> browserPaths = new(StringComparer.OrdinalIgnoreCase);
+        public System.Collections.Concurrent.ConcurrentDictionary<string, string> warningPaths = new(StringComparer.OrdinalIgnoreCase);
+        public System.Collections.Concurrent.ConcurrentDictionary<string, string> extraDatabasePaths = new(StringComparer.OrdinalIgnoreCase);
         public List<string> paths = new List<string>();
         public CancellationTokenSource dismcancel = new CancellationTokenSource();
         public Utilities utilities = null!;
@@ -1941,6 +1944,18 @@ namespace Multron_Win_Cleaner
             buttonStartScan.IsEnabled = duplicateCancelWasEnabled;
         }
 
+        public void ShowDuplicatesDeleted(int deleted, int total, long freedBytes, int failed)
+        {
+            if (DuplicateResultsPanel.Visibility != Visibility.Visible || duplicateReportRunning || total <= 0)
+                return;
+            DuplicateResultsStatus.Text = failed > 0
+                ? Loc.F("Duplicate File Finder deleted {0} of {1} duplicate copies ({2} freed). {3} could not be deleted.", deleted, total, formatsize(freedBytes), failed)
+                : Loc.F("Duplicate File Finder deleted {0} of {1} duplicate copies ({2} freed).", deleted, total, formatsize(freedBytes));
+            DuplicateResultsButton.Content = Loc.T("Show Files");
+            DuplicateResultsButton.Visibility = failed > 0 ? Visibility.Visible : Visibility.Collapsed;
+            SetResultPanelColor(DuplicateResultsPanel, DuplicateResultsIcon, failed > 0 ? WarningColor : OkColor);
+        }
+
         private void ShowDuplicateProgress(string status)
         {
             if (!duplicateCancelMode)
@@ -2033,6 +2048,12 @@ namespace Multron_Win_Cleaner
         }
 
         public static bool IsSimpleInterface() => !IsAdvancedInterface();
+
+        public const string ShowEntryNotesSettingKey = "showentrynotes";
+        public const string ConfirmRiskySettingKey = "confirmrisky";
+        public static bool ShowEntryNotes() => ReadSettingValue(ShowEntryNotesSettingKey) != "0";
+        public static bool ConfirmRiskyItems() => ReadSettingValue(ConfirmRiskySettingKey) != "0";
+        public static bool IsInfoNote(string note) => note.StartsWith("Not selected by default:", StringComparison.Ordinal);
 
         private static string? ReadSettingValue(string key)
         {
@@ -2681,7 +2702,7 @@ namespace Multron_Win_Cleaner
                 this.Left = previousLeft;
                 this.Top = previousTop;
                 isMaximized = false;
-                buttonMaximize.Content = "↔";
+                buttonMaximize.Content = "\uE922";
             }
             else
             {
@@ -2698,7 +2719,7 @@ namespace Multron_Win_Cleaner
                 this.Height = SystemParameters.WorkArea.Height;
 
                 isMaximized = true;
-                buttonMaximize.Content = "↔";
+                buttonMaximize.Content = "\uE923";
             }
         }
         public static byte[] getrandombytes(long size)
@@ -3239,6 +3260,8 @@ namespace Multron_Win_Cleaner
             }
             else if (Equals(malwareCancelRestore, "Clean"))
                 LeaveMalwareCancelMode();
+            else
+                RefreshShownToolStatus(Loc.T("Malware Scan"), status, threatsFound > 0);
 
             if (state != MalwareScanProgress.ScanState.Scanning && Equals(buttonStartScan.Content, Loc.T("Clean")))
             {
@@ -3376,7 +3399,20 @@ namespace Multron_Win_Cleaner
                 return;
             progressBar1.Value = toolSavedProgress;
             if (!string.IsNullOrWhiteSpace(text))
+            {
                 SetStatusText(Loc.F("{0}: {1}", tool, text), problem ? WarningColor : OkColor);
+                shownToolStatus = (tool, label1_Copy.Text);
+            }
+        }
+
+        private (string Tool, string Text)? shownToolStatus;
+
+        private void RefreshShownToolStatus(string tool, string text, bool problem)
+        {
+            if (shownToolStatus is not { } shown || shown.Tool != tool || label1_Copy.Text != shown.Text || IsScanOrCleanBusy)
+                return;
+            SetStatusText(Loc.F("{0}: {1}", tool, text), problem ? WarningColor : OkColor);
+            shownToolStatus = (tool, label1_Copy.Text);
         }
 
         public void MirrorToolStatus(string tool, TextBlock source, System.Windows.Controls.ProgressBar? bar = null)
@@ -4142,6 +4178,153 @@ namespace Multron_Win_Cleaner
 
         #endregion
 
+        private void ToolbarMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (e.OriginalSource is CheckBox)
+                return;
+            SelectionsMenuToggle.IsChecked = false;
+            DatabaseMenuToggle.IsChecked = false;
+        }
+
+        private bool extraDatabasesChanged;
+
+        private void DatabasePopup_Opened(object sender, EventArgs e) => FillExtraDatabases();
+
+        private async void DatabasePopup_Closed(object sender, EventArgs e)
+        {
+            if (!extraDatabasesChanged)
+                return;
+            extraDatabasesChanged = false;
+            await ReloadAfterDatabaseChangeAsync();
+        }
+
+        private void FillExtraDatabases()
+        {
+            ExtraDatabasesPanel.Children.Clear();
+            var databases = ExtraDatabases.List();
+            NoExtraDatabasesText.Visibility = databases.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            foreach (var database in databases)
+            {
+                var row = new Grid { Margin = new Thickness(10, 2, 4, 2) };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var label = new TextBlock { TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 210 };
+                label.Inlines.Add(new System.Windows.Documents.Run(database.Name));
+                if (database.Url != null)
+                    label.Inlines.Add(new System.Windows.Documents.Run("  \uE774") { FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"), FontSize = 11 });
+                var box = new CheckBox
+                {
+                    Content = label,
+                    IsChecked = database.Enabled,
+                    FontSize = 13.5,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    ToolTip = database.Url ?? database.FilePath
+                };
+                string fileName = database.FileName;
+                box.Checked += (s, e) => { ExtraDatabases.SetEnabled(fileName, true); extraDatabasesChanged = true; };
+                box.Unchecked += (s, e) => { ExtraDatabases.SetEnabled(fileName, false); extraDatabasesChanged = true; };
+                row.Children.Add(box);
+
+                var remove = new Button
+                {
+                    Content = "\uE74D",
+                    Style = (Style)FindResource("ChromeCloseButtonStyle"),
+                    Width = 28,
+                    Height = 26,
+                    FontSize = 11,
+                    ToolTip = Loc.T("Remove this database")
+                };
+                remove.Click += async (s, e) =>
+                {
+                    DatabaseMenuToggle.IsChecked = false;
+                    if (AppDialog.Show(this, Loc.F("Remove the database {0}?\n\nIts file is deleted from the Databases folder.", database.Name),
+                            Loc.T("Additional databases"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                        return;
+                    try
+                    {
+                        ExtraDatabases.Remove(fileName);
+                    }
+                    catch (Exception ex)
+                    {
+                        AppDialog.Show(this, Loc.F("The database could not be removed: {0}", ex.Message), Loc.T("Additional databases"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    await ReloadAfterDatabaseChangeAsync();
+                };
+                Grid.SetColumn(remove, 1);
+                row.Children.Add(remove);
+                ExtraDatabasesPanel.Children.Add(row);
+            }
+        }
+
+        private async Task ReloadAfterDatabaseChangeAsync()
+        {
+            if (!IsIdleForDatabaseReload())
+            {
+                databaseReloadPending = true;
+                ShowDatabaseStatus(Loc.T("The database list changed. It is loaded after the current scan or clean."), WarningColor, always: true);
+                return;
+            }
+            await ReloadDatabaseAsync(true);
+            databaseReloadPending = false;
+            UpdateTrayWarning();
+        }
+
+        private async void AddDatabaseUrl_Click(object sender, RoutedEventArgs e)
+        {
+            string? url = AppDialog.Prompt(this,
+                Loc.T("Internet address (https://) of a database .txt file in the Multron Win Cleaner format.") + "\n\n" +
+                Loc.T("Only add databases from sources you trust: a database decides which files and folders are deleted. Items from additional databases are never cleaned by automatic or startup cleaning, and they cannot run programs."),
+                Loc.T("Add a database"), 500);
+            if (string.IsNullOrWhiteSpace(url))
+                return;
+            ShowDatabaseStatus(Loc.T("Downloading the database..."), InfoColor, always: true);
+            try
+            {
+                var database = await ExtraDatabases.AddFromUrlAsync(url, CancellationToken.None);
+                ShowDatabaseStatus(Loc.F("The database {0} was added.", database.Name), OkColor, always: true);
+            }
+            catch (Exception ex)
+            {
+                ShowDatabaseStatus(Loc.F("Could not add the database: {0}", ex.Message), WarningColor, always: true);
+                return;
+            }
+            await ReloadAfterDatabaseChangeAsync();
+        }
+
+        private async void AddDatabaseFile_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = Loc.T("Choose a database"),
+                Filter = Loc.T("Database") + " (*.txt)|*.txt",
+                Multiselect = true
+            };
+            if (dialog.ShowDialog(this) != true)
+                return;
+
+            var added = new List<string>();
+            var failed = new List<string>();
+            foreach (string file in dialog.FileNames)
+            {
+                try
+                {
+                    added.Add(ExtraDatabases.AddFromFile(file).Name);
+                }
+                catch (Exception ex)
+                {
+                    failed.Add(System.IO.Path.GetFileName(file) + ": " + ex.Message);
+                }
+            }
+            if (failed.Count > 0)
+                AppDialog.Show(this, Loc.F("Could not add the database: {0}", string.Join("\n", failed)), Loc.T("Additional databases"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (added.Count == 0)
+                return;
+            ShowDatabaseStatus(Loc.F("The database {0} was added.", string.Join(", ", added)), OkColor, always: true);
+            await ReloadAfterDatabaseChangeAsync();
+        }
+
         private async void SelectAll_wpanel_Click(object sender, RoutedEventArgs e)
         {
             var dialogResult = await ShowCustomDialogAsync(
@@ -4620,6 +4803,11 @@ namespace Multron_Win_Cleaner
                     {
                         ShowDatabaseStatus(Loc.T("The database is up to date."), OkColor, force);
                     }
+                    var (extraChanged, extraErrors) = await ExtraDatabases.RefreshFromUrlsAsync(CancellationToken.None);
+                    if (extraChanged > 0)
+                        databaseReloadPending = true;
+                    if (extraErrors.Count > 0 && showProgress)
+                        ShowDatabaseStatus(Loc.F("Could not update {0} additional database(s): {1}", extraErrors.Count, string.Join("; ", extraErrors)), WarningColor, force);
                 }
 
                 if (databaseReloadPending)
@@ -4629,7 +4817,10 @@ namespace Multron_Win_Cleaner
                         ShowDatabaseStatus(Loc.T("Loading the new database..."), InfoColor, force);
                         await ReloadDatabaseAsync(true);
                         databaseReloadPending = false;
-                        ShowDatabaseStatus(Loc.F("The database was updated to version {0}.", downloadedDatabaseVersion ?? ""), OkColor, force);
+                        ShowDatabaseStatus(downloadedDatabaseVersion != null
+                            ? Loc.F("The database was updated to version {0}.", downloadedDatabaseVersion)
+                            : Loc.T("The additional databases were updated."), OkColor, force);
+                        downloadedDatabaseVersion = null;
                     }
                     else if (IsIdleForDatabaseReload())
                     {

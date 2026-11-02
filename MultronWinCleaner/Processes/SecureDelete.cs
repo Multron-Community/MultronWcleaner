@@ -203,18 +203,22 @@ namespace MultronWinCleaner.Processes
         }
 
 
-        private static readonly ConcurrentDictionary<char, bool> SsdCache = new();
+        private static readonly ConcurrentDictionary<char, bool?> SeekPenaltyCache = new();
 
-        public static bool IsSolidState(string path)
+        public static bool IsSolidState(string path) => SeekPenalty(path) == false;
+
+        public static bool IsRotational(string path) => SeekPenalty(path) == true;
+
+        private static bool? SeekPenalty(string path)
         {
             try
             {
                 string full = Path.GetFullPath(path);
-                if (full.Length < 2 || full[1] != ':') return false;
+                if (full.Length < 2 || full[1] != ':') return null;
                 char drive = char.ToUpperInvariant(full[0]);
-                return SsdCache.GetOrAdd(drive, QuerySeekPenalty);
+                return SeekPenaltyCache.GetOrAdd(drive, QuerySeekPenalty);
             }
-            catch { return false; }
+            catch { return null; }
         }
 
         private const int FILE_SHARE_READ = 0x1, FILE_SHARE_WRITE = 0x2, OPEN_EXISTING = 3;
@@ -251,22 +255,22 @@ namespace MultronWinCleaner.Processes
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool CloseHandle(IntPtr hObject);
 
-        private static bool QuerySeekPenalty(char drive)
+        private static bool? QuerySeekPenalty(char drive)
         {
             IntPtr handle = CreateFileW($@"\\.\{drive}:", 0, FILE_SHARE_READ | FILE_SHARE_WRITE, IntPtr.Zero, OPEN_EXISTING, 0, IntPtr.Zero);
             if (handle == IntPtr.Zero || handle == new IntPtr(-1))
-                return false;
+                return null;
             try
             {
                 var query = new STORAGE_PROPERTY_QUERY { PropertyId = StorageDeviceSeekPenaltyProperty, QueryType = PropertyStandardQuery };
                 var descriptor = new DEVICE_SEEK_PENALTY_DESCRIPTOR();
                 if (DeviceIoControl(handle, IOCTL_STORAGE_QUERY_PROPERTY, ref query, Marshal.SizeOf<STORAGE_PROPERTY_QUERY>(),
                         ref descriptor, Marshal.SizeOf<DEVICE_SEEK_PENALTY_DESCRIPTOR>(), out _, IntPtr.Zero))
-                    return !descriptor.IncursSeekPenalty;
+                    return descriptor.IncursSeekPenalty;
             }
             catch { }
             finally { CloseHandle(handle); }
-            return false;
+            return null;
         }
     }
 }

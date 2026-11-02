@@ -84,10 +84,8 @@
                            Grid.Column="0"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
                             Margin="0,0,8,0" Grid.Column="1">
-                    <Button Content="✖" Width="32" Height="32"
-                            Style="{StaticResource TitleBarButtonStyle}"
-                            Foreground="{DynamicResource DangerButtonBackground}"
-                            Click="CloseButton_Click" Cursor="Hand"/>
+                    <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}"
+                            Click="CloseButton_Click"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -114,11 +112,11 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="txtPath" Style="{StaticResource FieldTextBoxStyle}" Grid.Column="0" Margin="0,0,0,-9"/>
-                    <Button Content="{loc:Tr 'Browse...'}"
-                            Grid.Column="1" Width="72" Height="34"
+                    <Button
+                            Grid.Column="1" MinWidth="72" HorizontalAlignment="Center" Height="34"
                             Margin="6,0,0,0" Cursor="Hand"
                             Click="Browse_Click"
-                            Style="{StaticResource RoundedButtonStyle}"/>
+                            Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Browse...'}" Margin="10,0"/></Button>
                 </Grid>
             </StackPanel>
 
@@ -130,29 +128,28 @@
                                  IsChecked="True"
                                  Foreground="{DynamicResource TextPrimary}"
                                  FontSize="13"
-                                 Margin="0,0,24,0"
+                                 Margin="0,0,16,0"
                                  VerticalAlignment="Center" Checked="rbRegistry_Checked"/>
                     <RadioButton x:Name="rbTaskScheduler"
                                  Content="{loc:Tr 'Task Scheduler'}"
                                  Foreground="{DynamicResource TextPrimary}"
-                                 FontSize="13"
+                                 FontSize="13" Margin="0,0,16,0"
                                  VerticalAlignment="Center" Checked="rbTaskScheduler_Checked"/>
                     <RadioButton x:Name="rbWinLogon"
                          Content="Userunit WinLogon"
                          Foreground="{DynamicResource TextPrimary}"
-                          Margin="22,0,32,0"
-                         FontSize="13" Width="159" Checked="rbWinLogon_Checked"/>
+                         FontSize="13" VerticalAlignment="Center" Checked="rbWinLogon_Checked"/>
                 </StackPanel>
             </StackPanel>
 
             <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="{loc:Tr 'Cancel'}" Width="80" Height="34" Margin="0,0,8,0"
+                <Button MinWidth="80" HorizontalAlignment="Center" Height="34" Margin="0,0,8,0"
                         Cursor="Hand" Click="CloseButton_Click"
-                        Style="{StaticResource RoundedButtonStyle}"/>
-                <Button Content="{loc:Tr 'Add'}" Width="80" Height="34"
+                        Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Cancel'}" Margin="10,0"/></Button>
+                <Button MinWidth="80" HorizontalAlignment="Center" Height="34"
                         IsDefault="True" Cursor="Hand"
                         Click="Add_Click"
-                        Style="{StaticResource RoundedButtonStyle}"/>
+                        Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Add'}" Margin="10,0"/></Button>
             </StackPanel>
         </Grid>
     </Grid>

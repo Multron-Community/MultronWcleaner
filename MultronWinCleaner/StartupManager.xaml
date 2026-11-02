@@ -20,9 +20,9 @@
         <DockPanel Grid.Row="0" Background="{DynamicResource PanelBackground}" MouseDown="TopBar_MouseDown" LastChildFill="False">
             <TextBlock Text="{loc:Tr 'Multron Startup Manager'}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="16,0,0,0" VerticalAlignment="Center" DockPanel.Dock="Left"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0">
-                <Button Content="-" Style="{DynamicResource ModernButtonStyle}" Width="30" Height="30" FontSize="14" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,6,0"/>
-                <Button Content="⤢" Style="{DynamicResource ModernButtonStyle}" Width="30" Height="30" FontSize="14" Click="MaximizeButton_Click" ToolTip="{loc:Tr 'Maximize/Restore'}" Margin="0,0,6,0"/>
-                <Button Content="✕" Style="{DynamicResource DangerButtonStyle}" Width="30" Height="30" FontSize="14" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
+                <Button Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,6,0"/>
+                <Button Content="&#xE922;" Style="{DynamicResource ChromeButtonStyle}" Click="MaximizeButton_Click" ToolTip="{loc:Tr 'Maximize/Restore'}" Margin="0,0,6,0"/>
+                <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
             </StackPanel>
         </DockPanel>
 
@@ -33,11 +33,11 @@
                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10" LastChildFill="False">
                  
                     <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                        <Button Content="{loc:Tr 'Add'}" Width="80" Height="30" Style="{DynamicResource RoundedButtonStyle}" Margin="0,0,8,0" Click="AddButton_Click" Cursor="Hand"/>
-                        <Button Content="{loc:Tr 'Remove'}" x:Name="btnRemove" Width="80" Height="30" Style="{DynamicResource RoundedButtonStyle}" IsEnabled="False" Margin="0,0,8,0" Click="RemoveButton_Click" Cursor="Hand"/>
+                        <Button MinWidth="80" HorizontalAlignment="Center" Height="30" Style="{DynamicResource RoundedButtonStyle}" Margin="0,0,8,0" Click="AddButton_Click" Cursor="Hand"><TextBlock Text="{loc:Tr 'Add'}" Margin="10,0"/></Button>
+                        <Button x:Name="btnRemove" MinWidth="80" HorizontalAlignment="Center" Height="30" Style="{DynamicResource RoundedButtonStyle}" IsEnabled="False" Margin="0,0,8,0" Click="RemoveButton_Click" Cursor="Hand"><TextBlock Text="{loc:Tr 'Remove'}" Margin="10,0"/></Button>
 
-                        <Button Content="{loc:Tr 'Apply'}" x:Name="btnApply" Width="80" Height="30" Style="{DynamicResource RoundedButtonStyle}" Margin="0,0,8,0" Click="ApplyButton_Click" Cursor="Hand"/>
-                        <Button Content="{loc:Tr 'Add Operation'}" Width="113" Height="30" Style="{DynamicResource RoundedButtonStyle}" Click="AddOperationButton_Click" Cursor="Hand"/>
+                        <Button x:Name="btnApply" MinWidth="80" HorizontalAlignment="Center" Height="30" Style="{DynamicResource RoundedButtonStyle}" Margin="0,0,8,0" Click="ApplyButton_Click" Cursor="Hand"><TextBlock Text="{loc:Tr 'Apply'}" Margin="10,0"/></Button>
+                        <Button MinWidth="113" HorizontalAlignment="Center" Height="30" Style="{DynamicResource RoundedButtonStyle}" Click="AddOperationButton_Click" Cursor="Hand"><TextBlock Text="{loc:Tr 'Add Operation'}" Margin="10,0"/></Button>
                     </StackPanel>
  
                     <Border DockPanel.Dock="Right" Height="32" Width="240" CornerRadius="16" VerticalAlignment="Center"

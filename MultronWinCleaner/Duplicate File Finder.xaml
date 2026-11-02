@@ -126,9 +126,16 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0">
-                        <Button Content="—" Style="{StaticResource ModernButtonStyle}" Width="36" Height="30" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,4,0"/>
-                        <Button x:Name="buttonMaximize" Content="⤢" Style="{StaticResource ModernButtonStyle}" Width="36" Height="30" FontSize="16" Click="MaximizeButton_Click" ToolTip="{loc:Tr 'Maximize/Restore'}" Margin="0,0,4,0"/>
-                        <Button Content="✕" Style="{StaticResource DangerButtonStyle}" Width="36" Height="30" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
+                        <Button x:Name="SettingsButton" Style="{StaticResource ModernButtonStyle}" Height="30" Click="SettingsButton_Click" Margin="0,0,8,0"
+                                ToolTip="{loc:Tr 'Folders, file types and filters for the duplicate scan'}">
+                            <StackPanel Orientation="Horizontal" Margin="10,0">
+                                <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Tr 'Settings'}" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,4,0"/>
+                        <Button Content="&#xE922;" Style="{DynamicResource ChromeButtonStyle}" x:Name="buttonMaximize" Click="MaximizeButton_Click" ToolTip="{loc:Tr 'Maximize/Restore'}" Margin="0,0,4,0"/>
+                        <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -152,19 +159,7 @@
                     <TextBlock x:Name="FilesScannedText" Text="" HorizontalAlignment="Center" FontSize="14" Opacity="0.7" Foreground="{DynamicResource SecondaryText}"/>
                 </StackPanel>
   
-                <StackPanel Grid.Row="1" Margin="0,0,0,15">
-                    <TextBlock x:Name="AdvancedToggleText" Text="{loc:Tr '▼ Properties'}" HorizontalAlignment="Center" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AccentColor}" Cursor="Hand" MouseLeftButtonUp="AdvancedToggle_MouseLeftButtonUp" Margin="0,0,0,10">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Opacity" Value="0.8"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-
+                <StackPanel Grid.Row="1">
                     <Border x:Name="AdvancedPanel" Visibility="Collapsed" Background="{DynamicResource PanelBackground}" CornerRadius="10" Padding="20">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -222,10 +217,10 @@
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Column="0" Text="{loc:Tr 'Min Size (KB):'}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0"/>
-                                    <TextBox Grid.Column="1" x:Name="MinSizeTextBox" Text="1024" Style="{StaticResource ModernTextBox}" Height="30" Margin="0,0,12,0" PreviewTextInput="NumberValidationTextBox" ToolTip="{loc:Tr 'Files smaller than this will be ignored (e.g. 1024 for 1MB).'}"/>
+                                    <TextBox Grid.Column="1" x:Name="MinSizeTextBox" Text="100" Style="{StaticResource ModernTextBox}" Height="30" Margin="0,0,12,0" PreviewTextInput="NumberValidationTextBox" ToolTip="{loc:Tr 'Files smaller than this will be ignored (e.g. 1024 for 1MB).'}"/>
 
                                     <TextBlock Grid.Column="2" Text="{loc:Tr 'Preset:'}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0"/>
-                                    <ComboBox Grid.Column="3" x:Name="ExtensionPresetComboBox" Height="30" SelectionChanged="ExtensionPresetComboBox_SelectionChanged">
+                                    <ComboBox Grid.Column="3" x:Name="ExtensionPresetComboBox" Height="30" Style="{DynamicResource ModernComboBoxStyle}" SelectionChanged="ExtensionPresetComboBox_SelectionChanged">
                                         <ComboBoxItem Content="{loc:Tr 'All Files (*.*)'}"/>
                                         <ComboBoxItem Content="{loc:Tr 'Images Only'}"/>
                                         <ComboBoxItem Content="{loc:Tr 'Videos Only'}"/>
@@ -281,35 +276,51 @@
                                         <CheckBox Content=".gif" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".bmp" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".heic" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                        <CheckBox Content=".tiff" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                        <CheckBox Content=".raw" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".tiff" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".raw" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".svg" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".wmv" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".webm" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".flv" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".m4v" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                        <CheckBox Content=".mpg" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                        <CheckBox Content=".3gp" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".mpg" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".3gp" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".mp3" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".wav" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".flac" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".m4a" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                        <CheckBox Content=".aac" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                        <CheckBox Content=".ogg" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".aac" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".ogg" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".pdf" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".docx" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".xlsx" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".pptx" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".txt" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                        <CheckBox Content=".epub" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".epub" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".zip" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".rar" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".7z" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".iso" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                        <CheckBox Content=".exe" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                        <CheckBox Content=".msi" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                        <CheckBox Content=".apk" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".exe" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".msi" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".apk" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".psd" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".tif" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".cr2" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".nef" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".arw" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".dng" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".mpeg" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".wma" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".opus" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".doc" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".xls" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".ppt" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".odt" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".ods" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".rtf" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".tar" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
+                                        <CheckBox Content=".gz" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                     </UniformGrid>
                                 </GroupBox>
 

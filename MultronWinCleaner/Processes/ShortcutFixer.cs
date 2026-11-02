@@ -27,10 +27,89 @@ namespace MultronWinCleaner.Processes
 
         private static IEnumerable<(string Folder, string Location)> ShortcutFolders()
         {
+            string roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             yield return (Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "Desktop");
             yield return (Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory), "Public Desktop");
             yield return (Environment.GetFolderPath(Environment.SpecialFolder.Programs), "Start Menu");
             yield return (Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms), "Start Menu (all users)");
+            yield return (Path.Combine(roaming, @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"), "Taskbar");
+            yield return (Environment.GetFolderPath(Environment.SpecialFolder.SendTo), "Send To");
+        }
+
+        private static IEnumerable<string> StartMenuRoots()
+        {
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.Programs);
+            yield return Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
+        }
+
+        public static string BackupFolder => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ShortcutBackup");
+
+        private static Dictionary<string, List<string>>? installedPrograms;
+
+        private static Dictionary<string, List<string>> InstalledPrograms()
+        {
+            var found = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            void Add(string? file)
+            {
+                if (string.IsNullOrWhiteSpace(file))
+                    return;
+                file = Environment.ExpandEnvironmentVariables(file.Trim().Trim('"'));
+                int comma = file.LastIndexOf(',');
+                if (comma > 0 && file.Substring(comma + 1).Trim().TrimStart('-').All(char.IsDigit))
+                    file = file.Substring(0, comma).Trim().Trim('"');
+                if (!file.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || !Path.IsPathFullyQualified(file) || !File.Exists(file))
+                    return;
+                string name = Path.GetFileName(file);
+                if (!found.TryGetValue(name, out var list))
+                    found[name] = list = new List<string>();
+                if (!list.Contains(file, StringComparer.OrdinalIgnoreCase))
+                    list.Add(file);
+            }
+
+            foreach (var hive in new[] { Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryHive.CurrentUser })
+                foreach (var view in new[] { Microsoft.Win32.RegistryView.Registry64, Microsoft.Win32.RegistryView.Registry32 })
+                {
+                    try
+                    {
+                        using var root = Microsoft.Win32.RegistryKey.OpenBaseKey(hive, view);
+                        using (var appPaths = root.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths"))
+                            if (appPaths != null)
+                                foreach (string sub in appPaths.GetSubKeyNames())
+                                {
+                                    using var key = appPaths.OpenSubKey(sub);
+                                    Add(key?.GetValue("") as string);
+                                }
+                        using (var uninstall = root.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"))
+                            if (uninstall != null)
+                                foreach (string sub in uninstall.GetSubKeyNames())
+                                {
+                                    using var key = uninstall.OpenSubKey(sub);
+                                    Add(key?.GetValue("DisplayIcon") as string);
+                                }
+                    }
+                    catch (Exception) { }
+                }
+            return found;
+        }
+
+        private static string? FindInstalled(string target)
+        {
+            string name = Path.GetFileName(target);
+            if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                return null;
+            installedPrograms ??= InstalledPrograms();
+            if (!installedPrograms.TryGetValue(name, out var files) || files.Count != 1)
+                return null;
+
+            string[] generic = { "bin", "x64", "x86", "application", "app", "program", "programs" };
+            string? folder = Path.GetDirectoryName(target);
+            while (folder != null && generic.Contains(Path.GetFileName(folder), StringComparer.OrdinalIgnoreCase))
+                folder = Path.GetDirectoryName(folder);
+            string owner = folder == null ? "" : VersionlessName(Path.GetFileName(folder));
+            if (owner.Length < 3)
+                return null;
+            bool sameProgram = (Path.GetDirectoryName(files[0]) ?? "").Split('\\').Any(f => VersionlessName(f) == owner);
+            return sameProgram ? files[0] : null;
         }
 
         public static List<BrokenShortcut> FindBrokenShortcuts()
@@ -38,6 +117,7 @@ namespace MultronWinCleaner.Processes
             var result = new List<BrokenShortcut>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var shell = new IWshRuntimeLibrary.WshShell();
+            installedPrograms = null;
 
             foreach (var (folder, location) in ShortcutFolders())
             {
@@ -67,7 +147,7 @@ namespace MultronWinCleaner.Processes
                     {
                         ShortcutPath = file,
                         TargetPath = target,
-                        RepairTarget = FindReplacement(target),
+                        RepairTarget = FindReplacement(target) ?? FindInstalled(Environment.ExpandEnvironmentVariables(target.Trim().Trim('"'))),
                         Location = location
                     });
                 }
@@ -150,6 +230,9 @@ namespace MultronWinCleaner.Processes
 
                     if (item.RepairTarget != null && File.Exists(item.RepairTarget))
                     {
+                        string backup = Path.Combine(BackupFolder, DateTime.Now.ToString("yyyy-MM-dd"), item.Location);
+                        Directory.CreateDirectory(backup);
+                        File.Copy(item.ShortcutPath, Path.Combine(backup, Path.GetFileName(item.ShortcutPath)), overwrite: true);
                         var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(item.ShortcutPath);
                         string oldFolder = Path.GetDirectoryName(Environment.ExpandEnvironmentVariables(item.TargetPath)) ?? "";
                         string newFolder = Path.GetDirectoryName(item.RepairTarget) ?? "";
@@ -167,6 +250,7 @@ namespace MultronWinCleaner.Processes
                             Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
                             Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
                         removed++;
+                        RemoveEmptyStartMenuFolders(Path.GetDirectoryName(item.ShortcutPath));
                     }
                 }
                 catch (Exception)
@@ -175,6 +259,28 @@ namespace MultronWinCleaner.Processes
                 }
             }
             return (repaired, removed, failed);
+        }
+
+        private static void RemoveEmptyStartMenuFolders(string? folder)
+        {
+            string? root = StartMenuRoots().FirstOrDefault(r => !string.IsNullOrEmpty(r) && folder != null
+                && folder.StartsWith(r.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase));
+            if (root == null)
+                return;
+            string startup = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+            string commonStartup = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup);
+            try
+            {
+                while (folder != null && folder.Length > root.TrimEnd('\\').Length
+                    && !folder.Equals(startup, StringComparison.OrdinalIgnoreCase)
+                    && !folder.Equals(commonStartup, StringComparison.OrdinalIgnoreCase)
+                    && Directory.Exists(folder) && !Directory.EnumerateFileSystemEntries(folder).Any())
+                {
+                    Directory.Delete(folder);
+                    folder = Path.GetDirectoryName(folder);
+                }
+            }
+            catch (Exception) { }
         }
     }
 }
