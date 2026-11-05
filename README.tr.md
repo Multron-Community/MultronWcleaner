@@ -13,7 +13,7 @@
     </a>
     <!-- downloads-badge:start -->
     <a href="#downloads">
-      <img src="https://img.shields.io/badge/%C4%B0ndirme-14.3k-c2410c?style=for-the-badge&logo=github&logoColor=white" alt="İndirme: 14.288" />
+      <img src="https://img.shields.io/badge/%C4%B0ndirme-14.3k-c2410c?style=for-the-badge&logo=github&logoColor=white" alt="İndirme: 14.336" />
     </a>
 <!-- downloads-badge:end -->
     <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Platform" />
@@ -214,7 +214,7 @@ Uygulama **12 dile** tamamen çevrilmiştir: İngilizce, Türkçe, Almanca, İsp
 ## İndirmeler
 
 <!-- downloads:start -->
-**80** sürümde toplam **14.288** indirme · son sürüm [v1.28.0](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.28.0): **119** · güncelleme 2026-11-04
+**80** sürümde toplam **14.336** indirme · son sürüm [v1.28.0](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.28.0): **167** · güncelleme 2026-11-05
 
 Her sürümün kurulum dosyası ve taşınabilir arşiv indirmelerini sayar. Uygulamanın yaptığı güncelleme denetimleri sayılmaz.
 
@@ -223,7 +223,7 @@ Her sürümün kurulum dosyası ve taşınabilir arşiv indirmelerini sayar. Uyg
 
 | Sürüm | Tarih | İndirme |
 |---|---|---:|
-| [v1.28.0](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.28.0) | 2026-11-02 | 119 |
+| [v1.28.0](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.28.0) | 2026-11-02 | 167 |
 | [v1.27.3](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.3) | 2026-11-01 | 183 |
 | [v1.27.2](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.2) | 2026-11-01 | 16 |
 | [v1.27.1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.1) | 2026-10-23 | 472 |
