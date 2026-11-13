@@ -2728,5 +2728,11 @@
   "{0} freed on drive {1}": "{0} libérés sur le lecteur {1}",
   "Drag to make the messages area larger or smaller. Double-click to reset.": "Faites glisser pour agrandir ou réduire la zone des messages. Double-cliquez pour réinitialiser.",
   "Also log notifications": "Journaliser aussi les notifications",
-  "Writes every message card and notification of the app to the same log file.": "Écrit chaque carte de message et notification de l'application dans le même fichier journal."
+  "Writes every message card and notification of the app to the same log file.": "Écrit chaque carte de message et notification de l'application dans le même fichier journal.",
+  "Clear the log automatically": "Vider le journal automatiquement",
+  "Every week": "Chaque semaine",
+  "Every month": "Chaque mois",
+  "Every 3 months": "Tous les 3 mois",
+  "Empties the log file when the chosen time has passed, so it does not keep growing.": "Vide le fichier journal une fois la durée choisie écoulée, pour qu'il ne grossisse pas sans cesse.",
+  "Never": "Jamais"
 }

@@ -866,6 +866,21 @@ namespace MultronWinCleaner
             chkAnimations.IsChecked = MultronWinCleaner.Processes.Motion.Enabled;
             diskInfoLoaded = true;
             LoadCloseOptions();
+            logAutoClearLoaded = false;
+            string logMode = MainWindow.LogAutoClearMode;
+            cmbLogAutoClear.SelectedItem = cmbLogAutoClear.Items.OfType<System.Windows.Controls.ComboBoxItem>().FirstOrDefault(i => Equals(i.Tag, logMode));
+            logAutoClearLoaded = true;
+            mainWindow?.ClearLogIfDue();
+        }
+
+        private bool logAutoClearLoaded;
+
+        private void LogAutoClear_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            if (!logAutoClearLoaded || cmbLogAutoClear.SelectedItem is not System.Windows.Controls.ComboBoxItem item)
+                return;
+            Utilities?.savesettings($"{MainWindow.LogAutoClearSettingKey}:{item.Tag}");
+            Utilities?.savesettings($"{MainWindow.LogLastClearSettingKey}:{DateTime.Now:yyyyMMdd}");
         }
 
         private bool closeOptionsLoaded;

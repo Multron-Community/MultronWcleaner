@@ -2727,5 +2727,11 @@
   "{0} freed on drive {1}": "{0} liberados en la unidad {1}",
   "Drag to make the messages area larger or smaller. Double-click to reset.": "Arrastra para agrandar o reducir el área de mensajes. Doble clic para restablecer.",
   "Also log notifications": "Registrar también las notificaciones",
-  "Writes every message card and notification of the app to the same log file.": "Escribe cada tarjeta de mensaje y notificación de la aplicación en el mismo archivo de registro."
+  "Writes every message card and notification of the app to the same log file.": "Escribe cada tarjeta de mensaje y notificación de la aplicación en el mismo archivo de registro.",
+  "Clear the log automatically": "Vaciar el registro automáticamente",
+  "Every week": "Cada semana",
+  "Every month": "Cada mes",
+  "Every 3 months": "Cada 3 meses",
+  "Empties the log file when the chosen time has passed, so it does not keep growing.": "Vacía el archivo de registro cuando pasa el tiempo elegido, para que no siga creciendo.",
+  "Never": "Nunca"
 }

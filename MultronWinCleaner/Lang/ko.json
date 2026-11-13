@@ -2728,5 +2728,11 @@
   "{0} freed on drive {1}": "드라이브 {1}에서 {0} 확보",
   "Drag to make the messages area larger or smaller. Double-click to reset.": "끌어서 메시지 영역을 늘리거나 줄입니다. 두 번 클릭하면 초기화됩니다.",
   "Also log notifications": "알림도 기록",
-  "Writes every message card and notification of the app to the same log file.": "앱의 모든 메시지 카드와 알림을 같은 로그 파일에 기록합니다."
+  "Writes every message card and notification of the app to the same log file.": "앱의 모든 메시지 카드와 알림을 같은 로그 파일에 기록합니다.",
+  "Clear the log automatically": "로그 자동 비우기",
+  "Every week": "매주",
+  "Every month": "매월",
+  "Every 3 months": "3개월마다",
+  "Empties the log file when the chosen time has passed, so it does not keep growing.": "선택한 기간이 지나면 로그 파일을 비워 계속 커지지 않게 합니다.",
+  "Never": "안 함"
 }

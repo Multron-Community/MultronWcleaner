@@ -2728,5 +2728,11 @@
   "{0} freed on drive {1}": "已在磁碟機 {1} 上釋放 {0}",
   "Drag to make the messages area larger or smaller. Double-click to reset.": "拖曳以放大或縮小訊息區域。按兩下可重設。",
   "Also log notifications": "同時記錄通知",
-  "Writes every message card and notification of the app to the same log file.": "將應用程式的所有訊息卡片和通知寫入同一個記錄檔。"
+  "Writes every message card and notification of the app to the same log file.": "將應用程式的所有訊息卡片和通知寫入同一個記錄檔。",
+  "Clear the log automatically": "自動清空記錄",
+  "Every week": "每週",
+  "Every month": "每月",
+  "Every 3 months": "每 3 個月",
+  "Empties the log file when the chosen time has passed, so it does not keep growing.": "到達所選時間後清空記錄檔，避免它不斷變大。",
+  "Never": "從不"
 }

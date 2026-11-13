@@ -2729,5 +2729,11 @@
   "{0} freed on drive {1}": "Освобождено {0} на диске {1}",
   "Drag to make the messages area larger or smaller. Double-click to reset.": "Перетащите, чтобы увеличить или уменьшить область сообщений. Двойной щелчок — сброс.",
   "Also log notifications": "Также записывать уведомления",
-  "Writes every message card and notification of the app to the same log file.": "Записывает все карточки сообщений и уведомления приложения в тот же файл журнала."
+  "Writes every message card and notification of the app to the same log file.": "Записывает все карточки сообщений и уведомления приложения в тот же файл журнала.",
+  "Clear the log automatically": "Автоматически очищать журнал",
+  "Every week": "Каждую неделю",
+  "Every month": "Каждый месяц",
+  "Every 3 months": "Каждые 3 месяца",
+  "Empties the log file when the chosen time has passed, so it does not keep growing.": "Очищает файл журнала по прошествии выбранного времени, чтобы он не разрастался.",
+  "Never": "Никогда"
 }

@@ -277,7 +277,7 @@ namespace MultronWinCleaner.Processes
 
         public const string AppUpdateSettingKey = "appautoupdate";
         private const string AppLastCheckSettingKey = "applastcheck";
-        public static readonly Version CurrentAppVersion = new Version("1.29.0");
+        public static readonly Version CurrentAppVersion = new Version("1.29.1");
 
         public static bool IsAppAutoUpdateEnabled() => ReadSetting(AppUpdateSettingKey) != "0";
 

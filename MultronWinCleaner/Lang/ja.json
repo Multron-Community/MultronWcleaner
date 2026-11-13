@@ -2726,5 +2726,11 @@
   "{0} freed on drive {1}": "ドライブ {1} で {0} を解放しました",
   "Drag to make the messages area larger or smaller. Double-click to reset.": "ドラッグしてメッセージ領域を拡大・縮小します。ダブルクリックで元に戻します。",
   "Also log notifications": "通知も記録する",
-  "Writes every message card and notification of the app to the same log file.": "アプリのすべてのメッセージカードと通知を同じログファイルに書き込みます。"
+  "Writes every message card and notification of the app to the same log file.": "アプリのすべてのメッセージカードと通知を同じログファイルに書き込みます。",
+  "Clear the log automatically": "ログを自動的に消去",
+  "Every week": "毎週",
+  "Every month": "毎月",
+  "Every 3 months": "3 か月ごと",
+  "Empties the log file when the chosen time has passed, so it does not keep growing.": "選んだ期間が過ぎるとログファイルを空にし、大きくなり続けないようにします。",
+  "Never": "しない"
 }

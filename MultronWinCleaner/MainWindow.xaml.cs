@@ -601,6 +601,42 @@ namespace Multron_Win_Cleaner
             AppendCleanupLog(line);
         }
 
+        public const string LogAutoClearSettingKey = "logautoclear";
+        public const string LogLastClearSettingKey = "loglastclear";
+
+        public static string LogAutoClearMode => ReadSettingValue(LogAutoClearSettingKey) switch
+        {
+            "never" => "never",
+            "week" => "week",
+            "quarter" => "quarter",
+            _ => "month"
+        };
+
+        public void ClearLogIfDue()
+        {
+            try
+            {
+                int days = LogAutoClearMode switch { "week" => 7, "month" => 30, "quarter" => 90, _ => 0 };
+                if (days == 0 || settings == null)
+                    return;
+                string path = !string.IsNullOrWhiteSpace(settings.logfilepath) ? settings.logfilepath
+                    : !string.IsNullOrWhiteSpace(settings.txtLogPath.Text) ? settings.txtLogPath.Text
+                    : System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mwc_cleanlog.txt");
+                if (!DateTime.TryParseExact(ReadSettingValue(LogLastClearSettingKey), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime last))
+                {
+                    utilities?.savesettings($"{LogLastClearSettingKey}:{DateTime.Now:yyyyMMdd}");
+                    return;
+                }
+                if ((DateTime.Now - last).TotalDays < days)
+                    return;
+                if (System.IO.File.Exists(path))
+                    System.IO.File.WriteAllText(path, "");
+                utilities?.savesettings($"{LogLastClearSettingKey}:{DateTime.Now:yyyyMMdd}");
+                settings.RefreshLogPreview();
+            }
+            catch { }
+        }
+
         public void AppendCleanupLog(string line, bool addTime = true)
         {
             if (!Dispatcher.CheckAccess())
@@ -610,6 +646,7 @@ namespace Multron_Win_Cleaner
             }
             if (settings == null || settings.chkEnableLog.IsChecked != true || string.IsNullOrWhiteSpace(line))
                 return;
+            ClearLogIfDue();
             try
             {
                 if (string.IsNullOrWhiteSpace(settings.logfilepath))

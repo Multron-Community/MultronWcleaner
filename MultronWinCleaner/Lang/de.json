@@ -2728,5 +2728,11 @@
   "{0} freed on drive {1}": "{0} auf Laufwerk {1} freigegeben",
   "Drag to make the messages area larger or smaller. Double-click to reset.": "Ziehen, um den Nachrichtenbereich zu vergrößern oder zu verkleinern. Doppelklick zum Zurücksetzen.",
   "Also log notifications": "Auch Benachrichtigungen protokollieren",
-  "Writes every message card and notification of the app to the same log file.": "Schreibt jede Meldungskarte und Benachrichtigung der App in dieselbe Protokolldatei."
+  "Writes every message card and notification of the app to the same log file.": "Schreibt jede Meldungskarte und Benachrichtigung der App in dieselbe Protokolldatei.",
+  "Clear the log automatically": "Protokoll automatisch leeren",
+  "Every week": "Jede Woche",
+  "Every month": "Jeden Monat",
+  "Every 3 months": "Alle 3 Monate",
+  "Empties the log file when the chosen time has passed, so it does not keep growing.": "Leert die Protokolldatei nach der gewählten Zeit, damit sie nicht immer weiter wächst.",
+  "Never": "Nie"
 }

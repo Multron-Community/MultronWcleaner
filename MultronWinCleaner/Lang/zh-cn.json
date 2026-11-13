@@ -2728,5 +2728,11 @@
   "{0} freed on drive {1}": "已在驱动器 {1} 上释放 {0}",
   "Drag to make the messages area larger or smaller. Double-click to reset.": "拖动以放大或缩小消息区域。双击可重置。",
   "Also log notifications": "同时记录通知",
-  "Writes every message card and notification of the app to the same log file.": "将应用的所有消息卡片和通知写入同一个日志文件。"
+  "Writes every message card and notification of the app to the same log file.": "将应用的所有消息卡片和通知写入同一个日志文件。",
+  "Clear the log automatically": "自动清空日志",
+  "Every week": "每周",
+  "Every month": "每月",
+  "Every 3 months": "每 3 个月",
+  "Empties the log file when the chosen time has passed, so it does not keep growing.": "到达所选时间后清空日志文件，避免它不断变大。",
+  "Never": "从不"
 }

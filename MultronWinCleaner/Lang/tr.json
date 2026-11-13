@@ -2730,5 +2730,11 @@
   "{0} freed on drive {1}": "{1} sürücüsünde {0} boşaltıldı",
   "Drag to make the messages area larger or smaller. Double-click to reset.": "Mesaj alanını büyütmek veya küçültmek için sürükleyin. Sıfırlamak için çift tıklayın.",
   "Also log notifications": "Bildirimleri de kaydet",
-  "Writes every message card and notification of the app to the same log file.": "Uygulamanın tüm mesaj kartlarını ve bildirimlerini aynı log dosyasına yazar."
+  "Writes every message card and notification of the app to the same log file.": "Uygulamanın tüm mesaj kartlarını ve bildirimlerini aynı log dosyasına yazar.",
+  "Clear the log automatically": "Log dosyasını otomatik temizle",
+  "Every week": "Her hafta",
+  "Every month": "Her ay",
+  "Every 3 months": "3 ayda bir",
+  "Empties the log file when the chosen time has passed, so it does not keep growing.": "Seçilen süre dolunca log dosyasını boşaltır, böylece dosya sürekli büyümez.",
+  "Never": "Asla"
 }

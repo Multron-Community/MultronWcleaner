@@ -776,6 +776,17 @@ Cursor="Hand"/>
                                 <CheckBox x:Name="chkShowLastLog" Content="{loc:Tr 'Show the last log entry in the status bar'}" Style="{DynamicResource CustomCheckBoxStyle}"/>
                                 <TextBlock Text="{loc:Tr 'Displays the most recent log line without opening the log file.'}" FontSize="12" Opacity="0.6" TextWrapping="Wrap" Margin="26,2,0,16"/>
 
+                                <TextBlock Text="{loc:Tr 'Clear the log automatically'}" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <ComboBox x:Name="cmbLogAutoClear" Height="34" Width="260" HorizontalAlignment="Left" Padding="8" FontSize="13.5"
+                                          Style="{StaticResource ModernComboBoxStyle}" SelectionChanged="LogAutoClear_Changed">
+                                    <ComboBoxItem Tag="never" Content="{loc:Tr 'Never'}"/>
+                                    <ComboBoxItem Tag="week" Content="{loc:Tr 'Every week'}"/>
+                                    <ComboBoxItem Tag="month" Content="{loc:Tr 'Every month'}"/>
+                                    <ComboBoxItem Tag="quarter" Content="{loc:Tr 'Every 3 months'}"/>
+                                </ComboBox>
+                                <TextBlock Text="{loc:Tr 'Empties the log file when the chosen time has passed, so it does not keep growing.'}"
+                                           FontSize="12" Opacity="0.6" TextWrapping="Wrap" Margin="0,4,0,16"/>
+
                                 <TextBlock Text="{loc:Tr 'Log file location'}" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <Grid Margin="0,0,0,14">
                                     <Grid.ColumnDefinitions>
