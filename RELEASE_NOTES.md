@@ -1,3 +1,14 @@
+## Multron Win Cleaner 1.29.1 Update
+
+### Cleanup log
+- **The log no longer grows forever.** A new **Clear the log automatically** option in Settings > Cleanup Log empties the log file every week, every month or every 3 months, or never. It is set to **every month** by default; the first month starts counting when you open 1.29.1, so your current log is not removed at once. **Clear Log File** still empties it by hand at any time.
+
+### Updating
+- **From 1.29 or earlier:** the app updates itself to 1.29.1 as usual (Settings > App Updates).
+- **New installs:** download `mwc_setup.exe` (installer) or `mwc.zip` (portable) below.
+
+---
+
 ## Multron Win Cleaner 1.29 Update
 
 ### A new, simpler main screen
@@ -16,7 +27,7 @@
 - **New look.** Notifications look like part of the app: a header with the Multron icon, the app name and the time, a glossy round icon in the color of the result (green when all is well, blue for information, orange for warnings and red for danger) with a soft glow, a light wash of the same color across the card, the amount on a colored badge and a matching button. They slide in from the side, the icon pops in with a ring around it, and they fade out when closed.
 - **No more Windows balloons.** When Malware Scan keeps running in the background or finishes, Multron shows its own notification (with an **Open** button) instead of a Windows tray balloon.
 - **Cleaning results as cards.** A finished cleaning also adds a message card with the space freed and the files deleted. The messages area can be made taller or shorter by dragging the handle above it; double-click the handle to reset it.
-- **Cleanup log on by default.** The cleanup log and the last log entry are now on by default and the log is saved in the program folder. A new *Also log notifications* switch writes every message card and notification to the same log file. The log can also be emptied automatically every week, month or 3 months (every month by default), so it does not keep growing.
+- **Cleanup log on by default.** The cleanup log and the last log entry are now on by default and the log is saved in the program folder. A new *Also log notifications* switch writes every message card and notification to the same log file.
 - **Malware warnings after every scan.** When threats are found, a red notification appears as soon as the scan ends, also for scans you start yourself. Click it to see the results.
 - **Cleaning reminder.** If no scan or cleaning is started from the main window for 30 days while the app runs in the background, a reminder appears. In Settings you can turn it off, choose the number of days, how often it repeats, and whether it also appears while the window is open.
 
