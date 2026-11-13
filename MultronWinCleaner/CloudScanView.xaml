@@ -46,7 +46,7 @@
     <Border Padding="12,10" CornerRadius="10" Background="#141E88E5" BorderBrush="#331E88E5" BorderThickness="1">
         <StackPanel>
             <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
-            <ProgressBar Height="12" Margin="0,6,0,0" Minimum="0" Maximum="100" Value="{Binding Percent, Mode=OneWay}" IsIndeterminate="{Binding Indeterminate, Mode=OneWay}"
+            <ProgressBar Style="{DynamicResource ModernLinearProgressStyle}" Height="8" Margin="0,6,0,0" Minimum="0" Maximum="100" Value="{Binding Percent, Mode=OneWay}" IsIndeterminate="{Binding Indeterminate, Mode=OneWay}"
                          Foreground="#FF28A745" Background="#33888888" BorderThickness="0"/>
             <TextBlock Text="{Binding PipelineText}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Margin="0,5,0,0"/>
             <TextBlock Text="{Binding CurrentFile}" ToolTip="{Binding CurrentFile}" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
@@ -63,14 +63,17 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="1"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="1"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="{Binding ScannedText}" Style="{StaticResource StatValue}"/>
+                        <Viewbox StretchDirection="DownOnly" Margin="4,0" Height="23"><TextBlock Text="{Binding ScannedText}" Style="{StaticResource StatValue}"/></Viewbox>
                         <TextBlock Text="{loc:Tr 'Scanned'}" Style="{StaticResource StatLabel}"/>
                     </StackPanel>
                     <Border Grid.Column="1" Background="#22888888" Margin="0,4"/>
                     <StackPanel Grid.Column="2" Background="Transparent" Cursor="Hand" MouseLeftButtonUp="Threats_Click"
                                 ToolTip="{loc:Tr 'Show the threats found so far in a separate window'}">
+                        <Viewbox StretchDirection="DownOnly" Margin="4,0" Height="23">
                         <TextBlock Text="{Binding ThreatsText}" TextDecorations="Underline">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource StatValue}">
@@ -82,21 +85,42 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
+                        </Viewbox>
                         <TextBlock Text="{loc:Tr 'Threats'}" Style="{StaticResource StatLabel}" TextDecorations="Underline"/>
                     </StackPanel>
                     <Border Grid.Column="3" Background="#22888888" Margin="0,4"/>
-                    <StackPanel Grid.Column="4">
-                        <TextBlock Text="{Binding UploadedText}" Style="{StaticResource StatValue}"/>
-                        <TextBlock Text="{loc:Tr 'Uploaded'}" Style="{StaticResource StatLabel}"/>
+                    <StackPanel Grid.Column="4" Background="Transparent" Cursor="Hand" MouseLeftButtonUp="Threats_Click"
+                                ToolTip="{loc:Tr 'Show the threats found so far in a separate window'}">
+                        <Viewbox StretchDirection="DownOnly" Margin="4,0" Height="23">
+                        <TextBlock Text="{Binding SuspiciousText}" TextDecorations="Underline">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource StatValue}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasSuspicious}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource WarningText}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        </Viewbox>
+                        <Viewbox StretchDirection="DownOnly" Margin="4,0" Height="15">
+                            <TextBlock Text="{loc:Tr 'Suspicious'}" Style="{StaticResource StatLabel}" TextDecorations="Underline"/>
+                        </Viewbox>
                     </StackPanel>
                     <Border Grid.Column="5" Background="#22888888" Margin="0,4"/>
                     <StackPanel Grid.Column="6">
-                        <TextBlock Text="{Binding Elapsed}" Style="{StaticResource StatValue}"/>
-                        <TextBlock Text="{loc:Tr 'Elapsed'}" Style="{StaticResource StatLabel}"/>
+                        <Viewbox StretchDirection="DownOnly" Margin="4,0" Height="23"><TextBlock Text="{Binding UploadedText}" Style="{StaticResource StatValue}"/></Viewbox>
+                        <TextBlock Text="{loc:Tr 'Uploaded'}" Style="{StaticResource StatLabel}"/>
                     </StackPanel>
                     <Border Grid.Column="7" Background="#22888888" Margin="0,4"/>
                     <StackPanel Grid.Column="8">
-                        <TextBlock Text="{Binding Remaining}" Style="{StaticResource StatValue}"/>
+                        <Viewbox StretchDirection="DownOnly" Margin="4,0" Height="23"><TextBlock Text="{Binding Elapsed}" Style="{StaticResource StatValue}"/></Viewbox>
+                        <TextBlock Text="{loc:Tr 'Elapsed'}" Style="{StaticResource StatLabel}"/>
+                    </StackPanel>
+                    <Border Grid.Column="9" Background="#22888888" Margin="0,4"/>
+                    <StackPanel Grid.Column="10">
+                        <Viewbox StretchDirection="DownOnly" Margin="4,0" Height="23"><TextBlock Text="{Binding Remaining}" Style="{StaticResource StatValue}"/></Viewbox>
                         <TextBlock Text="{loc:Tr 'Remaining'}" Style="{StaticResource StatLabel}"/>
                     </StackPanel>
                 </Grid>
@@ -104,47 +128,32 @@
 
             <Border x:Name="UploadsBox" Margin="0,8,0,0" CornerRadius="6" Background="{DynamicResource SecondaryPanelBackground}" BorderBrush="#22888888" BorderThickness="1">
                 <StackPanel>
-                    <DockPanel Margin="10,6,10,4">
-                        <TextBlock x:Name="MoreLabel" Text="{Binding MoreText}" DockPanel.Dock="Right" FontSize="11" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        <Grid DockPanel.Dock="Right" Width="200" Margin="8,2,0,2" VerticalAlignment="Center">
-                            <TextBox x:Name="SearchBox" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=200}"
-                                     FontSize="11.5" Padding="22,3,6,3" BorderThickness="1" BorderBrush="#44888888"
-                                     Background="Transparent" Foreground="{DynamicResource TextPrimary}" CaretBrush="{DynamicResource TextPrimary}"
-                                     ToolTip="{loc:Tr 'Search by file name or path'}"/>
-                            <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11" Foreground="{DynamicResource TextSecondary}"
-                                       VerticalAlignment="Center" Margin="7,0,0,0" IsHitTestVisible="False"/>
-                            <TextBlock Text="{loc:Tr 'Search files...'}" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" Opacity="0.7"
-                                       VerticalAlignment="Center" Margin="23,0,0,0" IsHitTestVisible="False">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Grid>
+                    <StackPanel Margin="10,6,10,4">
                         <WrapPanel VerticalAlignment="Center">
                             <TextBlock Text="{loc:Tr 'Scan activity'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <ToggleButton Style="{StaticResource FilterChip}" IsChecked="{Binding ShowUploads, Mode=TwoWay}" Content="{Binding UploadsChip}"
                                           ToolTip="{loc:Tr 'Unknown files sent to the cloud'}"/>
                             <ToggleButton Style="{StaticResource FilterChip}" IsChecked="{Binding ShowThreats, Mode=TwoWay}" Content="{Binding ThreatsChip}"
-                                          ToolTip="{loc:Tr 'Malicious and suspicious files'}"/>
+                                          ToolTip="{loc:Tr 'Malicious files'}"/>
+                            <ToggleButton Style="{StaticResource FilterChip}" IsChecked="{Binding ShowSuspicious, Mode=TwoWay}" Content="{Binding SuspiciousChip}"
+                                          ToolTip="{loc:Tr 'Files the cloud marked as suspicious'}"/>
                             <ToggleButton Style="{StaticResource FilterChip}" IsChecked="{Binding ShowSkipped, Mode=TwoWay}" Content="{Binding SkippedChip}"
                                           ToolTip="{loc:Tr 'Files that were not checked, for example over the size limit'}"/>
                             <ToggleButton Style="{StaticResource FilterChip}" IsChecked="{Binding ShowErrors, Mode=TwoWay}" Content="{Binding ErrorsChip}"
                                           ToolTip="{loc:Tr 'Files that could not be read or checked'}"/>
                             <TextBlock x:Name="ResetLink" VerticalAlignment="Center" FontSize="11.5" Margin="2,0,0,0">
-                                <Hyperlink Click="ResetFilter_Click" Foreground="#FF1E88E5"
+                                <Hyperlink Click="ResetFilter_Click" Foreground="{DynamicResource AccentText}"
                                            ToolTip="{loc:Tr 'Clears the search and shows every kind of file again'}">
                                     <Run Text="{loc:Tr 'Show all'}"/>
                                 </Hyperlink>
                             </TextBlock>
                         </WrapPanel>
-                    </DockPanel>
+                        <DockPanel Margin="0,4,0,0">
+                            <TextBlock x:Name="MoreLabel" Text="{Binding MoreText}" DockPanel.Dock="Right" FontSize="11" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <TextBox x:Name="SearchBox" Style="{DynamicResource SearchPillBoxStyle}" Tag="{loc:Tr 'Search files...'}" Height="30" FontSize="11.5" Margin="0,2,0,2" VerticalAlignment="Center"
+                                     Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=200}" ToolTip="{loc:Tr 'Search by file name or path'}"/>
+                        </DockPanel>
+                    </StackPanel>
                     <TextBlock x:Name="EmptyLabel" Text="{Binding EmptyText}" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" Margin="10,4,10,8"/>
                     <ItemsControl ItemsSource="{Binding Shown}" MaxHeight="{Binding ListMaxHeight, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                   VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel"
@@ -168,24 +177,24 @@
                                                  Background="Transparent" BorderThickness="0" Foreground="#7728A745"/>
                                     <Grid Margin="10,5">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="3*"/>
+                                            <ColumnDefinition Width="2*"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="{Binding FileName}" FontSize="13" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
                                             <TextBlock Text="{Binding FilePath}" ToolTip="{Binding FilePath}" FontSize="11" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
-                                            <TextBlock x:Name="CloudGlyph" Text="☁" FontSize="13" Foreground="#FF1E88E5" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock x:Name="Status" Text="{Binding StatusText}" FontSize="11.5" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"
-                                                       MaxWidth="360" TextTrimming="CharacterEllipsis" ToolTip="{Binding StatusText}"/>
-                                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" FontSize="11.5"
+                                        <DockPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" LastChildFill="True">
+                                            <TextBlock DockPanel.Dock="Right" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11.5"
                                                        Visibility="{Binding CanCancel, Converter={StaticResource BoolToVis}}">
-                                                <Hyperlink Click="CancelUpload_Click" Foreground="#FF1E88E5">
+                                                <Hyperlink Click="CancelUpload_Click" Foreground="{DynamicResource AccentText}">
                                                     <Run Text="{loc:Tr 'Cancel'}"/>
                                                 </Hyperlink>
                                             </TextBlock>
-                                        </StackPanel>
+                                            <TextBlock x:Name="CloudGlyph" DockPanel.Dock="Left" Text="☁" FontSize="13" Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                            <TextBlock x:Name="Status" Text="{Binding StatusText}" FontSize="11.5" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding StatusText}"/>
+                                        </DockPanel>
                                     </Grid>
                                 </Grid>
                                 <DataTemplate.Triggers>
@@ -201,13 +210,13 @@
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Verdict}" Value="clean">
                                         <Setter TargetName="CloudGlyph" Property="Text" Value="✓"/>
-                                        <Setter TargetName="CloudGlyph" Property="Foreground" Value="#FF28A745"/>
-                                        <Setter TargetName="Status" Property="Foreground" Value="#FF28A745"/>
+                                        <Setter TargetName="CloudGlyph" Property="Foreground" Value="{DynamicResource ResultSuccessText}"/>
+                                        <Setter TargetName="Status" Property="Foreground" Value="{DynamicResource ResultSuccessText}"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Verdict}" Value="possible_clean">
                                         <Setter TargetName="CloudGlyph" Property="Text" Value="✓"/>
-                                        <Setter TargetName="CloudGlyph" Property="Foreground" Value="#FF4CAF7D"/>
-                                        <Setter TargetName="Status" Property="Foreground" Value="#FF4CAF7D"/>
+                                        <Setter TargetName="CloudGlyph" Property="Foreground" Value="{DynamicResource ResultSuccessText}"/>
+                                        <Setter TargetName="Status" Property="Foreground" Value="{DynamicResource ResultSuccessText}"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Verdict}" Value="malicious">
                                         <Setter TargetName="CloudGlyph" Property="Text" Value="!"/>
@@ -216,15 +225,15 @@
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Verdict}" Value="suspicious">
                                         <Setter TargetName="CloudGlyph" Property="Text" Value="!"/>
-                                        <Setter TargetName="CloudGlyph" Property="Foreground" Value="#FFFF9800"/>
-                                        <Setter TargetName="Status" Property="Foreground" Value="#FFFF9800"/>
+                                        <Setter TargetName="CloudGlyph" Property="Foreground" Value="{DynamicResource VerdictSuspiciousText}"/>
+                                        <Setter TargetName="Status" Property="Foreground" Value="{DynamicResource VerdictSuspiciousText}"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Verdict}" Value="skipped">
                                         <Setter TargetName="CloudGlyph" Property="Text" Value="⤼"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Verdict}" Value="error">
                                         <Setter TargetName="CloudGlyph" Property="Text" Value="✕"/>
-                                        <Setter TargetName="CloudGlyph" Property="Foreground" Value="#FFB0B0B0"/>
+                                        <Setter TargetName="CloudGlyph" Property="Foreground" Value="{DynamicResource TextSecondary}"/>
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>

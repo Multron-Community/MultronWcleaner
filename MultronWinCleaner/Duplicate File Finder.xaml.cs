@@ -64,7 +64,7 @@ namespace MultronWinCleaner
         public bool IsExactDuplicate => Hash != null && !Hash.StartsWith(Duplicate_File_Finder.SimilarMediaPrefix);
         public string? DisplayHash => IsExactDuplicate || Hash == null ? Hash : Loc.T(Duplicate_File_Finder.SimilarMediaPrefix) + Hash.Substring(Duplicate_File_Finder.SimilarMediaPrefix.Length);
         public string CopyBadge => Loc.T(IsExactDuplicate ? "COPY" : "SIMILAR");
-        public string CopyBadgeColor => IsExactDuplicate ? "#FFFF9800" : "#FF8E44AD";
+        public string CopyBadgeColor => IsExactDuplicate ? "#FFC2570A" : "#FF8E44AD";
         public string CreatedText => Created == default || Created == DateTime.MaxValue ? string.Empty : Loc.F("Created {0:g}", Created);
 
         public List<string> MatchedFilePaths { get; } = new List<string>();
@@ -178,6 +178,7 @@ namespace MultronWinCleaner
         public Duplicate_File_Finder()
         {
             InitializeComponent();
+            BuildExtensionChoices();
             ExtensionCheckBox_CheckedChanged(this, new RoutedEventArgs());
 
             DuplicatesTreeView.ItemsSource = ExplorerTree;
@@ -227,9 +228,13 @@ namespace MultronWinCleaner
             }
         }
 
+        private int DuplicateCopyCount() => allDuplicates.GroupBy(d => d.Hash).Sum(g => g.Count() - 1);
+
+        public int CopyCount => DuplicateCopyCount();
+
         private async Task LoadDuplicatesDataAsync()
         {
-            if (_isScanning) return;
+            if (_isScanning || _isScanned) return;
 
             if (!File.Exists(duplicatesFilePath))
             {
@@ -271,7 +276,7 @@ namespace MultronWinCleaner
 
                 DuplicatesTreeView.ItemsSource = ExplorerTree;
 
-                StatusText.Text = Loc.F("Successfully loaded {0} duplicate files from previous scan.", allDuplicates.Count);
+                StatusText.Text = Loc.F("Successfully loaded {0} duplicate files from previous scan.", DuplicateCopyCount());
 
                 await CalculateTotalDuplicateSizeAsync();
 
@@ -298,7 +303,7 @@ namespace MultronWinCleaner
 
         private async void MainActionButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_mainCancelContent != null)
+            if (_mainCancelContent != null && !_isScanned)
             {
                 (Application.Current?.MainWindow as Multron_Win_Cleaner.MainWindow)?.CancelScanOrClean();
                 return;
@@ -332,9 +337,18 @@ namespace MultronWinCleaner
 
                 if (_cts != null && _cts.IsCancellationRequested)
                 {
-                    StatusText.Text = Loc.F("Scan Canceled. Found {0} duplicate files.", allDuplicates.Count);
+                    StatusText.Text = Loc.F("Scan Canceled. Found {0} duplicate files.", DuplicateCopyCount());
                     MainStatus?.EndMirrorToolStatus(StatusText, true);
-                    if (allDuplicates.Count == 0) ResetToScanState();
+                    if (allDuplicates.Count == 0)
+                    {
+                        ResetToScanState();
+                    }
+                    else
+                    {
+                        _isScanned = true;
+                        MainActionButton.Content = Loc.T("CLEAN");
+                        MainActionButton.Background = new SolidColorBrush(Colors.Crimson);
+                    }
                 }
                 else if (allDuplicates.Count > 0)
                 {
@@ -358,6 +372,7 @@ namespace MultronWinCleaner
         }
 
         private bool _isDeleting;
+        private bool _keepScanButton;
 
         private object? _mainCancelContent;
 
@@ -366,7 +381,9 @@ namespace MultronWinCleaner
             if (_isScanning || _isDeleting)
                 return;
             bool busy = (Application.Current?.MainWindow as Multron_Win_Cleaner.MainWindow)?.IsScanOrCleanBusy == true;
-            if (busy)
+            if (!busy)
+                _keepScanButton = false;
+            if (busy && !_isScanned && !_keepScanButton)
             {
                 if (!Equals(MainActionButton.Content, Loc.T("Cancel")))
                     _mainCancelContent = MainActionButton.Content;
@@ -376,7 +393,7 @@ namespace MultronWinCleaner
             }
             else if (_mainCancelContent != null)
             {
-                MainActionButton.Content = _mainCancelContent;
+                MainActionButton.Content = _isScanned ? Loc.T("CLEAN") : _mainCancelContent;
                 _mainCancelContent = null;
                 MainActionButton.IsEnabled = true;
                 MainActionButton.ToolTip = null;
@@ -468,8 +485,8 @@ namespace MultronWinCleaner
                     if (allDuplicates.Count > 0)
                     {
                         StatusText.Text = _cts.IsCancellationRequested
-                            ? Loc.F("Scan Canceled. Found {0} duplicate files.", allDuplicates.Count)
-                            : Loc.F("Scan Complete. Found {0} duplicate files.", allDuplicates.Count);
+                            ? Loc.F("Scan Canceled. Found {0} duplicate files.", DuplicateCopyCount())
+                            : Loc.F("Scan Complete. Found {0} duplicate files.", DuplicateCopyCount());
                     }
                 });
             }
@@ -799,7 +816,8 @@ namespace MultronWinCleaner
                 }
             }
 
-            if (selectedExtensions.Count > 0)
+            int boxCount = QuickExtensionGrid?.Children.OfType<CheckBox>().Count() ?? 0;
+            if (selectedExtensions.Count > 0 && selectedExtensions.Count < boxCount)
             {
                 ExtensionTextBox.Text = string.Join(", ", selectedExtensions);
             }
@@ -841,6 +859,26 @@ namespace MultronWinCleaner
         {
             ".exe", ".msi", ".msix", ".msixbundle", ".appx", ".appxbundle", ".apk", ".xapk", ".dmg", ".deb", ".rpm", ".jar"
         };
+
+        private void BuildExtensionChoices()
+        {
+            var present = new HashSet<string>(QuickExtensionGrid.Children.OfType<CheckBox>().Select(box => (string)box.Content), StringComparer.OrdinalIgnoreCase);
+            foreach (string extension in ImageExtensions.Concat(VideoExtensions).Concat(MusicExtensions).Concat(DocumentExtensions).Concat(ArchiveExtensions).Concat(ProgramExtensions))
+            {
+                if (!present.Add(extension))
+                    continue;
+                var box = new CheckBox { Content = extension, IsChecked = false };
+                box.SetResourceReference(ForegroundProperty, "TextPrimary");
+                box.Checked += ExtensionCheckBox_CheckedChanged;
+                box.Unchecked += ExtensionCheckBox_CheckedChanged;
+                QuickExtensionGrid.Children.Add(box);
+            }
+            foreach (var box in QuickExtensionGrid.Children.OfType<CheckBox>())
+            {
+                box.Margin = new Thickness(0, 0, 10, 4);
+                box.MinWidth = 72;
+            }
+        }
 
         private static string ToFilter(IEnumerable<string> extensions) => string.Join(", ", extensions.Select(e => "*" + e));
 
@@ -1203,6 +1241,7 @@ namespace MultronWinCleaner
                 _isDeleting = false;
 
                 ClearListButton_Click(this, new RoutedEventArgs());
+                _keepScanButton = true;
 
                 StatusText.Text = Loc.F("Cleanup Complete! Successfully deleted {0} of {1} files. Total freed space: {2}", deletedCount, totalFiles, FormatSize(freedBytes));
                 MainStatus?.EndMirrorToolStatus(StatusText, failedFilesList.Count > 0);
@@ -1507,7 +1546,7 @@ namespace MultronWinCleaner
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
             AdvancedPanel.Visibility = Visibility.Visible;
-            settingsWindow ??= new ToolSettingsWindow(this, Loc.T("Duplicate File Finder Settings"), AdvancedPanel, 960);
+            settingsWindow ??= new ToolSettingsWindow(this, Loc.T("Duplicate File Finder Settings"), AdvancedPanel, 960, windowButtons: true);
             settingsWindow.ShowOrActivate();
         }
 

@@ -1,34 +1,28 @@
 using Hardcodet.Wpf.TaskbarNotification;
+using MultronWinCleaner;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace Multron_Win_Cleaner
 {
     public class TrayIconAnimator
     {
+        private const int FrameCount = 12;
         private readonly TaskbarIcon _trayIcon;
-        private readonly BitmapImage _idleIcon;
-        private readonly BitmapImage[] _frames;
+        private readonly string _idleIconUri;
         private readonly DispatcherTimer _timer;
+        private readonly Dictionary<string, System.Drawing.Icon> _icons = new();
+        private System.Drawing.Bitmap? _base;
+        private System.Drawing.Icon[]? _frames;
         private int _frameIndex;
+        private bool _warning;
+        private TrayBadge? _badge;
 
-        public TrayIconAnimator(TaskbarIcon trayIcon, string idleIconUri, string frameUriFormat, int frameCount, int fps = 12)
+        public TrayIconAnimator(TaskbarIcon trayIcon, string idleIconUri, int fps = 12)
         {
             _trayIcon = trayIcon ?? throw new ArgumentNullException(nameof(trayIcon));
-
-            _idleIcon = new BitmapImage(new Uri(idleIconUri, UriKind.Absolute));
-
-            _frames = new BitmapImage[frameCount];
-            for (int i = 0; i < frameCount; i++)
-            {
-                _frames[i] = new BitmapImage(new Uri(string.Format(frameUriFormat, i), UriKind.Absolute));
-            }
-
+            _idleIconUri = idleIconUri;
             _timer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(1000.0 / fps)
@@ -38,11 +32,14 @@ namespace Multron_Win_Cleaner
 
         public bool IsSpinning => _timer.IsEnabled;
 
+        internal TrayBadge? Badge => _badge;
+
         public void Start()
         {
             if (_timer.IsEnabled) return;
             _frameIndex = 0;
             _timer.Start();
+            OnTick(this, EventArgs.Empty);
         }
 
         public void Stop()
@@ -51,44 +48,51 @@ namespace Multron_Win_Cleaner
             ShowIdleIcon();
         }
 
-        private System.Drawing.Icon? _warningIcon;
-
-        public void SetWarningIcon(System.Drawing.Icon? icon)
+        public void SetWarning(bool warning)
         {
-            _warningIcon = icon;
+            _warning = warning;
             if (!_timer.IsEnabled)
                 ShowIdleIcon();
         }
 
-        private System.Drawing.Icon? _idleDrawingIcon;
-
-        private void ShowIdleIcon()
+        internal void SetBadge(TrayBadge? badge)
         {
-            if (_warningIcon != null)
-            {
-                _trayIcon.Icon = _warningIcon;
-                return;
-            }
+            _badge = badge;
+            if (!_timer.IsEnabled)
+                ShowIdleIcon();
+        }
 
+        private System.Drawing.Bitmap? Base()
+        {
             try
             {
-                if (_idleDrawingIcon == null)
-                {
-                    using var stream = System.Windows.Application.GetResourceStream(_idleIcon.UriSource).Stream;
-                    _idleDrawingIcon = new System.Drawing.Icon(stream);
-                }
-                _trayIcon.Icon = _idleDrawingIcon;
+                return _base ??= ScanTrayIcons.LoadBase(_idleIconUri);
             }
             catch
             {
-                _trayIcon.IconSource = null;
-                _trayIcon.IconSource = _idleIcon;
+                return null;
             }
+        }
+
+        private void ShowIdleIcon()
+        {
+            var image = Base();
+            if (image == null)
+                return;
+            TrayBadge? badge = _badge == TrayBadge.Danger ? TrayBadge.Danger : _warning ? TrayBadge.Warning : _badge;
+            string key = badge?.ToString() ?? "none";
+            if (!_icons.TryGetValue(key, out var icon))
+                _icons[key] = icon = ScanTrayIcons.CreateWithBadge(image, badge);
+            _trayIcon.Icon = icon;
         }
 
         private void OnTick(object? sender, EventArgs e)
         {
-            _trayIcon.IconSource = _frames[_frameIndex];
+            var image = Base();
+            if (image == null)
+                return;
+            _frames ??= ScanTrayIcons.CreateSpinnerFrames(image, FrameCount);
+            _trayIcon.Icon = _frames[_frameIndex];
             _frameIndex = (_frameIndex + 1) % _frames.Length;
         }
     }

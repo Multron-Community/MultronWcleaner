@@ -6,13 +6,13 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
-                    <Border x:Name="thumbBorder" CornerRadius="4" Background="{DynamicResource TextPrimary}" Opacity="0.25" Margin="2,0,2,0"/>
+                    <Border x:Name="thumbBorder" CornerRadius="4" Background="{DynamicResource ScrollThumbBrush}" BorderBrush="{DynamicResource ScrollThumbEdge}" BorderThickness="1" Opacity="0.55" Margin="2,0,2,0"/>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="thumbBorder" Property="Opacity" Value="0.55"/>
+                            <Setter TargetName="thumbBorder" Property="Opacity" Value="0.8"/>
                         </Trigger>
                         <Trigger Property="IsDragging" Value="True">
-                            <Setter TargetName="thumbBorder" Property="Opacity" Value="0.80"/>
+                            <Setter TargetName="thumbBorder" Property="Opacity" Value="1"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -24,13 +24,13 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
-                    <Border x:Name="thumbBorderH" CornerRadius="4" Background="{DynamicResource TextPrimary}" Opacity="0.25" Margin="0,2,0,2"/>
+                    <Border x:Name="thumbBorderH" CornerRadius="4" Background="{DynamicResource ScrollThumbBrush}" BorderBrush="{DynamicResource ScrollThumbEdge}" BorderThickness="1" Opacity="0.55" Margin="0,2,0,2"/>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="thumbBorderH" Property="Opacity" Value="0.55"/>
+                            <Setter TargetName="thumbBorderH" Property="Opacity" Value="0.8"/>
                         </Trigger>
                         <Trigger Property="IsDragging" Value="True">
-                            <Setter TargetName="thumbBorderH" Property="Opacity" Value="0.80"/>
+                            <Setter TargetName="thumbBorderH" Property="Opacity" Value="1"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -10,7 +10,7 @@
     ResizeMode="CanResizeWithGrip"
     AllowsTransparency="True"
     WindowStartupLocation="CenterOwner"
-    Icon="pack://application:,,,/Assets/mwc_utilities.ico"
+    Icon="pack://application:,,,/Assets/Icons/mwc_scanlogs.ico"
     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
     Background="{DynamicResource WindowBackground}">
 
@@ -34,7 +34,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="&#xE9F9;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="#FF1E88E5" VerticalAlignment="Center"/>
+                <Image Source="pack://application:,,,/Assets/Icons/mwc_scanlogs.png" Width="28" Height="28" Margin="0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
                 <TextBlock Text="{loc:Tr 'Scan Logs'}" FontSize="19" FontWeight="Bold" Margin="10,0,0,0" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                 <TextBlock x:Name="CountText" Text="" FontSize="13" Margin="10,2,0,0" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
             </StackPanel>

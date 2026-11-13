@@ -4,6 +4,7 @@
         <ResourceDictionary Source="pack://application:,,,/MultronWinCleaner;component/Themes/ScrollBars.xaml"/>
         <ResourceDictionary Source="pack://application:,,,/MultronWinCleaner;component/Themes/ComboBoxes.xaml"/>
         <ResourceDictionary Source="pack://application:,,,/MultronWinCleaner;component/Themes/Controls.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/MultronWinCleaner;component/Themes/Menus.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="ToggleDayStyle" TargetType="ToggleButton">
@@ -65,16 +66,75 @@
     <SolidColorBrush x:Key="RowBackground" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="AlternateRowBackground" Color="#FFF8F8F8"/>
     <SolidColorBrush x:Key="SelectedRowBackground" Color="#FFE0EAFE"/>
-    <SolidColorBrush x:Key="WindowBackground" Color="#F5F5F0"/>
-    <SolidColorBrush x:Key="PanelBackground" Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="UtilityDangerText" Color="#FFB4232F"/>
+    <SolidColorBrush x:Key="ResultSuccessText" Color="#FF167A37"/>
+    <SolidColorBrush x:Key="ResultProblemText" Color="#FFC2410C"/>
+    <SolidColorBrush x:Key="ProgressTrack" Color="#1F000000"/>
+    <SolidColorBrush x:Key="WidgetDiskText" Color="#FF00838F"/>
+    <SolidColorBrush x:Key="VerdictSuspiciousText" Color="#FF9A6000"/>
+    <SolidColorBrush x:Key="WarningText" Color="#FFA04300"/>
+    <SolidColorBrush x:Key="WarningTint" Color="#1AB04A00"/>
+    <SolidColorBrush x:Key="WarningBorder" Color="#80B04A00"/>
+    <SolidColorBrush x:Key="DangerText" Color="#FFB0262F"/>
+    <SolidColorBrush x:Key="BadgeWarningText" Color="#FF8F4C00"/>
+    <SolidColorBrush x:Key="BadgeWarningBackground" Color="#2EFF9800"/>
+    <SolidColorBrush x:Key="BadgeWarningBorder" Color="#99C77700"/>
+    <LinearGradientBrush x:Key="WindowBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFE9EAE7" Offset="0"/>
+        <GradientStop Color="#FFE6E7E4" Offset="0.45"/>
+        <GradientStop Color="#FFE2E3E0" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PanelBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFEFF0ED" Offset="0"/>
+        <GradientStop Color="#FFECEDEA" Offset="0.35"/>
+        <GradientStop Color="#FFE8E9E6" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BevelBorder" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFF4F5F3" Offset="0"/>
+        <GradientStop Color="#FFDDE0DC" Offset="0.25"/>
+        <GradientStop Color="#FFCDD0CC" Offset="0.8"/>
+        <GradientStop Color="#FFB9BDB8" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardSheen" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#2EFFFFFF" Offset="0"/>
+        <GradientStop Color="#0DFFFFFF" Offset="0.45"/>
+        <GradientStop Color="#00FFFFFF" Offset="0.46"/>
+        <GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="ControlGloss" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#3DFFFFFF" Offset="0"/>
+        <GradientStop Color="#0AFFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="ControlEdge" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#6BFFFFFF" Offset="0"/>
+        <GradientStop Color="#1AFFFFFF" Offset="0.5"/>
+        <GradientStop Color="#33000000" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="ScrollThumbBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#FFC3C9CF" Offset="0"/>
+        <GradientStop Color="#FFA3AAB2" Offset="0.5"/>
+        <GradientStop Color="#FF8B929A" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="InsetBorder" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FF8E949A" Offset="0"/>
+        <GradientStop Color="#FFC4C8CC" Offset="0.5"/>
+        <GradientStop Color="#FFFFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="InsetShade" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#26000000" Offset="0"/>
+        <GradientStop Color="#0A000000" Offset="0.35"/>
+        <GradientStop Color="#00000000" Offset="0.6"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="CardShadow" Color="#1A1E2A33"/>
+    <SolidColorBrush x:Key="ScrollThumbEdge" Color="#59FFFFFF"/>
     <SolidColorBrush x:Key="ListViewBackground" Color="#FFFFFF"/>
 
 
-    <SolidColorBrush x:Key="TextPrimary" Color="#222"/>
-    <SolidColorBrush x:Key="TextSecondary" Color="#666"/>
+    <SolidColorBrush x:Key="TextPrimary" Color="#FF1B1D20"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#FF4D5258"/>
 
    
-    <SolidColorBrush x:Key="TextBoxBackground" Color="White"/>
+    <SolidColorBrush x:Key="TextBoxBackground" Color="#FFE9EEF3"/>
     <SolidColorBrush x:Key="TextBoxBorder" Color="#CCC"/>
 
   
@@ -96,11 +156,16 @@
                                     Background="#444"
                                     BorderBrush="#666"
                                     BorderThickness="1"/>
+                        <Border CornerRadius="16.5" Margin="1" IsHitTestVisible="False" Background="{DynamicResource InsetShade}"/>
                         <Ellipse x:Name="SwitchKnob"
                                      Width="29" Height="29"
                                      Fill="White"
                                      Margin="3,3,0,3"
-                                     HorizontalAlignment="Left"/>
+                                     HorizontalAlignment="Left" Stroke="#33000000" StrokeThickness="0.5">
+                            <Ellipse.Effect>
+                                <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.5"/>
+                            </Ellipse.Effect>
+                        </Ellipse>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
@@ -117,41 +182,12 @@
         </Setter>
     </Style>
 
-    <Style x:Key="RoundedButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="#FF1E88E5"/>
-        <Setter Property="Foreground" Value="White"/>
-        <Setter Property="Padding" Value="10,5"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Grid>
-                        <Border Background="{TemplateBinding Background}" CornerRadius="8"
-                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
-                        <Border x:Name="overlay" CornerRadius="8" Background="Transparent"/>
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="overlay" Property="Background" Value="#1FFFFFFF"/>
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="overlay" Property="Background" Value="#26000000"/>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.45"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style> 
+    <Style x:Key="RoundedButtonStyle" TargetType="Button" BasedOn="{StaticResource UtilityPrimaryButtonStyle}"/> 
  
     <Color x:Key="DropShadowColor">#33000000</Color>
     <Color x:Key="DangerColor">#B61423</Color>
     <SolidColorBrush x:Key="AccentColorBrush" Color="#FF1E88E5" />
+    <SolidColorBrush x:Key="AccentText" Color="#FF0F5AAE" />
     <SolidColorBrush x:Key="AccentTextBrush" Color="Black" />
     <SolidColorBrush x:Key="WatermarkBrush" Color="#FF999999" />
     <SolidColorBrush x:Key="AccentColor" Color="#FF1E88E5" />
@@ -162,8 +198,8 @@
     <SolidColorBrush x:Key="ToggleButtonBorder" Color="#FF5A5A5A"/>
     <SolidColorBrush x:Key="ButtonBorder" Color="#FF1565C0"/>
     <SolidColorBrush x:Key="WindowBorder" Color="#FF3C3C3C"/>
-    <SolidColorBrush x:Key="TitleBarBackground" Color="#FF252526"/>
-    <SolidColorBrush x:Key="TitleBarText" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="TitleBarBackground" Color="#FFE3E5E2"/>
+    <SolidColorBrush x:Key="TitleBarText" Color="#FF1B1D20"/>
     
     <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFF"/>
     <SolidColorBrush x:Key="SecondaryTextBrush" Color="#BBB"/>
@@ -263,7 +299,7 @@
       
     <SolidColorBrush x:Key="RowHoverBackground" Color="#FFE5E5E5" />
     
-    <SolidColorBrush x:Key="SecondaryPanelBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="SecondaryPanelBackground" Color="#FFE7ECF1" />
    
    
 
@@ -373,7 +409,7 @@
         </Setter>
     </Style>
   
-    <SolidColorBrush x:Key="ComboBoxBackground" Color="White"/>
+    <SolidColorBrush x:Key="ComboBoxBackground" Color="#FFEEF3F8"/>
 
   
    
@@ -414,7 +450,7 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="Padding" Value="12,0"/>
         <Setter Property="Margin" Value="4"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
@@ -423,8 +459,16 @@
                     <Grid>
                         <Border Background="{TemplateBinding Background}" CornerRadius="8"
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
+                        <Border CornerRadius="8" BorderThickness="1" BorderBrush="{DynamicResource ControlEdge}" IsHitTestVisible="False"/>
+                        <Grid Margin="1" IsHitTestVisible="False">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border CornerRadius="7,7,0,0" Background="{DynamicResource ControlGloss}"/>
+                        </Grid>
                         <Border x:Name="overlay" CornerRadius="8" Background="Transparent"/>
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -524,7 +568,7 @@
     <SolidColorBrush x:Key="ProgressBarBorder" Color="#CCCCCC"/>
 
     <SolidColorBrush x:Key="ButtonForeground" Color="#333333"/>
-    <SolidColorBrush x:Key="ButtonBackground" Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="ButtonBackground" Color="#FFEDEDEC"/>
     <SolidColorBrush x:Key="ButtonHoverForeground" Color="#000000"/>
     <SolidColorBrush x:Key="ButtonPressedBackground" Color="#D0D0D0"/>
     <SolidColorBrush x:Key="ButtonPressedForeground" Color="#000000"/>

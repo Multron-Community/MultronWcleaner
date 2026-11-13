@@ -1,9 +1,9 @@
-<Window
+<Window xmlns:mwcp="clr-namespace:MultronWinCleaner.Processes"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:MultronWinCleaner"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="MultronWinCleaner.Settings"
-        Title="{loc:Tr 'Settings'}" Height="750" Width="850" MinHeight="420" MinWidth="620" Icon="pack://application:,,,/Assets/mwc_icon.ico"
+        Title="{loc:Tr 'Settings'}" Height="760" Width="1040" MinHeight="460" MinWidth="760" Icon="pack://application:,,,/Assets/mwc_icon.ico"
         WindowStyle="None" ResizeMode="CanResize"
         StateChanged="Window_StateChanged"
         Background="{DynamicResource WindowBackground}"
@@ -24,13 +24,13 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
-                        <Border x:Name="thumbBorder" CornerRadius="4" Background="{DynamicResource TextPrimary}" Opacity="0.25" Margin="2,0,2,0"/>
+                        <Border x:Name="thumbBorder" CornerRadius="4" Background="{DynamicResource ScrollThumbBrush}" BorderBrush="{DynamicResource ScrollThumbEdge}" BorderThickness="1" Opacity="0.55" Margin="2,0,2,0"/>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="thumbBorder" Property="Opacity" Value="0.55"/>
+                                <Setter TargetName="thumbBorder" Property="Opacity" Value="0.8"/>
                             </Trigger>
                             <Trigger Property="IsDragging" Value="True">
-                                <Setter TargetName="thumbBorder" Property="Opacity" Value="0.80"/>
+                                <Setter TargetName="thumbBorder" Property="Opacity" Value="1"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -80,13 +80,13 @@
                                             <Thumb>
                                                 <Thumb.Template>
                                                     <ControlTemplate TargetType="Thumb">
-                                                        <Border x:Name="thumbBorderH" CornerRadius="4" Background="{DynamicResource TextPrimary}" Opacity="0.25" Margin="0,2,0,2"/>
+                                                        <Border x:Name="thumbBorderH" CornerRadius="4" Background="{DynamicResource ScrollThumbBrush}" BorderBrush="{DynamicResource ScrollThumbEdge}" BorderThickness="1" Opacity="0.55" Margin="0,2,0,2"/>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="thumbBorderH" Property="Opacity" Value="0.55"/>
+                                                                <Setter TargetName="thumbBorderH" Property="Opacity" Value="0.8"/>
                                                             </Trigger>
                                                             <Trigger Property="IsDragging" Value="True">
-                                                                <Setter TargetName="thumbBorderH" Property="Opacity" Value="0.80"/>
+                                                                <Setter TargetName="thumbBorderH" Property="Opacity" Value="1"/>
                                                             </Trigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
@@ -116,7 +116,17 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Effect="{StaticResource DropShadowSoft}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                            <Grid>
+                                <Border CornerRadius="8" BorderThickness="1" BorderBrush="{DynamicResource ControlEdge}" IsHitTestVisible="False"/>
+                                <Grid Margin="1" IsHitTestVisible="False">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Border CornerRadius="7,7,0,0" Background="{DynamicResource ControlGloss}"/>
+                                </Grid>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -136,34 +146,10 @@
             </Setter>
         </Style>
 
-        <Style x:Key="AccentButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-            <Setter Property="Background" Value="#FF1E88E5" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Effect="{StaticResource DropShadowSoft}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#FF1976D2" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#FF1565C0" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <Style x:Key="AccentButtonStyle" TargetType="Button" BasedOn="{StaticResource UtilityPrimaryButtonStyle}"/>
 
         <Style x:Key="CancelButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-            <Setter Property="Background" Value="#FFF57C00" />
+            <Setter Property="Background" Value="#FFC2570A" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -173,10 +159,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#FFFF9800" />
+                                <Setter TargetName="border" Property="Background" Value="#FFD0620C" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#FFEF6C00" />
+                                <Setter TargetName="border" Property="Background" Value="#FFA84B08" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.5" />
@@ -223,21 +209,32 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="GroupBox">
-                        <Border Background="{DynamicResource TextBoxBackground}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="14">
+                        <Grid>
+                        <Border CornerRadius="12" Margin="1,3,1,-3" Background="{DynamicResource CardShadow}" IsHitTestVisible="False"/>
+                        <Border Background="{DynamicResource PanelBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Text="{TemplateBinding Header}"
-                                           FontSize="15" FontWeight="Bold"
-                                           Margin="18,14,18,10"/>
+                                <Border Grid.Row="0" CornerRadius="11,11,0,0" IsHitTestVisible="False" Background="{DynamicResource ControlGloss}"/>
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="18,14,18,10">
+                                    <Border Width="32" Height="32" CornerRadius="8" Margin="0,0,10,0" BorderThickness="1" BorderBrush="#2B78DCE6">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#FF14626D" Offset="0"/>
+                                                <GradientStop Color="#FF0B4A54" Offset="0.5"/>
+                                                <GradientStop Color="#FF01181F" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <TextBlock Text="{TemplateBinding Tag}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="{TemplateBinding Header}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </StackPanel>
                                 <ContentPresenter Grid.Row="1" Margin="{TemplateBinding Padding}"/>
                             </Grid>
                         </Border>
+                        </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -250,17 +247,30 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <StackPanel Orientation="Horizontal">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
                             <Border x:Name="box" Width="20" Height="20" CornerRadius="5"
                                     Background="{DynamicResource TextBoxBackground}"
                                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1.5"
                                     VerticalAlignment="Center">
-                                <Path x:Name="checkMark" Data="M2,7 L6,11 L13,3" Stroke="White" StrokeThickness="2"
-                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                      Visibility="Collapsed" Stretch="Uniform" Margin="3"/>
+                                <Grid>
+                                    <Border CornerRadius="4" IsHitTestVisible="False" Background="{DynamicResource InsetShade}"/>
+                                    <Path x:Name="checkMark" Data="M2,7 L6,11 L13,3" Stroke="White" StrokeThickness="2"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Visibility="Collapsed" Stretch="Uniform" Margin="3"/>
+                                </Grid>
                             </Border>
-                            <ContentPresenter Content="{TemplateBinding Content}" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                        </StackPanel>
+                            <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}" Margin="10,0,0,0" VerticalAlignment="Center">
+                                <ContentPresenter.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                    </Style>
+                                </ContentPresenter.Resources>
+                            </ContentPresenter>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="box" Property="Background" Value="#FF1E88E5"/>
@@ -362,7 +372,7 @@
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}" />
 
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InsetBorder}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="10,6" />
             <Setter Property="FontSize" Value="14" />
@@ -370,7 +380,10 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
-                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                            <Grid>
+                                <Border CornerRadius="7" IsHitTestVisible="False" Background="{DynamicResource InsetShade}"/>
+                                <ScrollViewer x:Name="PART_ContentHost" Margin="10,0" VerticalAlignment="Center" HorizontalScrollBarVisibility="Hidden"/>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
@@ -461,8 +474,8 @@
         <WindowChrome CaptionHeight="0" ResizeBorderThickness="24" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/>
     </WindowChrome.WindowChrome>
     <Grid>
-        <Border x:Name="WindowFrame" Background="{DynamicResource PanelBackground}"
-                BorderBrush="{DynamicResource BorderBrush}"
+        <Border mwcp:RoundedClip.Enabled="True" x:Name="WindowFrame" Background="{DynamicResource WindowBackground}"
+                BorderBrush="{DynamicResource BevelBorder}"
                 BorderThickness="1" CornerRadius="22"
                 Margin="24">
             <Grid>
@@ -472,8 +485,9 @@
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0" Margin="28,22,20,14">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{loc:Tr 'Settings'}" FontSize="26" FontWeight="Bold" />
+                    <Image Source="pack://application:,,,/Assets/mwc_icon.ico" Width="40" Height="40" HorizontalAlignment="Left" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <StackPanel VerticalAlignment="Center" Margin="54,0,0,0">
+                        <TextBlock Text="{loc:Tr 'Settings'}" FontSize="22" FontWeight="Bold" />
                         <TextBlock Text="{loc:Tr 'Manage cleaning, scanning, startup and notification preferences'}"
                                    FontSize="13" Opacity="0.6"
                                    Margin="0,4,0,0"/>
@@ -495,13 +509,25 @@
                     </StackPanel>
                 </Grid>
 
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0">
-                    <StackPanel Margin="28,0,20,24">
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="272"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel Margin="16,0,0,20">
+                        <TextBox x:Name="SettingsSearchBox" DockPanel.Dock="Top" Style="{DynamicResource SearchPillBoxStyle}" Tag="{loc:Tr 'Search settings'}" Margin="0,0,8,10" TextChanged="SettingsSearchBox_TextChanged" KeyDown="SettingsSearchBox_KeyDown"/>
+                        <TextBlock x:Name="SettingsSearchEmpty" DockPanel.Dock="Top" Visibility="Collapsed" Text="{loc:Tr 'No matching settings.'}" FontSize="12.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="12,4,12,0"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="SettingsNav" Margin="0,0,8,0"/>
+                        </ScrollViewer>
+                    </DockPanel>
+                <ScrollViewer x:Name="SettingsScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" Padding="0" ScrollChanged="SettingsScroll_ScrollChanged">
+                    <StackPanel x:Name="SettingsSections" Margin="14,0,20,24">
 
                         <TextBlock Text="{loc:Tr 'Changes are saved automatically.'}"
                                    FontSize="12" Opacity="0.55" Margin="2,0,0,14"/>
 
-                        <GroupBox Header="{loc:Tr 'App Updates'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE895;" Header="{loc:Tr 'App Updates'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <TextBlock x:Name="txtAppVersion" FontSize="14" FontWeight="SemiBold"/>
                                 <TextBlock x:Name="txtAppUpdateStatus" FontSize="12" Opacity="0.7" TextWrapping="Wrap" Margin="0,4,0,0"/>
@@ -516,7 +542,7 @@
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Windows Startup'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE7E8;" Header="{loc:Tr 'Windows Startup'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <CheckBox x:Name="chkRunAtStartup" Content="{loc:Tr 'Start Multron Win Cleaner when I sign in to Windows'}"
                                           Style="{DynamicResource CustomCheckBoxStyle}"
@@ -527,7 +553,7 @@
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'System Tray'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE7C4;" Header="{loc:Tr 'System Tray'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <CheckBox x:Name="chkTrayIcon" Content="{loc:Tr 'Show a tray icon for quick access'}"
                                           Style="{DynamicResource CustomCheckBoxStyle}"
@@ -535,10 +561,40 @@
                                 <TextBlock Text="{loc:Tr 'Lets you open, pause or exit Multron Cleaner from the system tray.'}"
                                            FontSize="12" Opacity="0.55"
                                            Margin="26,2,0,0"/>
+
+                                <StackPanel Margin="26,12,0,0" IsEnabled="{Binding IsChecked, ElementName=chkTrayIcon}">
+                                    <TextBlock Text="{loc:Tr 'When I click the close button (X)'}" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                                    <ComboBox x:Name="cmbCloseAction" Height="34" Width="320" HorizontalAlignment="Left" Padding="8"
+                                              FontSize="13.5" Style="{StaticResource ModernComboBoxStyle}" SelectionChanged="CloseOptions_Changed">
+                                        <ComboBoxItem Tag="hide" Content="{loc:Tr 'Hide to the tray'}"/>
+                                        <ComboBoxItem Tag="ask" Content="{loc:Tr 'Ask every time'}"/>
+                                        <ComboBoxItem Tag="exit" Content="{loc:Tr 'Close the app'}"/>
+                                    </ComboBox>
+                                    <CheckBox x:Name="chkMinimizeToTray" Content="{loc:Tr 'Hide to the tray when I minimize the window'}"
+                                              Style="{DynamicResource CustomCheckBoxStyle}" Margin="0,12,0,0"
+                                              Checked="CloseOptions_Changed" Unchecked="CloseOptions_Changed"/>
+                                    <TextBlock Text="{loc:Tr 'Needs the tray icon above. Open the app again from the tray icon.'}"
+                                               FontSize="12" Opacity="0.55" TextWrapping="Wrap" Margin="26,2,0,0"/>
+                                </StackPanel>
+
+                                <CheckBox x:Name="chkConfirmExit" Content="{loc:Tr 'Ask before closing Multron Win Cleaner'}"
+                                          Style="{DynamicResource CustomCheckBoxStyle}" Margin="0,14,0,0"
+                                          Checked="CloseOptions_Changed" Unchecked="CloseOptions_Changed"/>
+                                <TextBlock Text="{loc:Tr 'Shows a confirmation before the app closes completely.'}"
+                                           FontSize="12" Opacity="0.55" TextWrapping="Wrap"
+                                           Margin="26,2,0,0"/>
+
+                                <CheckBox x:Name="chkUtilitiesTray" Content="{loc:Tr 'Show a tray icon for Utilities'}"
+                                          Style="{DynamicResource CustomCheckBoxStyle}" Margin="0,14,0,0"
+                                          Checked="chkUtilitiesTray_Changed" Unchecked="chkUtilitiesTray_Changed"/>
+                                <TextBlock Text="{loc:Tr 'Utilities gets its own icon in the system tray and keeps running there when you close its window.'}"
+                                           FontSize="12" Opacity="0.55" TextWrapping="Wrap"
+                                           Margin="26,2,0,0"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Language'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE8C1;" Header="{loc:Tr 'Language'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <ComboBox x:Name="cmbLanguage" Height="34" Width="460"
                                           HorizontalAlignment="Left" Padding="8"
@@ -551,7 +607,7 @@
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Interface Mode'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE771;" Header="{loc:Tr 'Interface Mode'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <RadioButton x:Name="rbSimpleInterface" Content="{loc:Tr 'Simplified (recommended)'}"
                                              GroupName="InterfaceMode" IsChecked="True" FontSize="14"
@@ -569,11 +625,16 @@
                                            Margin="26,2,0,0"/>
                                 <TextBlock Text="{loc:Tr 'The cleaning list reloads when you change this.'}"
                                            FontSize="12" Opacity="0.55" TextWrapping="Wrap"
-                                           Margin="0,10,0,0"/>
+                                           Margin="0,10,0,14"/>
+                                <CheckBox x:Name="chkShowDiskInfo" Content="{loc:Tr 'Show disk information on the main screen'}" IsChecked="True" Style="{DynamicResource CustomCheckBoxStyle}" Checked="ShowDiskInfo_Changed" Unchecked="ShowDiskInfo_Changed"/>
+                                <CheckBox x:Name="chkShowItemPaths" Content="{loc:Tr 'Show the paths of the item you point at in Cleaning Selections'}" IsChecked="True" Style="{DynamicResource CustomCheckBoxStyle}" Checked="ShowItemPaths_Changed" Unchecked="ShowItemPaths_Changed" Margin="0,10,0,0"
+                                          ToolTip="{loc:Tr 'Shows a panel at the bottom of the Cleaning Selections window with the folders and files of the item under the mouse pointer.'}"/>
+                                <CheckBox x:Name="chkAnimations" Content="{loc:Tr 'Show animations'}" IsChecked="True" Style="{DynamicResource CustomCheckBoxStyle}" Checked="Animations_Changed" Unchecked="Animations_Changed" Margin="0,10,0,0"
+                                          ToolTip="{loc:Tr 'Turns the moving effects of the app on or off: glows, pulses, slides, card and button animations. Progress indicators keep moving so you can see that work is going on. Some effects that are already on screen change after a restart.'}"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Warnings and Notes'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE7BA;" Header="{loc:Tr 'Warnings and Notes'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <CheckBox x:Name="chkShowEntryNotes" Content="{loc:Tr 'Show warning and info buttons next to cleaning items'}" IsChecked="True"
                                           Style="{DynamicResource CustomCheckBoxStyle}" Checked="EntryNotes_Changed" Unchecked="EntryNotes_Changed"/>
@@ -586,7 +647,7 @@
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Theme'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE790;" Header="{loc:Tr 'Theme'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <CheckBox x:Name="chkThemeFollowsWindows" Content="{loc:Tr 'Match the Windows theme'}"
                                           Style="{DynamicResource CustomCheckBoxStyle}" IsChecked="True"
@@ -622,7 +683,7 @@
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'User Profile Selection'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE77B;" Header="{loc:Tr 'User Profile Selection'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <TextBlock Text="{loc:Tr 'Choose which Windows user profile the cleaner should target:'}"
                    FontSize="14" Opacity="0.75"
@@ -652,7 +713,7 @@ Cursor="Hand"/>
                                     <ComboBox.Style> 
                                         <Style TargetType="ComboBox" BasedOn="{StaticResource ModernComboBoxStyle}">
                                             <Style.Triggers> 
-                                                <DataTrigger Binding="{Binding IsChecked, ElementName=chkCleanAllUsers}" Value="True">
+                                                <DataTrigger Binding="{Binding IsChecked, ElementName=rbCleanAllUsers}" Value="True">
                                                     <Setter Property="IsEnabled" Value="False"/>
                                                     <Setter Property="Opacity" Value="0.4"/>
                                                 </DataTrigger>
@@ -669,7 +730,7 @@ Cursor="Hand"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Secure Deletion (Shredding)'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE74D;" Header="{loc:Tr 'Secure Deletion (Shredding)'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <TextBlock Text="{loc:Tr 'For privacy, overwrite files before deleting them during cleaning so they cannot be recovered. SSD-aware: on a solid-state drive the extra passes are skipped (they cannot target the same memory cells and only wear the drive); after deletion the TRIM command discards the blocks.'}"
                                            FontSize="14" Opacity="0.75" Margin="0,0,0,10" TextWrapping="Wrap"/>
@@ -687,7 +748,7 @@ Cursor="Hand"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Open Browsers and Apps'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE737;" Header="{loc:Tr 'Open Browsers and Apps'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <TextBlock Text="{loc:Tr 'Before cleaning, Multron Win Cleaner checks whether a browser or an app whose files it found is open. Its files can only be cleaned once it is closed.'}"
                                            FontSize="14" Opacity="0.75" Margin="0,0,0,10" TextWrapping="Wrap"/>
@@ -703,68 +764,59 @@ Cursor="Hand"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Cleanup Log'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE81C;" Header="{loc:Tr 'Cleanup Log'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
+                                <CheckBox x:Name="chkEnableLog" Content="{loc:Tr 'Keep a cleanup log'}" Style="{DynamicResource CustomCheckBoxStyle}"/>
+                                <TextBlock Text="{loc:Tr 'Records every cleaning operation performed by the app.'}" FontSize="12" Opacity="0.6" TextWrapping="Wrap" Margin="26,2,0,12"/>
 
-                                <CheckBox x:Name="chkEnableLog" Content="{loc:Tr 'Keep a cleanup log'}"
-                                          Style="{DynamicResource CustomCheckBoxStyle}" />
-                                <TextBlock Text="{loc:Tr 'Records every cleaning operation performed by the app.'}"
-                                           FontSize="12" Opacity="0.55"
-                                           Margin="26,2,0,12"/>
+                                <CheckBox x:Name="chkLogNotifications" Content="{loc:Tr 'Also log notifications'}" Style="{DynamicResource CustomCheckBoxStyle}"
+                                          IsEnabled="{Binding IsChecked, ElementName=chkEnableLog}"/>
+                                <TextBlock Text="{loc:Tr 'Writes every message card and notification of the app to the same log file.'}" FontSize="12" Opacity="0.6" TextWrapping="Wrap" Margin="26,2,0,12"/>
 
-                                <CheckBox x:Name="chkShowLastLog" Content="{loc:Tr 'Show the last log entry in the status bar'}"
-                                          Style="{DynamicResource CustomCheckBoxStyle}" />
-                                <TextBlock Text="{loc:Tr 'Displays the most recent log line without opening the log file.'}"
-                                           FontSize="12" Opacity="0.55"
-                                           Margin="26,2,0,16"/>
+                                <CheckBox x:Name="chkShowLastLog" Content="{loc:Tr 'Show the last log entry in the status bar'}" Style="{DynamicResource CustomCheckBoxStyle}"/>
+                                <TextBlock Text="{loc:Tr 'Displays the most recent log line without opening the log file.'}" FontSize="12" Opacity="0.6" TextWrapping="Wrap" Margin="26,2,0,16"/>
 
-                                <TextBlock Text="{loc:Tr 'Log file location'}" FontSize="13"
-                                           FontWeight="SemiBold" Margin="0,0,0,6"/>
-
-                                <Grid Margin="0,0,0,12">
+                                <TextBlock Text="{loc:Tr 'Log file location'}" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <Grid Margin="0,0,0,14">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="txtLogPath" Grid.Column="0"
-                                             Style="{DynamicResource RoundedTextBox}"
-                                             Height="40" FontSize="13"
-                                             VerticalContentAlignment="Center"
-                                             Margin="0,0,10,0"
-                                            />
-                                    <Button Content="{loc:Tr 'Browse'}" Grid.Column="1"
-                                            MinWidth="90" HorizontalAlignment="Center" Height="40"
-                                            Click="BrowseLogPath_Click"
-                                            Style="{DynamicResource ModernButtonStyle}"
-                                            FontWeight="SemiBold" Cursor="Hand"/>
+                                    <TextBox x:Name="txtLogPath" Grid.Column="0" Style="{DynamicResource RoundedTextBox}" Height="40" FontSize="13" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
+                                    <Button Grid.Column="1" Content="{loc:Tr 'Browse'}" Click="BrowseLogPath_Click" Style="{DynamicResource UtilitySecondaryButtonStyle}" Height="40" Padding="16,0" Margin="0,0,8,0"/>
+                                    <Button x:Name="btnApplyLog" Grid.Column="2" Content="{loc:Tr 'Apply'}" Click="ApplyLog_Click" Style="{DynamicResource UtilityPrimaryButtonStyle}" Height="40" Padding="18,0"/>
                                 </Grid>
 
-                                <StackPanel Orientation="Horizontal">
-                                    <Button x:Name="btnOpenLog" Content="{loc:Tr 'Open Log File'}"
-                                            MinWidth="150" HorizontalAlignment="Center" Height="34"
-                                            Click="OpenLogFile_Click"
-                                            Style="{DynamicResource ModernButtonStyle}"
-                                            FontWeight="SemiBold" Cursor="Hand" Margin="0,0,10,0"/>
-                                    <Button x:Name="btnOpenAppFolder" Content="{loc:Tr 'Open Folder'}"
-                                            MinWidth="150" HorizontalAlignment="Center" Height="34"
-                                            Click="OpenAppFolder_Click"
-                                            Style="{DynamicResource ModernButtonStyle}"
-                                            FontWeight="SemiBold" Cursor="Hand" Margin="0,0,10,0"/>
-                                    <Button x:Name="btnClearLog" Content="{loc:Tr 'Clear Log File'}"
-                                            MinWidth="120" HorizontalAlignment="Center" Height="34"
-                                            Click="ClearLog_Click"
-                                            Style="{DynamicResource CancelButtonStyle}"
-                                            FontWeight="SemiBold" Cursor="Hand" Margin="0,0,10,0"/>
-                                    <Button x:Name="btnApplyLog" Content="{loc:Tr 'Apply'}"
-                                            MinWidth="120" HorizontalAlignment="Center" Height="34"
-                                            Click="ApplyLog_Click"
-                                            Style="{DynamicResource AccentButtonStyle}"
-                                            FontWeight="SemiBold" Cursor="Hand"/>
-                                </StackPanel>
+                                <TextBlock Text="{loc:Tr 'Recent entries'}" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <Border CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Background="#0D808080" Padding="12,10" Margin="0,0,0,14">
+                                    <TextBlock x:Name="LogPreviewText" FontFamily="Cascadia Mono, Consolas" FontSize="11.5" TextWrapping="Wrap" LineHeight="19" Foreground="{DynamicResource TextSecondary}"/>
+                                </Border>
+
+                                <WrapPanel>
+                                    <Button x:Name="btnOpenLog" Click="OpenLogFile_Click" Style="{DynamicResource UtilitySecondaryButtonStyle}" Height="34" Padding="14,0" Margin="0,0,8,6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8E5;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{loc:Tr 'Open Log File'}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="btnOpenAppFolder" Click="OpenAppFolder_Click" Style="{DynamicResource UtilitySecondaryButtonStyle}" Height="34" Padding="14,0" Margin="0,0,8,6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE838;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{loc:Tr 'Open Folder'}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="btnClearLog" Click="ClearLog_Click" Style="{DynamicResource UtilityDangerButtonStyle}" Height="34" Padding="14,0" Margin="0,0,8,6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{loc:Tr 'Clear Log File'}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </WrapPanel>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Scanner Settings'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE721;" Header="{loc:Tr 'Scanner Settings'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <Grid>
                                 <StackPanel Margin="0,0,36,0">
 
@@ -772,7 +824,7 @@ Cursor="Hand"/>
                                                FontSize="13" Opacity="0.6"
                                                TextWrapping="Wrap" Margin="0,0,0,14"/>
 
-                                    <Border Background="{DynamicResource TextBoxBackground}"
+                                    <Border Background="#14808080"
                                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                             CornerRadius="12" Padding="14" Margin="0,0,0,12">
                                         <StackPanel>
@@ -831,7 +883,7 @@ Cursor="Hand"/>
                                         </StackPanel>
                                     </Border>
 
-                                    <Border Background="{DynamicResource TextBoxBackground}"
+                                    <Border Background="#14808080"
                                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                             CornerRadius="12" Padding="14" Margin="0,0,0,16">
                                         <StackPanel>
@@ -976,7 +1028,7 @@ Cursor="Hand"/>
                         </GroupBox>
 
 
-                        <GroupBox Header="{loc:Tr 'Startup &amp; Notify Settings'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xEA8F;" Header="{loc:Tr 'Startup &amp; Notify Settings'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
 
                                 <CheckBox x:Name="chkEnableStartupScan" Content="{loc:Tr 'Automatically scan when the app starts'}"
@@ -1055,7 +1107,33 @@ Cursor="Hand"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Right-Click Menu'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE787;" Header="{loc:Tr 'Cleaning Reminder'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                            <StackPanel>
+                                <CheckBox x:Name="chkCleanReminder" Content="{loc:Tr 'Remind me to clean when the app is not used'}" Style="{DynamicResource CustomCheckBoxStyle}" Checked="CleanReminder_Changed" Unchecked="CleanReminder_Changed"/>
+                                <TextBlock Text="{loc:Tr 'Shows a reminder when no scan or cleaning has been started from the main window for the time you choose.'}" FontSize="12" Opacity="0.55" TextWrapping="Wrap" Margin="26,2,0,12"/>
+                                <StackPanel IsEnabled="{Binding IsChecked, ElementName=chkCleanReminder}">
+                                    <Grid Margin="26,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="90"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{loc:Tr 'Remind after (days):'}" FontSize="14" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                        <TextBox x:Name="txtReminderDays" Grid.Column="1" Height="32" Text="30" Style="{DynamicResource ModernTextBoxStyle}" TextChanged="CleanReminder_Changed"/>
+                                    </Grid>
+                                    <Grid Margin="26,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="90"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{loc:Tr 'Repeat the reminder every (days):'}" FontSize="14" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                        <TextBox x:Name="txtReminderRepeat" Grid.Column="1" Height="32" Text="7" Style="{DynamicResource ModernTextBoxStyle}" TextChanged="CleanReminder_Changed"/>
+                                    </Grid>
+                                    <CheckBox x:Name="chkReminderBackground" Margin="26,0,0,0" Content="{loc:Tr 'Only when the app is running in the background'}" Style="{DynamicResource CustomCheckBoxStyle}" IsChecked="True" Checked="CleanReminder_Changed" Unchecked="CleanReminder_Changed"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Tag="&#xE8FD;" Header="{loc:Tr 'Right-Click Menu'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <CheckBox x:Name="chkContextMenuScan" Content="{loc:Tr 'Add Scan with Multron Malware Scan to the right-click menu'}"
                                           Style="{DynamicResource CustomCheckBoxStyle}"
@@ -1073,7 +1151,7 @@ Cursor="Hand"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Automatic Cleaning'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE823;" Header="{loc:Tr 'Automatic Cleaning'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <Grid>
                                 <StackPanel Margin="0,0,36,0">
 
@@ -1085,7 +1163,7 @@ Cursor="Hand"/>
                                                FontSize="12" Opacity="0.55"
                                                Margin="26,0,0,14" TextWrapping="Wrap"/>
 
-                                    <Border Background="{DynamicResource TextBoxBackground}"
+                                    <Border Background="#14808080"
                                             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                             CornerRadius="12" Padding="14" Margin="0,0,0,16">
                                         <StackPanel>
@@ -1262,7 +1340,7 @@ Cursor="Hand"/>
                             </Grid>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Network'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE968;" Header="{loc:Tr 'Network'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <CheckBox x:Name="chkOfflineMode" Content="{loc:Tr 'Offline mode'}"
                                           Style="{DynamicResource CustomCheckBoxStyle}" IsChecked="false"
@@ -1313,7 +1391,7 @@ Cursor="Hand"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Selections'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE762;" Header="{loc:Tr 'Selections'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <CheckBox x:Name="chkAutoSaveSelections" Content="{loc:Tr 'Save selections automatically'}"
                                           Style="{DynamicResource CustomCheckBoxStyle}" IsChecked="true"
@@ -1324,7 +1402,7 @@ Cursor="Hand"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Browsers'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
+                        <GroupBox Tag="&#xE774;" Header="{loc:Tr 'Browsers'}" Style="{DynamicResource CustomGroupBoxStyle}" Margin="0,0,0,20">
                             <StackPanel>
                                 <CheckBox x:Name="chkCleanAllBrowserProfiles" Content="{loc:Tr 'Clean all browser profiles'}"
                                           Style="{DynamicResource CustomCheckBoxStyle}" IsChecked="true"
@@ -1335,7 +1413,7 @@ Cursor="Hand"/>
                             </StackPanel>
                         </GroupBox>
 
-                        <GroupBox Header="{loc:Tr 'Exceptions'}" Style="{DynamicResource CustomGroupBoxStyle}">
+                        <GroupBox Tag="&#xE8F8;" Header="{loc:Tr 'Exceptions'}" Style="{DynamicResource CustomGroupBoxStyle}">
                             <StackPanel>
                                 <TextBlock Text="{loc:Tr 'Files and folders listed here will never be touched by the cleaner.'}"
                                            FontSize="12" Opacity="0.55"
@@ -1365,16 +1443,14 @@ Cursor="Hand"/>
                                 </Grid>
                                 <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10"
                                         Background="{DynamicResource TextBoxBackground}" Padding="8">
-                                    <ListBox x:Name="lstExceptions" Height="145" FontSize="15"
-                                             Background="{DynamicResource TextBoxBackground}"
-                                             Foreground="{DynamicResource TextPrimary}"
-                                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                                    <ListBox x:Name="lstExceptions" Height="145" Background="Transparent" BorderThickness="0" Style="{DynamicResource ResultListStyle}" ItemTemplate="{DynamicResource PathRowTemplate}"/>
                                 </Border>
                             </StackPanel>
                         </GroupBox>
 
                     </StackPanel>
                 </ScrollViewer>
+                </Grid>
             </Grid>
         </Border>
     </Grid>

@@ -1,0 +1,91 @@
+<Window x:Class="MultronWinCleaner.CloseChoiceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:MultronWinCleaner"
+        Icon="pack://application:,,,/Assets/mwc_icon.ico"
+        Title="{loc:Tr 'Close Multron Win Cleaner?'}"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" ShowInTaskbar="False" SizeToContent="WidthAndHeight"
+        FontFamily="Inter, Segoe UI, Arial, sans-serif"
+        KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <Style x:Key="ChoiceButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Box" CornerRadius="12" BorderThickness="1" Padding="14,12"
+                                Background="#0A808080" BorderBrush="{DynamicResource BorderBrush}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="#1A808080"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource AccentText}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource AccentText}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="#26808080"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Border Margin="24" Width="440" CornerRadius="16" BorderThickness="1"
+            Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="24" ShadowDepth="6" Opacity="0.32"/>
+        </Border.Effect>
+        <Border Background="#0C000000" CornerRadius="16" Padding="22,20,22,18">
+            <StackPanel>
+                <DockPanel Margin="0,0,0,14" Background="Transparent" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                    <Image DockPanel.Dock="Left" Source="pack://application:,,,/Assets/mwc_icon.ico" Width="36" Height="36" Margin="0,0,12,0"
+                           VerticalAlignment="Top" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{loc:Tr 'Close Multron Win Cleaner?'}" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{loc:Tr 'It can keep running in the system tray, so scheduled scans, reminders and the widget keep working.'}"
+                                   FontSize="12.5" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+
+                <Button x:Name="HideButton" Style="{StaticResource ChoiceButton}" Click="Hide_Click" IsDefault="True">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Left" Width="36" Height="36" CornerRadius="18" Background="#261E88E5" Margin="0,0,12,0" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE73F;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource AccentText}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Tr 'Hide to the tray'}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="{loc:Tr 'Keeps running in the background. Open it again from the tray icon.'}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+
+                <Button x:Name="ExitButton" Style="{StaticResource ChoiceButton}" Click="Exit_Click" Margin="0,10,0,0">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Left" Width="36" Height="36" CornerRadius="18" Background="#26DC3545" Margin="0,0,12,0" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE7E8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource DangerText}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Tr 'Close the app'}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="{loc:Tr 'Exits completely. Background scans, reminders and the widget stop.'}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+
+                <DockPanel Margin="0,16,0,0">
+                    <Button DockPanel.Dock="Right" Content="{loc:Tr 'Cancel'}" Click="Cancel_Click" IsCancel="True"
+                            Style="{DynamicResource UtilitySecondaryButtonStyle}" Padding="18,0" Height="32" FontSize="12.5"/>
+                    <CheckBox x:Name="RememberBox" Content="{loc:Tr 'Remember my choice'}" Style="{DynamicResource CustomCheckBoxStyle}"
+                              VerticalAlignment="Center" ToolTip="{loc:Tr 'You can change this later in Settings > System Tray.'}"/>
+                </DockPanel>
+            </StackPanel>
+        </Border>
+    </Border>
+</Window>

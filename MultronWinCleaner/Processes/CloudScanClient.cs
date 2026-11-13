@@ -118,9 +118,12 @@ namespace MultronWinCleaner.Processes
             catch
             {
                 connection.Fault(new IOException(Loc.T("Connect failed.")));
+                if (!ct.IsCancellationRequested)
+                    CloudServerStatus.ReportConnection(false);
                 throw;
             }
             current = connection;
+            CloudServerStatus.ReportConnection(true);
         }
 
         private static readonly TimeSpan[] ReconnectDelays =

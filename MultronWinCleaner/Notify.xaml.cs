@@ -50,17 +50,56 @@ namespace MultronWinCleaner
             InitializeComponent();
             
             Status.Text = status;
-            DetailsText.Text = proc;
+            DetailsText.Text = proc.Trim();
             AmountText.Text = cleaned;
             if (string.IsNullOrWhiteSpace(cleaned))
-                AmountText.Visibility = Visibility.Collapsed;
+                AmountBadge.Visibility = Visibility.Collapsed;
+            TimeText.Text = DateTime.Now.ToString("t", Loc.Culture);
+            Styled(Kind.Info, "\uE73E");
+            try
+            {
+                (Application.Current?.MainWindow as Multron_Win_Cleaner.MainWindow)?.LogNotification(status, proc.Replace("\r", " ").Replace("\n", " "), cleaned);
+            }
+            catch { }
         }
-        public Notify AsWarning()
+        public enum Kind { Info, Success, Warning, Danger }
+
+        public Notify Styled(Kind kind, string? glyph = null)
         {
-            IconStart.Color = (Color)ColorConverter.ConvertFromString("#FFEF5350");
-            IconEnd.Color = (Color)ColorConverter.ConvertFromString("#FFC62828");
-            IconText.Text = "!";
-            AmountText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFE53935"));
+            var (hex, icon) = kind switch
+            {
+                Kind.Success => ("#FF2EB872", "\uE73E"),
+                Kind.Warning => ("#FFFF9800", "\uE7BA"),
+                Kind.Danger => ("#FFEF5350", "\uE7BA"),
+                _ => ("#FF42A5F5", "\uE946")
+            };
+            var color = (Color)ColorConverter.ConvertFromString(hex);
+            var light = Color.FromRgb((byte)Math.Min(255, color.R + 45), (byte)Math.Min(255, color.G + 40), (byte)Math.Min(255, color.B + 30));
+            var deep = Color.FromRgb((byte)(color.R * 0.78), (byte)(color.G * 0.78), (byte)(color.B * 0.78));
+            IconText.Text = glyph ?? icon;
+            IconText.Foreground = Brushes.White;
+            IconBorder.Background = new LinearGradientBrush(light, deep, new Point(0, 0), new Point(1, 1));
+            IconBorder.Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = color, BlurRadius = 14, ShadowDepth = 0, Opacity = 0.45 };
+            IconRing.Stroke = new SolidColorBrush(color);
+            var wash = new RadialGradientBrush { Center = new Point(0.08, 0.0), GradientOrigin = new Point(0.08, 0.0), RadiusX = 0.95, RadiusY = 1.25 };
+            wash.GradientStops.Add(new GradientStop(Color.FromArgb(0x30, color.R, color.G, color.B), 0));
+            wash.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, color.R, color.G, color.B), 1));
+            Wash.Background = wash;
+            Card.BorderBrush = new SolidColorBrush(Color.FromArgb(0x55, color.R, color.G, color.B));
+            AmountBadge.Background = new SolidColorBrush(Color.FromArgb(0x24, color.R, color.G, color.B));
+            AmountText.Foreground = MultronWinCleaner.Processes.ThemeColors.ReadableBrush(color);
+            var fillColor = kind == Kind.Warning ? MultronWinCleaner.Processes.ThemeColors.WarningFill : color;
+            var fill = new LinearGradientBrush(Color.FromRgb((byte)Math.Min(255, fillColor.R + 25), (byte)Math.Min(255, fillColor.G + 25), (byte)Math.Min(255, fillColor.B + 25)), fillColor, 90);
+            DetailsButton.Background = fill;
+            DetailsButton.BorderBrush = new SolidColorBrush(fillColor);
+            return this;
+        }
+
+        public Notify AsWarning() => Styled(Kind.Warning);
+
+        public Notify WithAction(string text)
+        {
+            DetailsButton.Content = text;
             return this;
         }
 
@@ -82,6 +121,41 @@ namespace MultronWinCleaner
             SizeChanged += (s, args) => ArrangeNotifications();
             ArrangeNotifications();
             Dispatcher.BeginInvoke(ArrangeNotifications, System.Windows.Threading.DispatcherPriority.Loaded);
+            if (Processes.Motion.Enabled && Content is FrameworkElement root)
+            {
+                bool fromLeft = Left < SystemParameters.WorkArea.Left + SystemParameters.WorkArea.Width / 2;
+                var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+                var slide = new System.Windows.Media.TranslateTransform(fromLeft ? -40 : 40, 0);
+                root.RenderTransform = slide;
+                var move = new System.Windows.Media.Animation.DoubleAnimation(slide.X, 0, TimeSpan.FromMilliseconds(420)) { EasingFunction = ease, SpeedRatio = 1 };
+                move.Completed += (s2, e2) =>
+                {
+                    if (ReferenceEquals(root.RenderTransform, slide))
+                        root.ClearValue(RenderTransformProperty);
+                };
+                slide.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, move);
+                root.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320)) { SpeedRatio = 1, FillBehavior = System.Windows.Media.Animation.FillBehavior.Stop });
+                if (IconBorder.RenderTransform is ScaleTransform pop && !pop.IsFrozen)
+                {
+                    var bounce = new System.Windows.Media.Animation.DoubleAnimation(0.4, 1, TimeSpan.FromMilliseconds(520))
+                    {
+                        EasingFunction = new System.Windows.Media.Animation.BackEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut, Amplitude = 0.55 },
+                        BeginTime = TimeSpan.FromMilliseconds(120),
+                        SpeedRatio = 1
+                    };
+                    pop.ScaleX = 0.4;
+                    pop.ScaleY = 0.4;
+                    pop.BeginAnimation(ScaleTransform.ScaleXProperty, bounce);
+                    pop.BeginAnimation(ScaleTransform.ScaleYProperty, bounce);
+                }
+                if (IconRing.RenderTransform is ScaleTransform ring && !ring.IsFrozen)
+                {
+                    var spread = new System.Windows.Media.Animation.DoubleAnimation(1, 1.7, TimeSpan.FromMilliseconds(900)) { BeginTime = TimeSpan.FromMilliseconds(380), SpeedRatio = 1, EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut } };
+                    ring.BeginAnimation(ScaleTransform.ScaleXProperty, spread);
+                    ring.BeginAnimation(ScaleTransform.ScaleYProperty, spread);
+                    IconRing.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0.7, 0, TimeSpan.FromMilliseconds(900)) { BeginTime = TimeSpan.FromMilliseconds(380), SpeedRatio = 1 });
+                }
+            }
         }
 
         public const string PositionSettingKey = "notifyposition";
@@ -134,6 +208,22 @@ namespace MultronWinCleaner
                 next = top ? next + height + 10 : notify.Top - 10;
             }
         }
+        private bool fadingOut;
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            if (!fadingOut && Processes.Motion.Enabled && IsVisible && Content is FrameworkElement root)
+            {
+                e.Cancel = true;
+                fadingOut = true;
+                var fade = new System.Windows.Media.Animation.DoubleAnimation(0, TimeSpan.FromMilliseconds(220)) { SpeedRatio = 1 };
+                fade.Completed += (s, a) => Close();
+                root.BeginAnimation(OpacityProperty, fade);
+                return;
+            }
+            base.OnClosing(e);
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             this.Close();

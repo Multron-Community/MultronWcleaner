@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using Multron_Win_Cleaner;
 using MultronWinCleaner;
+using MultronWinCleaner.Processes;
 using NetFwTypeLib;
 using System;
 using System.Collections.Generic;
@@ -37,9 +38,110 @@ namespace MultronWinCleaner
 
         public bool isSettingsLoaded = false;
 
+        private static readonly Dictionary<string, string> CardGlyphs = new Dictionary<string, string>
+        {
+            ["Firewall Rule Cleaner"] = "",
+            ["Large File Finder"] = "",
+            ["Duplicate File Finder"] = "",
+            ["System Optimization"] = "",
+            ["Memory Cleaner"] = "",
+            ["Startup Manager"] = "",
+            ["Malware Scan"] = "",
+            ["Shortcut Fixer"] = "",
+            ["Security Check"] = "",
+        };
+
+        private static readonly Dictionary<string, string> ShortCardTexts = new Dictionary<string, string>
+        {
+            ["Finds Windows settings that make your PC less secure, for example UAC, Windows Firewall or Defender turned off, AutoPlay on for USB drives, SMB 1.0, Remote Desktop without protection, blocked Task Manager or backdoors on the sign-in screen. Tick the settings to fix; the current values are saved first, so every fix can be undone."]
+                = "Finds Windows settings that make your PC less secure and fixes the ones you choose. Every fix can be undone.",
+            ["Sends executables from running processes, startup items or selected folders to the cloud with the viruskov.com static engine over an encrypted connection and checks them for malware."]
+                = "Checks the programs on your PC for malware with a secure cloud scan.",
+            ["Finds Desktop and Start Menu shortcuts whose program no longer exists. Shortcuts to programs that moved to a new version folder are repaired, the others are moved to the Recycle Bin."]
+                = "Finds shortcuts to programs that no longer exist and repairs or removes them.",
+        };
+
+        private static IEnumerable<TextBlock> CardTextBlocks(DependencyObject root)
+        {
+            foreach (object child in LogicalTreeHelper.GetChildren(root))
+            {
+                if (child is TextBlock text)
+                    yield return text;
+                if (child is DependencyObject inner)
+                    foreach (TextBlock nested in CardTextBlocks(inner))
+                        yield return nested;
+            }
+        }
+
+        private void DecorateCards()
+        {
+            var accent = System.Windows.Media.Color.FromRgb(0x42, 0xA5, 0xF5);
+            var texts = CardTextBlocks(this).ToList();
+            foreach (TextBlock title in texts.Where(t => t.FontSize == 16 && t.FontWeight == FontWeights.SemiBold))
+            {
+                string? key = CardGlyphs.Keys.FirstOrDefault(k => Loc.T(k) == title.Text);
+                if (key == null)
+                    continue;
+                FrameworkElement icon = MultronWinCleaner.Processes.ToolIcons.Tile(MultronWinCleaner.Processes.ToolIcons.Tools.GetValueOrDefault(key), 36) ?? new Border
+                {
+                    Width = 36,
+                    Height = 36,
+                    CornerRadius = new CornerRadius(10),
+                    Margin = new Thickness(0, 0, 12, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x26, accent.R, accent.G, accent.B)),
+                    Child = new TextBlock
+                    {
+                        Text = CardGlyphs[key],
+                        FontFamily = new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+                        FontSize = 17,
+                        FontWeight = FontWeights.Normal,
+                        Foreground = MultronWinCleaner.Processes.ThemeColors.ReadableBrush(accent),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                };
+                icon.Margin = new Thickness(0, 0, 12, 0);
+                if (title.Parent is System.Windows.Controls.Grid header)
+                {
+                    icon.Margin = new Thickness(0, 0, 8, 0);
+                    System.Windows.Controls.Grid.SetColumn(icon, 0);
+                    header.Children.Add(icon);
+                }
+                else if (title.Parent is System.Windows.Controls.StackPanel { Orientation: System.Windows.Controls.Orientation.Horizontal } row)
+                {
+                    row.Children.Insert(0, icon);
+                }
+                else if (title.Parent is System.Windows.Controls.Panel parent)
+                {
+                    int index = parent.Children.IndexOf(title);
+                    parent.Children.RemoveAt(index);
+                    var line = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = title.Margin };
+                    title.Margin = new Thickness(0);
+                    title.VerticalAlignment = VerticalAlignment.Center;
+                    line.Children.Add(icon);
+                    line.Children.Add(title);
+                    parent.Children.Insert(index, line);
+                }
+            }
+            foreach (TextBlock text in texts)
+            {
+                foreach (var pair in ShortCardTexts)
+                {
+                    if (text.Text == Loc.T(pair.Key))
+                    {
+                        text.ToolTip = new System.Windows.Controls.ToolTip { Content = new TextBlock { Text = text.Text, TextWrapping = TextWrapping.Wrap, MaxWidth = 380 } };
+                        text.Text = Loc.T(pair.Value);
+                        break;
+                    }
+                }
+            }
+        }
+
         public Utilities(MainWindow window)
         {
             InitializeComponent();
+            DecorateCards();
             this.window = window;
             memcleaner = new MemCleaner(window);
             configure = new Configure(this);
@@ -47,7 +149,7 @@ namespace MultronWinCleaner
 
             WatchToolProgress(FirewallProgress, "Firewall Rule Cleaner", () => (FirewallScanResultLabel.Content?.ToString() ?? "", FirewallScanResultLabel.Foreground));
             WatchToolProgress(ShortcutProgress, "Shortcut Fixer", () => (ShortcutResultLabel.Content?.ToString() ?? "", ShortcutResultLabel.Foreground));
-            WatchToolProgress(SecurityProgress, "Security Check", () => (SecurityResultLabel.Text, SecurityResultLabel.Foreground));
+            WatchToolProgress(SecurityProgress, "Security Check", () => (SecurityResultLabel.Content?.ToString() ?? "", SecurityResultLabel.Foreground));
 
             var availabilityTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
             SecurityUndo.Visibility = MultronWinCleaner.Processes.SecurityCheck.HasBackup ? Visibility.Visible : Visibility.Collapsed;
@@ -184,6 +286,41 @@ namespace MultronWinCleaner
             });
         }
 
+        private System.Windows.Controls.ContextMenu BuildTrayMenu()
+        {
+            var menu = new System.Windows.Controls.ContextMenu();
+            menu.Items.Add(Processes.TrayMenus.Item(Loc.T("Show Utilities"), () => { Show(); WindowState = WindowState.Normal; Activate(); }, "utilities"));
+            menu.Items.Add(Processes.TrayMenus.Item(Loc.T("Hide Utilities"), Hide, "\uED1A", IsVisible));
+            menu.Items.Add(new System.Windows.Controls.Separator());
+            var tools = new List<(string Name, string Icon, System.Windows.Window? Window, Action Open, Action Close)>
+            {
+                (Loc.T("Memory Cleaner"), "memory", memcleaner, () => OpenMemoryCleaner_Click(this, new RoutedEventArgs()), () => CloseMemCleaner_Click(this, new RoutedEventArgs())),
+                (Loc.T("Malware Scan"), "malware", malwarescan, () => ShowMalwareScan(), () => CloseMalwareScan_Click(this, new RoutedEventArgs())),
+                (Loc.T("Startup Manager"), "startup", startupmanager, () => StartupManager_Click(this, new RoutedEventArgs()), () => CloseStartup_Click(this, new RoutedEventArgs())),
+                (Loc.T("Large File Finder"), "largefiles", largefilefinder, () => LargeFilesScan_Click(this, new RoutedEventArgs()), () => CloseLargeFile_Click(this, new RoutedEventArgs())),
+                (Loc.T("Duplicate File Finder"), "duplicates", Duplicate_File_Finder, () => DuplicateFilesScan_Click(this, new RoutedEventArgs()), () => CloseDuplicate_Click(this, new RoutedEventArgs()))
+            };
+            var running = tools.Where(t => IsToolRunning(t.Window)).ToList();
+            menu.Items.Add(Processes.TrayMenus.Label(running.Count == 0 ? Loc.T("No tools are running") : Loc.T("Running tools")));
+            foreach (var tool in running)
+            {
+                var entry = Processes.TrayMenus.Item(tool.Name, null, tool.Icon);
+                entry.Items.Add(Processes.TrayMenus.Item(Loc.T("Show"), tool.Open, "\uE8A7"));
+                entry.Items.Add(Processes.TrayMenus.Item(Loc.T("Close"), tool.Close, "\uE711"));
+                menu.Items.Add(entry);
+            }
+            if (running.Count > 1)
+            {
+                menu.Items.Add(new System.Windows.Controls.Separator());
+                menu.Items.Add(Processes.TrayMenus.Item(Loc.T("Close all tools"), () =>
+                {
+                    foreach (var tool in running)
+                        tool.Close();
+                }, "\uE8BB"));
+            }
+            return menu;
+        }
+
         private bool IsToolRunning(System.Windows.Window? toolWindow)
         {
             if (toolWindow == null)
@@ -243,12 +380,7 @@ namespace MultronWinCleaner
             if (malwarescan == null)
                 malwarescan = new MalwareScan(this);
 
-            malwarescan.Show();
-            if (malwarescan.WindowState == WindowState.Minimized)
-                malwarescan.WindowState = WindowState.Normal;
-            malwarescan.Activate();
-            malwarescan.Topmost = true;
-            malwarescan.Topmost = false;
+            malwarescan.BringToFront();
             return malwarescan;
         }
 
@@ -277,7 +409,7 @@ namespace MultronWinCleaner
 
                 try
                 {
-                    Uri iconUri = new Uri("pack://application:,,,/Assets/mwc_utilities.ico", UriKind.Absolute);
+                    Uri iconUri = new Uri("pack://application:,,,/Assets/Icons/mwc_utilities.ico", UriKind.Absolute);
                     var streamInfo = Application.GetResourceStream(iconUri);
                     if (streamInfo != null)
                     {
@@ -301,11 +433,7 @@ namespace MultronWinCleaner
                     this.WindowState = WindowState.Normal;
                 };
 
-                var contextMenu = new System.Windows.Forms.ContextMenuStrip();
-                contextMenu.Items.Add(Loc.T("Show Utilities"), null, (s, e) => { this.Show(); this.WindowState = WindowState.Normal; });
-                contextMenu.Items.Add(Loc.T("Hide Utilities"), null, (s, e) => { this.Hide(); });
-
-                trayIcon.ContextMenuStrip = contextMenu;
+                Processes.TrayMenus.Attach(trayIcon, BuildTrayMenu);
                 AppDomain.CurrentDomain.ProcessExit += (s, e) => trayIcon?.Dispose();
             }
 
@@ -380,6 +508,8 @@ namespace MultronWinCleaner
         {
             if (MainWindowButton != null)
                 MainWindowButton.Visibility = chkTrayIconUtil.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            if (TitleDivider != null)
+                TitleDivider.Visibility = chkTrayIconUtil.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void WatchToolProgress(System.Windows.Controls.ProgressBar bar, string tool, Func<(string Text, Brush Brush)> result)
@@ -400,7 +530,7 @@ namespace MultronWinCleaner
                 {
                     var (text, brush) = result();
                     bool ok = brush is SolidColorBrush solid &&
-                        (solid.Color == Colors.LimeGreen || solid.Color == (Color)ColorConverter.ConvertFromString(MainWindow.OkColor));
+                        (solid.Color == Colors.LimeGreen || solid.Color == ((System.Windows.Media.SolidColorBrush)FindResource("ResultSuccessText")).Color || solid.Color == (Color)ColorConverter.ConvertFromString(MainWindow.OkColor));
                     window?.FinishToolStatus(Loc.T(tool), text, !ok);
                 });
             }
@@ -472,17 +602,17 @@ namespace MultronWinCleaner
                 {
                     brokenShortcuts = await Task.Run(MultronWinCleaner.Processes.ShortcutFixer.FindBrokenShortcuts);
                     foreach (var item in brokenShortcuts)
-                        ShortcutList.Items.Add($"{Loc.T(item.Location)}: {item.Name} → {item.TargetPath}  ({item.Action})");
+                        ShortcutList.Items.Add(MultronWinCleaner.Processes.FriendlyListRow.ForShortcut(item));
                     if (brokenShortcuts.Count > 0)
                     {
-                        ShortcutResultLabel.Content = Loc.F("{0} broken shortcut(s) found.", brokenShortcuts.Count);
-                        ShortcutResultLabel.Foreground = Brushes.OrangeRed;
+                        ShortcutResultLabel.Content = Loc.F("{0} shortcut(s) point to files that no longer exist.", brokenShortcuts.Count);
+                        ShortcutResultLabel.SetResourceReference(ForegroundProperty, "ResultProblemText");
                         ShortcutScan.Content = Loc.T("Fix");
                     }
                     else
                     {
                         ShortcutResultLabel.Content = Loc.T("No broken shortcuts found.");
-                        ShortcutResultLabel.Foreground = Brushes.LimeGreen;
+                        ShortcutResultLabel.SetResourceReference(ForegroundProperty, "ResultSuccessText");
                         ShortcutScan.Content = Loc.T("ReScan");
                     }
                 }
@@ -491,7 +621,7 @@ namespace MultronWinCleaner
             catch (Exception ex)
             {
                 ShortcutResultLabel.Content = Loc.F("Shortcut Fixer failed: {0}", ex.Message);
-                ShortcutResultLabel.Foreground = Brushes.OrangeRed;
+                ShortcutResultLabel.SetResourceReference(ForegroundProperty, "ResultProblemText");
             }
             finally
             {
@@ -509,10 +639,10 @@ namespace MultronWinCleaner
                 return;
             ShortcutList.Items.Clear();
             foreach (var item in items)
-                ShortcutList.Items.Add(Loc.T(result.Failed.Contains(item) ? "Could not fix: " : item.RepairTarget != null ? "Repaired: " : "Moved to the Recycle Bin: ") + item.Name);
+                ShortcutList.Items.Add(MultronWinCleaner.Processes.FriendlyListRow.ForShortcutResult(item, result.Failed.Contains(item)));
             brokenShortcuts = new List<MultronWinCleaner.Processes.ShortcutFixer.BrokenShortcut>();
             ShortcutResultLabel.Content = Loc.F("{0} repaired, {1} moved to the Recycle Bin", result.Repaired, result.Removed) + (result.Failed.Count > 0 ? Loc.F(", {0} failed.", result.Failed.Count) : ".");
-            ShortcutResultLabel.Foreground = result.Failed.Count == 0 ? Brushes.LimeGreen : Brushes.OrangeRed;
+            ShortcutResultLabel.SetResourceReference(ForegroundProperty, result.Failed.Count == 0 ? "ResultSuccessText" : "ResultProblemText");
             ShortcutResultLabel.Visibility = Visibility.Visible;
             ShortcutList.Visibility = ShortcutList.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             ShortcutReset.Visibility = Visibility.Visible;
@@ -527,8 +657,8 @@ namespace MultronWinCleaner
             SecurityList.ItemsSource = securityIssues;
             SecurityListScroll.Visibility = securityIssues.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             string status = MainWindow.DescribeSecurityIssues(securityIssues, out string color);
-            SecurityResultLabel.Text = suffix.Length > 0 ? status + " " + suffix : status;
-            SecurityResultLabel.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
+            SecurityResultLabel.Content = suffix.Length > 0 ? status + " " + suffix : status;
+            SecurityResultLabel.Foreground = MultronWinCleaner.Processes.ThemeColors.ReadableBrush(color);
             SecurityResultLabel.Visibility = Visibility.Visible;
             SecurityFix.Visibility = securityIssues.Any(i => i.CanFix) ? Visibility.Visible : Visibility.Collapsed;
             SecurityUndo.Visibility = MultronWinCleaner.Processes.SecurityCheck.HasBackup ? Visibility.Visible : Visibility.Collapsed;
@@ -609,23 +739,23 @@ namespace MultronWinCleaner
             FirewallInvalidRulesList.Items.Clear();
             FirewallInvalidRulesList.Visibility = Visibility.Collapsed;
             FirewallScanResultLabel.Content = Loc.T("Checking the firewall rules for the main screen scan...");
-            FirewallScanResultLabel.Foreground = Brushes.DodgerBlue;
+            FirewallScanResultLabel.SetResourceReference(ForegroundProperty, "AccentText");
             FirewallScanResultLabel.Visibility = Visibility.Visible;
             try
             {
                 invalidrules = await Task.Run(MultronWinCleaner.Processes.FirewallRules.FindInvalidRules);
-                foreach (var rule in invalidrules)
-                    FirewallInvalidRulesList.Items.Add(Loc.F("Invalid Path: {0}  ({1}, {2})", rule.ApplicationPath, rule.Name, Loc.T(rule.Direction)));
+                foreach (var row in MultronWinCleaner.Processes.FriendlyListRow.ForFirewall(invalidrules))
+                FirewallInvalidRulesList.Items.Add(row);
                 FirewallInvalidRulesList.Visibility = invalidrules.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-                FirewallScanResultLabel.Content = invalidrules.Count > 0 ? Loc.F("{0} invalid firewall rule(s) found.", invalidrules.Count) : Loc.T("No invalid firewall rules found.");
-                FirewallScanResultLabel.Foreground = invalidrules.Count > 0 ? Brushes.OrangeRed : Brushes.LimeGreen;
+                FirewallScanResultLabel.Content = invalidrules.Count > 0 ? Loc.F("{0} firewall rule(s) left behind by removed programs.", invalidrules.Count) : Loc.T("No invalid firewall rules found.");
+                FirewallScanResultLabel.SetResourceReference(ForegroundProperty, invalidrules.Count > 0 ? "ResultProblemText" : "ResultSuccessText");
                 FirewallScan.Content = Loc.T(invalidrules.Count > 0 ? "Clean" : "ReScan");
                 return invalidrules;
             }
             catch (Exception ex)
             {
                 FirewallScanResultLabel.Content = Loc.F("Failed to read firewall rules: {0}", ex.Message);
-                FirewallScanResultLabel.Foreground = Brushes.OrangeRed;
+                FirewallScanResultLabel.SetResourceReference(ForegroundProperty, "ResultProblemText");
                 throw;
             }
             finally
@@ -650,23 +780,23 @@ namespace MultronWinCleaner
             ShortcutList.Items.Clear();
             ShortcutList.Visibility = Visibility.Collapsed;
             ShortcutResultLabel.Content = Loc.T("Checking the shortcuts for the main screen scan...");
-            ShortcutResultLabel.Foreground = Brushes.DodgerBlue;
+            ShortcutResultLabel.SetResourceReference(ForegroundProperty, "AccentText");
             ShortcutResultLabel.Visibility = Visibility.Visible;
             try
             {
                 brokenShortcuts = await Task.Run(MultronWinCleaner.Processes.ShortcutFixer.FindBrokenShortcuts);
                 foreach (var item in brokenShortcuts)
-                    ShortcutList.Items.Add($"{Loc.T(item.Location)}: {item.Name} → {item.TargetPath}  ({item.Action})");
+                    ShortcutList.Items.Add(MultronWinCleaner.Processes.FriendlyListRow.ForShortcut(item));
                 ShortcutList.Visibility = brokenShortcuts.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-                ShortcutResultLabel.Content = brokenShortcuts.Count > 0 ? Loc.F("{0} broken shortcut(s) found.", brokenShortcuts.Count) : Loc.T("No broken shortcuts found.");
-                ShortcutResultLabel.Foreground = brokenShortcuts.Count > 0 ? Brushes.OrangeRed : Brushes.LimeGreen;
+                ShortcutResultLabel.Content = brokenShortcuts.Count > 0 ? Loc.F("{0} shortcut(s) point to files that no longer exist.", brokenShortcuts.Count) : Loc.T("No broken shortcuts found.");
+                ShortcutResultLabel.SetResourceReference(ForegroundProperty, brokenShortcuts.Count > 0 ? "ResultProblemText" : "ResultSuccessText");
                 ShortcutScan.Content = Loc.T(brokenShortcuts.Count > 0 ? "Fix" : "ReScan");
                 return brokenShortcuts;
             }
             catch (Exception ex)
             {
                 ShortcutResultLabel.Content = Loc.F("Shortcut Fixer failed: {0}", ex.Message);
-                ShortcutResultLabel.Foreground = Brushes.OrangeRed;
+                ShortcutResultLabel.SetResourceReference(ForegroundProperty, "ResultProblemText");
                 throw;
             }
             finally
@@ -710,16 +840,16 @@ namespace MultronWinCleaner
                 SecurityList.ItemsSource = securityIssues;
                 SecurityListScroll.Visibility = securityIssues.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
                 string status = MainWindow.DescribeSecurityIssues(securityIssues, out string color);
-                SecurityResultLabel.Text = suffix.Length > 0 ? status + " " + suffix : status;
-                SecurityResultLabel.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
+                SecurityResultLabel.Content = suffix.Length > 0 ? status + " " + suffix : status;
+                SecurityResultLabel.Foreground = MultronWinCleaner.Processes.ThemeColors.ReadableBrush(color);
                 SecurityFix.Visibility = securityIssues.Any(i => i.CanFix) ? Visibility.Visible : Visibility.Collapsed;
                 SecurityScan.Content = Loc.T("ReScan");
                 UpdateShowIgnoredButton();
             }
             catch (Exception ex)
             {
-                SecurityResultLabel.Text = Loc.F("Security Check failed: {0}", ex.Message);
-                SecurityResultLabel.Foreground = Brushes.OrangeRed;
+                SecurityResultLabel.Content = Loc.F("Security Check failed: {0}", ex.Message);
+                SecurityResultLabel.SetResourceReference(ForegroundProperty, "ResultProblemText");
             }
             finally
             {
@@ -747,8 +877,8 @@ namespace MultronWinCleaner
             var selected = securityIssues.Where(i => i.IsSelected && i.CanFix).ToList();
             if (selected.Count == 0)
             {
-                SecurityResultLabel.Text = Loc.T("Tick the settings you want to fix.");
-                SecurityResultLabel.Foreground = Brushes.OrangeRed;
+                SecurityResultLabel.Content = Loc.T("Tick the settings you want to fix.");
+                SecurityResultLabel.SetResourceReference(ForegroundProperty, "ResultProblemText");
                 SecurityResultLabel.Visibility = Visibility.Visible;
                 return;
             }
@@ -757,7 +887,7 @@ namespace MultronWinCleaner
             bool done = await window.FixSecurityIssuesAsync(selected, SecurityFix, text =>
             {
                 message = text;
-                SecurityResultLabel.Text = text;
+                SecurityResultLabel.Content = text;
                 SecurityResultLabel.Visibility = Visibility.Visible;
             });
             if (done)
@@ -797,7 +927,7 @@ namespace MultronWinCleaner
             securityIssues = new List<MultronWinCleaner.Processes.SecurityCheck.Issue>();
             SecurityList.ItemsSource = null;
             SecurityListScroll.Visibility = Visibility.Collapsed;
-            SecurityResultLabel.Text = "";
+            SecurityResultLabel.Content = "";
             SecurityResultLabel.Visibility = Visibility.Collapsed;
             SecurityProgress.Visibility = Visibility.Collapsed;
             SecurityFix.Visibility = Visibility.Collapsed;
@@ -837,22 +967,21 @@ namespace MultronWinCleaner
             }
 
             FirewallProgress.IsIndeterminate = false;
-            FirewallProgress.Value = 100;
-            foreach (var rule in invalidrules)
-                FirewallInvalidRulesList.Items.Add(Loc.F("Invalid Path: {0}  ({1}, {2})", rule.ApplicationPath, rule.Name, Loc.T(rule.Direction)));
+            FirewallProgress.Visibility = Visibility.Collapsed;
+            foreach (var row in MultronWinCleaner.Processes.FriendlyListRow.ForFirewall(invalidrules))
+                FirewallInvalidRulesList.Items.Add(row);
 
             FirewallScanResultLabel.Visibility = Visibility.Visible;
             if (invalidrules.Count > 0)
             {
                 FirewallInvalidRulesList.Visibility = Visibility.Visible;
-                FirewallScanResultLabel.Content = Loc.F("{0} invalid firewall rule(s) found.", invalidrules.Count);
-                FirewallScanResultLabel.Foreground = Brushes.OrangeRed;
+                FirewallScanResultLabel.Content = Loc.F("{0} firewall rule(s) left behind by removed programs.", invalidrules.Count);
+                FirewallScanResultLabel.SetResourceReference(ForegroundProperty, "ResultProblemText");
             }
             else
             {
-                FirewallProgress.Visibility = Visibility.Collapsed;
                 FirewallScanResultLabel.Content = Loc.T("No invalid firewall rules found.");
-                FirewallScanResultLabel.Foreground = Brushes.LimeGreen;
+                FirewallScanResultLabel.SetResourceReference(ForegroundProperty, "ResultSuccessText");
                 FirewallScan.Content = Loc.T("ReScan");
             }
             firewallRunning = false;
@@ -866,7 +995,16 @@ namespace MultronWinCleaner
             FirewallInvalidRulesList.Items.Clear();
 
             var rules = invalidrules;
-            var result = await Task.Run(() => MultronWinCleaner.Processes.FirewallRules.RemoveRules(rules));
+            (int Removed, List<MultronWinCleaner.Processes.FirewallRules.InvalidRule> Failed) result;
+            try
+            {
+                result = await Task.Run(() => MultronWinCleaner.Processes.FirewallRules.RemoveRules(rules));
+            }
+            catch (Exception ex)
+            {
+                AppDialog.Show(Loc.F("Failed to remove firewall rules: {0}", ex.Message), Loc.T("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                result = (0, rules);
+            }
             ShowFirewallRemoval(rules, result);
             window?.ApplyFirewallRemoval(rules, result);
             firewallRunning = false;
@@ -878,8 +1016,8 @@ namespace MultronWinCleaner
             if (firewallRunning && !ReferenceEquals(rules, invalidrules))
                 return;
             FirewallInvalidRulesList.Items.Clear();
-            foreach (var rule in rules)
-                FirewallInvalidRulesList.Items.Add(Loc.T(result.Failed.Contains(rule) ? "could not delete: " : "deleted: ") + rule.ApplicationPath);
+            foreach (var row in MultronWinCleaner.Processes.FriendlyListRow.ForFirewallResult(rules, result.Failed))
+                FirewallInvalidRulesList.Items.Add(row);
             invalidrules = new List<MultronWinCleaner.Processes.FirewallRules.InvalidRule>();
 
             FirewallProgress.IsIndeterminate = false;
@@ -889,7 +1027,7 @@ namespace MultronWinCleaner
             FirewallScanResultLabel.Content = result.Failed.Count == 0
                 ? Loc.F("{0} invalid firewall rule(s) deleted.", result.Removed)
                 : Loc.F("{0} invalid firewall rule(s) deleted, {1} could not be deleted.", result.Removed, result.Failed.Count);
-            FirewallScanResultLabel.Foreground = result.Failed.Count == 0 ? Brushes.LimeGreen : Brushes.OrangeRed;
+            FirewallScanResultLabel.SetResourceReference(ForegroundProperty, result.Failed.Count == 0 ? "ResultSuccessText" : "ResultProblemText");
             FirewallScanResultLabel.Visibility = Visibility.Visible;
             FirewallScan.Content = Loc.T("ReScan");
         }
@@ -908,9 +1046,50 @@ namespace MultronWinCleaner
                 
             
             
-            largefilefinder.Show();
+            largefilefinder.BringToFront();
         }
-        private void TopPanel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (e.ButtonState == MouseButtonState.Pressed) this.DragMove(); }
+        private void TopPanel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left)
+                return;
+            if (e.ClickCount == 2)
+                ToggleFullScreen();
+            else if (!isFullScreen)
+                DragMove();
+        }
+
+        private bool isFullScreen;
+        private double previousWidth, previousHeight, previousLeft, previousTop;
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e) => ToggleFullScreen();
+
+        private void ToggleFullScreen()
+        {
+            if (isFullScreen)
+            {
+                Width = previousWidth;
+                Height = previousHeight;
+                Left = previousLeft;
+                Top = previousTop;
+                buttonMaximize.Content = "\uE922";
+            }
+            else
+            {
+                previousWidth = Width;
+                previousHeight = Height;
+                previousLeft = Left;
+                previousTop = Top;
+                Left = SystemParameters.WorkArea.Left;
+                Top = SystemParameters.WorkArea.Top;
+                Width = SystemParameters.WorkArea.Width;
+                Height = SystemParameters.WorkArea.Height;
+                buttonMaximize.Content = "\uE923";
+            }
+            isFullScreen = !isFullScreen;
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e) => this.Hide();
 
         private void ShowMainWindow_Click(object sender, RoutedEventArgs e)
@@ -932,6 +1111,12 @@ namespace MultronWinCleaner
             return Duplicate_File_Finder;
         }
 
+        public void ShowLargeFileReport(List<LargeFileFinder.LargeFileInfo> files)
+        {
+            LargeFilesScan_Click(this, new RoutedEventArgs());
+            largefilefinder?.ShowReport(files);
+        }
+
         public void ShowDuplicateFinder()
         {
             DuplicateFilesScan_Click(this, new RoutedEventArgs());
@@ -951,7 +1136,7 @@ namespace MultronWinCleaner
             }
         
             
-            Duplicate_File_Finder.Show();  
+            Duplicate_File_Finder.BringToFront();
         
         }
 
@@ -968,7 +1153,7 @@ namespace MultronWinCleaner
             }
          
             
-            memcleaner.Show();  
+            memcleaner.BringToFront();
         
         }
 
@@ -1310,7 +1495,7 @@ namespace MultronWinCleaner
                 window.settings.Show();
                 window.settings.Hide();
             }
-            startupmanager.Show();
+            startupmanager.BringToFront();
         }
     }
 }

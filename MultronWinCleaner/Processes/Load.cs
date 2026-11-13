@@ -58,7 +58,7 @@ namespace MultronWinCleaner.Processes
                 {
                     await main.Dispatcher.InvokeAsync(() => {
                         main.StatusLoad.Text = text + ".";
-                        main.StatusLoad.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1e88e5"));
+                        main.StatusLoad.Foreground = MultronWinCleaner.Processes.ThemeColors.ReadableBrush("#1e88e5");
                     });
 
                     await System.Threading.Tasks.Task.Delay(1000, cancellationToken);
@@ -178,6 +178,7 @@ namespace MultronWinCleaner.Processes
             public List<ProfileLine> ProfileLines = new List<ProfileLine>();
             public List<System.Windows.Controls.CheckBox> ProfileCheckBoxes = new List<System.Windows.Controls.CheckBox>();
             public BrowserTag? Browser;
+            public AppCategory? Category;
             public string? Source;
         }
 
@@ -293,8 +294,8 @@ namespace MultronWinCleaner.Processes
                         if (!string.IsNullOrWhiteSpace(main.settings.logfilepath) && File.Exists(main.settings.logfilepath))
                             lastLine = File.ReadLines(main.settings.logfilepath).LastOrDefault();
 
-                        if (lastLine != null && main.settings.chkShowLastLog.IsChecked == true) main.label1_Copy.Text = lastLine;
-                        else main.label1_Copy.Text = Loc.T("Ready to scan");
+                        main.label1_Copy.Text = Loc.T("Ready to scan");
+                        main.ShowLastLogLine(lastLine);
 
                         main.buttonStartScan.IsEnabled = true;
                         main.progressBar1.Value = 0;
@@ -494,6 +495,7 @@ namespace MultronWinCleaner.Processes
                     {
                         Header = main.stringtokenizer(line, "=", 1) ?? "",
                         Browser = BrowserTag.FromHeader(line),
+                        Category = AppCategories.FromHeader(line),
                         Source = extraHeaderSources.TryGetValue(line.Trim(), out string? source) ? source : null
                     };
                     section.Groups.Add(group);
@@ -630,14 +632,16 @@ namespace MultronWinCleaner.Processes
             };
             newCheckBox.Checked += main.CheckBox_Checked;
             newCheckBox.Unchecked += main.CheckBox_Unchecked;
+            newCheckBox.MouseEnter += (s, e) => main.ShowItemPaths(entry.Name, "", new[] { entry.Path });
+            newCheckBox.GotKeyboardFocus += (s, e) => main.ShowItemPaths(entry.Name, "", new[] { entry.Path });
             main.checkboxes2.Add(newCheckBox);
+            main.cleaningEntryBoxes.Add(newCheckBox);
             return newCheckBox;
         }
 
         #region Cleaning list
 
         private const string WindowsGlyph = "";
-        private const string AppsGlyph = "";
 
         private static readonly string[] WindowsGroupPrefixes =
         {
@@ -677,6 +681,7 @@ namespace MultronWinCleaner.Processes
         private sealed class SimpleGroup
         {
             public string Header = "";
+            public string Title = "";
             public string GroupId = "";
             public readonly List<LoadGroup> Parts = new List<LoadGroup>();
             public readonly List<(System.Windows.Controls.CheckBox Box, LoadEntry Entry)> Items = new List<(System.Windows.Controls.CheckBox, LoadEntry)>();
@@ -686,6 +691,7 @@ namespace MultronWinCleaner.Processes
             public TextBlock CountText = null!;
             public bool Syncing;
             public bool Detailed;
+            public Action? Refreshed;
         }
 
         private async System.Threading.Tasks.Task BuildSectionsAsync(List<LoadSection> sections, bool detailed)
@@ -715,8 +721,14 @@ namespace MultronWinCleaner.Processes
                 }
 
                 categories.Add((WindowsGlyph + " " + Loc.T("Windows"), merged.Where(g => IsWindowsGroup(g.Header)).ToList()));
-                categories.Add((AppsGlyph + " " + Loc.T("Applications"), merged.Where(g => !IsWindowsGroup(g.Header))
-                    .OrderBy(g => Prettify(g.Header), StringComparer.CurrentCultureIgnoreCase).ToList()));
+                var apps = merged.Where(g => !IsWindowsGroup(g.Header))
+                    .OrderBy(g => Prettify(g.Header), StringComparer.CurrentCultureIgnoreCase)
+                    .Select(g => (Group: g, Category: g.Parts.Any(p => p.Browser?.IsBrowser == true)
+                        ? AppCategory.Browsers
+                        : g.Parts.Select(p => p.Category).FirstOrDefault(c => c != null) ?? AppCategory.Other))
+                    .ToList();
+                foreach (var (category, glyph, title) in AppCategories.Order)
+                    categories.Add((glyph + " " + Loc.T(title), apps.Where(a => a.Category == category).Select(a => a.Group).ToList()));
             }
 
             int total = Math.Max(1, categories.Sum(c => c.Groups.Count));
@@ -725,11 +737,12 @@ namespace MultronWinCleaner.Processes
             {
                 if (category.Groups.Count == 0) continue;
 
-                StackPanel sectionPanel = null!;
+                System.Windows.Controls.Panel sectionPanel = null!;
                 Expander sectionExpander = null!;
+                bool cards = !detailed;
                 await main.Dispatcher.InvokeAsync(() =>
                 {
-                    sectionPanel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Vertical, Margin = new Thickness(5) };
+                    sectionPanel = cards ? CardLayout.CreateGrid(new Thickness(5)) : new StackPanel { Orientation = System.Windows.Controls.Orientation.Vertical, Margin = new Thickness(5) };
                     sectionExpander = new Expander
                     {
                         Header = SectionHeader(category.Title),
@@ -743,8 +756,8 @@ namespace MultronWinCleaner.Processes
                         Content = sectionPanel
                     };
                     sectionExpander.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "Text");
-                    sectionExpander.SetResourceReference(System.Windows.Controls.Control.BorderBrushProperty, "Text");
-                    main.wrapPanel1.Children.Add(sectionExpander);
+                    sectionExpander.SetResourceReference(System.Windows.Controls.Control.BorderBrushProperty, "BorderBrush");
+                    main.SectionHost.Children.Add(sectionExpander);
                 });
 
                 foreach (SimpleGroup group in category.Groups)
@@ -755,26 +768,27 @@ namespace MultronWinCleaner.Processes
                     {
                         try
                         {
-                            BuildSimpleGroup(group, sectionPanel);
+                            BuildSimpleGroup(group, sectionPanel, category.Title.Substring(0, 1));
                         }
                         catch (Exception ex)
                         {
                             Debug.WriteLine("Could not build group " + group.Header + ": " + ex.Message);
                         }
                         main.progressBar1.Value = progress;
+                        main.SetLoadingProgress(progress);
                     }, System.Windows.Threading.DispatcherPriority.Background);
                 }
 
                 await main.Dispatcher.InvokeAsync(() =>
                 {
                     if (sectionPanel.Children.Count == 0)
-                        main.wrapPanel1.Children.Remove(sectionExpander);
+                        (sectionExpander.Parent as System.Windows.Controls.Panel)?.Children.Remove(sectionExpander);
                 });
             }
 
         }
 
-        private void BuildSimpleGroup(SimpleGroup group, System.Windows.Controls.Panel sectionPanel)
+        private void BuildSimpleGroup(SimpleGroup group, System.Windows.Controls.Panel sectionPanel, string categoryGlyph)
         {
             var profileParts = group.Parts.Where(p => !allBrowserProfiles && p.ProfileFolders != null && p.ProfileFolders.Count > 1).ToList();
             if (group.Parts.All(p => p.Entries.Count == 0) && profileParts.Count == 0) return;
@@ -798,12 +812,54 @@ namespace MultronWinCleaner.Processes
             };
             group.HeaderBox.Click += (s, e) => SetGroupChecked(group, group.HeaderBox.IsChecked == true);
 
+            bool card = sectionPanel is System.Windows.Controls.Grid;
             var title = new TextBlock { Text = group.Detailed ? group.Header : Prettify(group.Header), VerticalAlignment = VerticalAlignment.Center };
             group.CountText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Opacity = 0.6, FontWeight = FontWeights.Normal, FontSize = 12 };
-            var header = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
-            header.Children.Add(group.HeaderBox);
-            header.Children.Add(title);
-            header.Children.Add(group.CountText);
+            System.Windows.FrameworkElement header;
+            (Border Pill, TextBlock Text) pill = default;
+            if (card)
+            {
+                title.FontSize = 14;
+                title.TextWrapping = TextWrapping.Wrap;
+                if (title.Text.StartsWith("Windows ", StringComparison.OrdinalIgnoreCase) && title.Text.Substring(8).Trim().Contains(' '))
+                    title.Text = title.Text.Substring(8).Trim();
+                title.Margin = new Thickness(0, 0, 0, 2);
+                group.Title = title.Text;
+                var titleLine = new WrapPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
+                titleLine.Children.Add(title);
+                var texts = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+                texts.Children.Add(titleLine);
+                string? description = ItemInfo.Description(group.Header);
+                if (description != null)
+                {
+                    var line = new TextBlock { Text = description, FontSize = 12, FontWeight = FontWeights.Normal, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
+                    line.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
+                    texts.Children.Add(line);
+                }
+                ItemInfo.Decorate(titleLine, title, group.Header, texts);
+                pill = CardLayout.Pill();
+                var grid = new System.Windows.Controls.Grid();
+                grid.ColumnDefinitions.Add(new System.Windows.Controls.ColumnDefinition { Width = GridLength.Auto });
+                grid.ColumnDefinitions.Add(new System.Windows.Controls.ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new System.Windows.Controls.ColumnDefinition { Width = GridLength.Auto });
+                string? infoKey = ItemInfo.Key(group.Header);
+                var icon = CardLayout.Icon(infoKey != null || IsWindowsGroup(group.Header) ? ItemInfo.Glyph(infoKey) : categoryGlyph);
+                System.Windows.Controls.Grid.SetColumn(texts, 1);
+                System.Windows.Controls.Grid.SetColumn(pill.Pill, 2);
+                grid.Children.Add(icon);
+                grid.Children.Add(texts);
+                grid.Children.Add(pill.Pill);
+                header = grid;
+            }
+            else
+            {
+                var row = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
+                row.Children.Add(group.HeaderBox);
+                row.Children.Add(title);
+                row.Children.Add(group.CountText);
+                ItemInfo.Decorate(row, title, group.Header);
+                header = row;
+            }
 
             group.RowPanel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Vertical, Margin = new Thickness(28, 2, 5, 6) };
 
@@ -828,8 +884,34 @@ namespace MultronWinCleaner.Processes
             foreach (LoadGroup part in profileParts)
                 group.RowPanel.Children.Add(CreateSimpleProfileList(group, part));
 
+            if (card)
+            {
+                group.RowPanel.Margin = new Thickness(60, 0, 12, 10);
+                CardLayout.MakeSelectable(expander, header, () =>
+                {
+                    bool anyOn = group.Items.Any(i => i.Box.IsChecked == true);
+                    if (anyOn)
+                        SetGroupChecked(group, false);
+                    else
+                    {
+                        var recommended = group.Items.Where(i => i.Entry.Recommended).Select(i => i.Box).ToList();
+                        SetBoxes(group, recommended.Count > 0 ? recommended : group.Items.Select(i => i.Box), true);
+                    }
+                });
+                group.Refreshed = () =>
+                {
+                    int selected = group.Items.Count(i => i.Box.IsChecked == true);
+                    CardLayout.SetSelected(expander, selected > 0);
+                    CardLayout.SetPill(pill.Pill!, pill.Text!, selected > 0, Loc.F("{0} / {1} selected", selected, group.Items.Count));
+                };
+            }
+
             RebuildSimpleRows(group);
-            sectionPanel.Children.Add(expander);
+            if (sectionPanel is System.Windows.Controls.Grid cardGrid)
+                CardLayout.Add(cardGrid, expander);
+            else
+                sectionPanel.Children.Add(expander);
+            group.Refreshed?.Invoke();
         }
 
         private void AddSimpleItem(SimpleGroup group, System.Windows.Controls.CheckBox box, LoadEntry entry)
@@ -889,6 +971,7 @@ namespace MultronWinCleaner.Processes
                 int selected = group.Rows.Count(r => r.View.IsChecked != false);
                 group.CountText.Text = Loc.F("{0} / {1} selected", selected, group.Rows.Count);
             }
+            group.Refreshed?.Invoke();
         }
 
         private void RebuildSimpleRows(SimpleGroup group)
@@ -913,21 +996,20 @@ namespace MultronWinCleaner.Processes
             foreach (SimpleRow row in group.Rows)
             {
                 List<string> paths = row.Boxes.Select(b => main.stringtokenizer(b.Content?.ToString() ?? "", "=", 1) ?? "").Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-                string tip = string.Join("\n", paths.Take(12));
-                if (paths.Count > 12) tip += "\n" + Loc.F("...and {0} more", paths.Count - 12);
+                string? tip = null;
                 string? note = MainWindow.ShowEntryNotes()
                     ? group.Items.Where(i => row.Boxes.Contains(i.Box)).Select(i => i.Entry.Warning).FirstOrDefault(w => !string.IsNullOrEmpty(w))
                     : null;
                 bool info = note != null && MainWindow.IsInfoNote(note);
                 string? warning = note == null ? null : Loc.T(note);
                 if (warning != null)
-                    tip = (info ? warning : Loc.F("Warning: {0}", warning)) + "\n\n" + tip;
+                    tip = info ? warning : Loc.F("Warning: {0}", warning);
 
-                object content = warning != null ? WithWarningButton(Prettify(row.Name), warning, info) : Prettify(row.Name);
+                object content = warning != null ? WithWarningButton(Prettify(row.Name), warning, info) : new TextBlock { Text = Prettify(row.Name), TextWrapping = TextWrapping.Wrap };
                 if (group.Detailed)
                 {
                     var lines = new StackPanel();
-                    lines.Children.Add(warning != null ? WithWarningButton(row.Name, warning, info) : new TextBlock { Text = row.Name });
+                    lines.Children.Add(warning != null ? WithWarningButton(row.Name, warning, info) : new TextBlock { Text = row.Name, TextWrapping = TextWrapping.Wrap });
                     var pathText = new TextBlock { Text = string.Join("\n", paths), FontSize = 11, Opacity = 0.65, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1, 0, 0) };
                     lines.Children.Add(pathText);
                     content = lines;
@@ -945,6 +1027,10 @@ namespace MultronWinCleaner.Processes
                 };
                 view.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "Text");
                 SimpleRow current = row;
+                string groupTitle = group.Title.Length > 0 ? group.Title : group.Detailed ? group.Header : Prettify(group.Header);
+                string rowTitle = group.Detailed ? row.Name : Prettify(row.Name);
+                view.MouseEnter += (s, e) => main.ShowItemPaths(rowTitle, groupTitle, paths);
+                view.GotKeyboardFocus += (s, e) => main.ShowItemPaths(rowTitle, groupTitle, paths);
                 view.Click += (s, e) => SetBoxes(group, current.Boxes, view.IsChecked == true);
                 view.ContextMenu = CreateSimpleRowMenu(paths);
                 row.View = view;
@@ -954,7 +1040,7 @@ namespace MultronWinCleaner.Processes
             RefreshSimpleGroup(group);
         }
 
-        private static StackPanel WithWarningButton(string text, string warning, bool info)
+        private static WrapPanel WithWarningButton(string text, string warning, bool info)
         {
             var orange = (Color)ColorConverter.ConvertFromString(info ? "#1E88E5" : "#FF9800");
             var button = new Button
@@ -968,7 +1054,7 @@ namespace MultronWinCleaner.Processes
                 Background = new SolidColorBrush(Color.FromArgb(0x26, orange.R, orange.G, orange.B)),
                 BorderBrush = new SolidColorBrush(orange),
                 BorderThickness = new Thickness(1),
-                Foreground = new SolidColorBrush(orange),
+                Foreground = ThemeColors.ReadableBrush(orange),
                 ToolTip = warning
             };
             button.Click += (s, e) =>
@@ -976,8 +1062,8 @@ namespace MultronWinCleaner.Processes
                 e.Handled = true;
                 AppDialog.Show(warning, text, MessageBoxButton.OK, info ? MessageBoxImage.Information : MessageBoxImage.Warning);
             };
-            var panel = new StackPanel { Orientation = Orientation.Horizontal };
-            panel.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+            var panel = new WrapPanel();
+            panel.Children.Add(new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center });
             panel.Children.Add(button);
             return panel;
         }
@@ -1005,6 +1091,7 @@ namespace MultronWinCleaner.Processes
                         string content = oldBox.Content?.ToString() ?? "";
                         main.database.Remove(main.stringtokenizer(content, "=", 0) + "=" + main.stringtokenizer(content, "=", 1));
                         main.checkboxes2.Remove(oldBox);
+                        main.cleaningEntryBoxes.Remove(oldBox);
                         group.Items.RemoveAll(i => i.Box == oldBox);
                     }
                     part.ProfileCheckBoxes.Clear();
@@ -1031,6 +1118,8 @@ namespace MultronWinCleaner.Processes
                     Debug.WriteLine("Could not switch browser profile in " + group.Header + ": " + ex.Message);
                 }
             };
+            list.Height = 32;
+            MainWindow.StyleCardComboBox(list);
             main.comboboxlist.Add(list);
             return list;
         }

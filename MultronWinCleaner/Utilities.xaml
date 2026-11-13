@@ -9,48 +9,51 @@
         Background="{DynamicResource WindowBackground}"
         SnapsToDevicePixels="True"
         UseLayoutRounding="True"
-        Icon="pack://application:,,,/Assets/mwc_utilities.ico"
+        Icon="pack://application:,,,/Assets/Icons/mwc_utilities.ico"
         TextOptions.TextFormattingMode="Display">
 
     <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display" Margin="0,0,0,23">
 
-        <Border Background="{DynamicResource PanelBackground}" Height="56" VerticalAlignment="Top" CornerRadius="10"
-        Margin="10,10,10,0" Padding="0,0,10,0"
-        MouseDown="TopPanel_MouseLeftButtonDown"
-        Effect="{StaticResource DropShadowEffect}">
-            <DockPanel LastChildFill="False" Margin="8,0,8,0">
-               
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Text="{loc:Tr 'Multron Win Cleaner Utilities'}"
-                       FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
-                </StackPanel>
- 
-                <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" DockPanel.Dock="Right"
-           Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"
-           Margin="0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <Border Background="{DynamicResource PanelBackground}" Height="60" VerticalAlignment="Top"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                MouseDown="TopPanel_MouseLeftButtonDown">
+            <DockPanel LastChildFill="False" Margin="18,0,12,0">
 
-                <Button x:Name="MainWindowButton" DockPanel.Dock="Right" Style="{DynamicResource AccentButtonStyle}"
-           Height="32" FontSize="13" Margin="0,0,10,0" VerticalAlignment="Center" Visibility="Collapsed"
-           Click="ShowMainWindow_Click" ToolTip="{loc:Tr 'Show the main Multron Win Cleaner window'}">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <Image Source="pack://application:,,,/Assets/Icons/mwc_utilities.png" Width="28" Height="28" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <TextBlock Text="MULTRON WIN CLEANER" FontSize="15" FontFamily="Bahnschrift, Century Gothic, Segoe UI" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Margin="0,5,0,0"/>
+                    <Border Background="#201E88E5" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:Tr 'Utilities'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentText}"/>
+                    </Border>
+                </StackPanel>
+
+                <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" DockPanel.Dock="Right" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}" VerticalAlignment="Center"/>
+                <Button x:Name="buttonMaximize" Content="&#xE922;" Style="{DynamicResource ChromeButtonStyle}" DockPanel.Dock="Right" Click="MaximizeButton_Click" ToolTip="{loc:Tr 'Maximize/Restore'}" VerticalAlignment="Center"/>
+                <Button Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}" DockPanel.Dock="Right" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" VerticalAlignment="Center"/>
+                <Border x:Name="TitleDivider" DockPanel.Dock="Right" Width="1" Height="24" Background="{DynamicResource BorderBrush}" Margin="14,0,12,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+
+                <Button x:Name="MainWindowButton" DockPanel.Dock="Right" Style="{DynamicResource UtilitySecondaryButtonStyle}" Padding="0"
+                        Height="32" FontSize="13" Margin="14,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"
+                        Click="ShowMainWindow_Click" ToolTip="{loc:Tr 'Show the main Multron Win Cleaner window'}">
                     <StackPanel Orientation="Horizontal" Margin="12,0">
                         <TextBlock Text="&#x2302;" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock Text="{loc:Tr 'Main Window'}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,15,0">
-                    <TextBlock Text="{loc:Tr 'Tray Icon'}" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold" FontSize="13"/>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="{loc:Tr 'Tray Icon'}" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold" FontSize="13"/>
                     <ToggleButton x:Name="chkTrayIconUtil" Style="{StaticResource ToggleSwitchStyle}" Checked="chkTrayIconUtil_CheckedChanged" Unchecked="chkTrayIconUtil_CheckedChanged" VerticalAlignment="Center" />
                 </StackPanel>
             </DockPanel>
         </Border>
 
-        <ScrollViewer Margin="0,76,0,-33"
+        <ScrollViewer Margin="0,66,0,-33"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="10,0,10,10">
             <Grid>
-                <Grid Margin="0,0,0,20">
+                <Grid Margin="0,0,0,20" MaxWidth="1240">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -66,58 +69,46 @@
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Row="1" Grid.Column="0" Margin="10" Padding="15"
-                            Background="{DynamicResource PanelBackground}" CornerRadius="12"
+                            Background="{DynamicResource PanelBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1"
                             Effect="{StaticResource DropShadowEffect}">
                         <StackPanel>
                             <TextBlock Text="{loc:Tr 'Firewall Rule Cleaner'}"
-                                       FontSize="16" FontWeight="SemiBold"
+                                       FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                             <TextBlock Text="{loc:Tr 'Removes broken or orphaned rules from Windows Firewall.'}"
                                        FontSize="13" Foreground="{DynamicResource TextSecondary}"
                                        TextWrapping="Wrap" Margin="0,0,0,10"/>
-                            <ProgressBar x:Name="FirewallProgress" Height="18" Minimum="0" Maximum="100" Value="0"
-                                         Margin="0,0,0,5" Foreground="{DynamicResource ButtonNormalBackground}"
-                                         Background="#DDD" Visibility="Collapsed"/>
-                            <ListBox x:Name="FirewallInvalidRulesList" Height="120"
-                                     Background="{DynamicResource PanelBackground}"
-                                     Foreground="{DynamicResource TextPrimary}"
-                                     BorderBrush="Transparent" Margin="0,0,0,5" Visibility="Collapsed">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                            <Label x:Name="FirewallScanResultLabel" FontWeight="Bold" FontSize="13"
-                                   Margin="0,5,0,0" Visibility="Collapsed"
-                                   HorizontalAlignment="Left" Foreground="{DynamicResource TextPrimary}"/>
+                            <ProgressBar x:Name="FirewallProgress" Height="6" Style="{DynamicResource ModernLinearProgressStyle}" Minimum="0" Maximum="100" Value="0"
+                                         Margin="0,2,0,10" Visibility="Collapsed"/>
+                            <ListBox x:Name="FirewallInvalidRulesList" Style="{DynamicResource ResultListStyle}" Height="156" Margin="0,0,0,5" Visibility="Collapsed" ItemTemplate="{DynamicResource FriendlyRowTemplate}"/>
+                            <Label x:Name="FirewallScanResultLabel" Style="{DynamicResource ResultBannerStyle}" Margin="0,8,0,0" Visibility="Collapsed" Foreground="{DynamicResource TextPrimary}"/>
                             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                 <Button x:Name="FirewallScan" Content="{loc:Tr 'Start Scan'}"
                                         MinWidth="140" HorizontalAlignment="Center" Height="36" Cursor="Hand" Click="FirewallClean_Click"
-                                        Style="{StaticResource RoundedButtonStyle}"/>
+                                        Style="{DynamicResource UtilityPrimaryButtonStyle}"/>
                                 <Button x:Name="FirewallReset"
                                         MinWidth="140" HorizontalAlignment="Center" Height="36" Cursor="Hand" Click="FirewallReset_Click"
-                                        Visibility="Collapsed" Margin="8,0,0,0" Background="Blue"
-                                        Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Reset'}" Margin="10,0"/></Button>
+                                        Visibility="Collapsed" Margin="8,0,0,0"
+                                        Style="{DynamicResource UtilitySecondaryButtonStyle}" Content="{loc:Tr 'Reset'}"/>
                          
-                                <TextBlock x:Name="lblStatusFirewall" Text="{loc:Tr 'Running'}" Foreground="LimeGreen" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
+                                <TextBlock x:Name="lblStatusFirewall" Text="{loc:Tr 'Running'}" Foreground="{DynamicResource ResultSuccessText}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
 
                     <Border Grid.Row="1" Grid.Column="1" Margin="10" Padding="15"
-                            Background="{DynamicResource PanelBackground}" CornerRadius="12"
+                            Background="{DynamicResource PanelBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1"
                             Effect="{StaticResource DropShadowEffect}">
                         <StackPanel>
-                            <TextBlock Text="{loc:Tr 'Large File Finder'}" FontSize="16" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:Tr 'Large File Finder'}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                             <TextBlock Text="{loc:Tr 'Scans a selected folder for the largest files consuming disk space.'}"
                                        FontSize="13" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                             <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                                <Button MinWidth="140" Height="36" HorizontalAlignment="Left" Cursor="Hand" Click="LargeFilesScan_Click" Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Launch'}" Margin="10,0"/></Button>
-                                <TextBlock x:Name="lblStatusLargeFile" Text="{loc:Tr 'Running'}" Foreground="LimeGreen" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
-                                <Button x:Name="btnCloseLargeFile" MinWidth="60" HorizontalAlignment="Center" Height="28" Margin="10,0,0,0" Cursor="Hand" Click="CloseLargeFile_Click" Background="#DC3545" Foreground="White" BorderThickness="0" Style="{StaticResource RoundedButtonStyle}" Visibility="Collapsed"><TextBlock Text="{loc:Tr 'Close'}" Margin="10,0"/></Button>
+                                <Button MinWidth="140" Height="36" HorizontalAlignment="Left" Cursor="Hand" Click="LargeFilesScan_Click" Style="{DynamicResource UtilityPrimaryButtonStyle}" Content="{loc:Tr 'Launch'}"/>
+                                <TextBlock x:Name="lblStatusLargeFile" Text="{loc:Tr 'Running'}" Foreground="{DynamicResource ResultSuccessText}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
+                                <Button x:Name="btnCloseLargeFile" MinWidth="60" HorizontalAlignment="Center" Height="28" Margin="10,0,0,0" Cursor="Hand" Click="CloseLargeFile_Click" Style="{DynamicResource UtilityDangerSoftButtonStyle}" Visibility="Collapsed" Content="{loc:Tr 'Close'}"/>
                             </StackPanel>
 
                         </StackPanel>
@@ -126,40 +117,42 @@
 
 
                     <Border Grid.Row="5" Grid.Column="0" Margin="10" Padding="15"
-                            Background="{DynamicResource PanelBackground}" CornerRadius="12"
+                            Background="{DynamicResource PanelBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1"
                             Effect="{StaticResource DropShadowEffect}">
                         <StackPanel>
-                            <TextBlock Text="{loc:Tr 'Duplicate File Finder'}" FontSize="16" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:Tr 'Duplicate File Finder'}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                             <TextBlock Text="{loc:Tr 'Scans a selected folder to find duplicate files and helps you clean up disk space.'}"
                                        FontSize="13" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                             <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                                <Button MinWidth="140" Height="36" HorizontalAlignment="Left" Cursor="Hand" Click="DuplicateFilesScan_Click" Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Launch'}" Margin="10,0"/></Button>
-                                <TextBlock x:Name="lblStatusDuplicate" Text="{loc:Tr 'Running'}" Foreground="LimeGreen" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
-                                <Button x:Name="btnCloseDuplicate" MinWidth="60" HorizontalAlignment="Center" Height="28" Margin="10,0,0,0" Cursor="Hand" Click="CloseDuplicate_Click" Background="#DC3545" Foreground="White" BorderThickness="0" Style="{StaticResource RoundedButtonStyle}" Visibility="Collapsed"><TextBlock Text="{loc:Tr 'Close'}" Margin="10,0"/></Button>
+                                <Button MinWidth="140" Height="36" HorizontalAlignment="Left" Cursor="Hand" Click="DuplicateFilesScan_Click" Style="{DynamicResource UtilityPrimaryButtonStyle}" Content="{loc:Tr 'Launch'}"/>
+                                <TextBlock x:Name="lblStatusDuplicate" Text="{loc:Tr 'Running'}" Foreground="{DynamicResource ResultSuccessText}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
+                                <Button x:Name="btnCloseDuplicate" MinWidth="60" HorizontalAlignment="Center" Height="28" Margin="10,0,0,0" Cursor="Hand" Click="CloseDuplicate_Click" Style="{DynamicResource UtilityDangerSoftButtonStyle}" Visibility="Collapsed" Content="{loc:Tr 'Close'}"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
 
                     <Border Grid.Row="2" Grid.Column="1" Margin="10" Padding="15"
-                            Background="{DynamicResource PanelBackground}" CornerRadius="12"
+                            Background="{DynamicResource PanelBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1"
                             Effect="{StaticResource DropShadowEffect}">
                         <StackPanel>
-                            <TextBlock Text="{loc:Tr 'System Optimization'}" FontSize="16" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:Tr 'System Optimization'}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                             <ComboBox x:Name="OptimizationProfile" Height="34" Style="{DynamicResource ModernComboBoxStyle}" Margin="0,0,0,10" SelectionChanged="OptimizationProfile_SelectionChanged">
-                                <ComboBoxItem Content="{loc:Tr 'For old systems: pause background services'}"/>
-                                <ComboBoxItem Content="{loc:Tr 'For new systems: performance boost'}"/>
-                                <ComboBoxItem Content="{loc:Tr 'All: old and new system optimizations'}"/>
+                                <ComboBox.Resources>
+                                    <DataTemplate x:Key="TrimmedChoice">
+                                        <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </ComboBox.Resources>
+                                <ComboBoxItem Content="{loc:Tr 'For old systems: pause background services'}" ContentTemplate="{StaticResource TrimmedChoice}"/>
+                                <ComboBoxItem Content="{loc:Tr 'For new systems: performance boost'}" ContentTemplate="{StaticResource TrimmedChoice}"/>
+                                <ComboBoxItem Content="{loc:Tr 'All: old and new system optimizations'}" ContentTemplate="{StaticResource TrimmedChoice}"/>
                             </ComboBox>
                             <TextBlock x:Name="OptimizationDescription" Text="{loc:Tr 'Pauses background Windows services to free memory and CPU on older PCs. Windows starts them again after a restart, so while this is on they are paused again every time the app starts. Undo starts exactly the services that were paused.'}"
                                        FontSize="13" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                             <TextBlock Text="{loc:Tr 'Activity'}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
-                            <ListBox x:Name="OptimizationLog" Height="110" FontSize="12"
-                                     Background="{DynamicResource PanelBackground}"
-                                     Foreground="{DynamicResource TextSecondary}"
-                                     BorderBrush="{DynamicResource BorderBrush}" Margin="0,0,0,10">
+                            <ListBox x:Name="OptimizationLog" Style="{DynamicResource ResultListStyle}" Height="110" Margin="0,0,0,10">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
@@ -172,121 +165,115 @@
                             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                 <Button x:Name="Turbo" Content="{loc:Tr 'Apply Optimization'}" MinWidth="180" Height="36"
                                         HorizontalAlignment="Left" Cursor="Hand" Click="ActivateTurboBoost_Click"
-                                        Style="{StaticResource RoundedButtonStyle}"/>
+                                        Style="{DynamicResource UtilityPrimaryButtonStyle}"/>
                               
-                                <TextBlock x:Name="lblStatusTurbo" Text="{loc:Tr 'Running'}" Foreground="LimeGreen" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
+                                <TextBlock x:Name="lblStatusTurbo" Text="{loc:Tr 'Running'}" Foreground="{DynamicResource ResultSuccessText}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
                     <Border Grid.Row="3" Grid.Column="0" Margin="10" Padding="15"
-                            Background="{DynamicResource PanelBackground}" CornerRadius="12"
+                            Background="{DynamicResource PanelBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1"
                             Effect="{StaticResource DropShadowEffect}">
                         <StackPanel>
-                            <TextBlock Text="{loc:Tr 'Memory Cleaner'}" FontSize="16" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:Tr 'Memory Cleaner'}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                             <TextBlock Text="{loc:Tr 'Cleans system memory to help boost system speed and performance.'}" 
                                        FontSize="13" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                             <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                                <Button MinWidth="140" Height="36" HorizontalAlignment="Left" Cursor="Hand" Click="OpenMemoryCleaner_Click" Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Launch'}" Margin="10,0"/></Button>
-                                <TextBlock x:Name="lblStatusMemCleaner" Text="{loc:Tr 'Running'}" Foreground="LimeGreen" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
-                                <Button x:Name="btnCloseMemCleaner" MinWidth="60" HorizontalAlignment="Center" Height="28" Margin="10,0,0,0" Cursor="Hand" Click="CloseMemCleaner_Click" Background="#DC3545" Foreground="White" BorderThickness="0" Style="{StaticResource RoundedButtonStyle}" Visibility="Collapsed"><TextBlock Text="{loc:Tr 'Close'}" Margin="10,0"/></Button>
+                                <Button MinWidth="140" Height="36" HorizontalAlignment="Left" Cursor="Hand" Click="OpenMemoryCleaner_Click" Style="{DynamicResource UtilityPrimaryButtonStyle}" Content="{loc:Tr 'Launch'}"/>
+                                <TextBlock x:Name="lblStatusMemCleaner" Text="{loc:Tr 'Running'}" Foreground="{DynamicResource ResultSuccessText}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
+                                <Button x:Name="btnCloseMemCleaner" MinWidth="60" HorizontalAlignment="Center" Height="28" Margin="10,0,0,0" Cursor="Hand" Click="CloseMemCleaner_Click" Style="{DynamicResource UtilityDangerSoftButtonStyle}" Visibility="Collapsed" Content="{loc:Tr 'Close'}"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
                     <Border Grid.Row="3" Grid.Column="1" Margin="10" Padding="15"
-                            Background="{DynamicResource PanelBackground}" CornerRadius="12"
+                            Background="{DynamicResource PanelBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1"
                             Effect="{StaticResource DropShadowEffect}">
                         <StackPanel>
-                            <TextBlock Text="{loc:Tr 'Startup Manager'}" FontSize="16" FontWeight="SemiBold"
+                            <TextBlock Text="{loc:Tr 'Startup Manager'}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                             <TextBlock Text="{loc:Tr 'Manage programs that run automatically when Windows starts. Speed up your boot time and disable or delete unwanted startup entries.'}"
                                        FontSize="13" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                             <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                                <Button MinWidth="140" Height="36" HorizontalAlignment="Left" Cursor="Hand" Click="StartupManager_Click" Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Launch'}" Margin="10,0"/></Button>
-                                <TextBlock x:Name="lblStatusStartup" Text="{loc:Tr 'Running'}" Foreground="LimeGreen" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
-                                <Button x:Name="btnCloseStartup" MinWidth="60" HorizontalAlignment="Center" Height="28" Margin="10,0,0,0" Cursor="Hand" Click="CloseStartup_Click" Background="#DC3545" Foreground="White" BorderThickness="0" Style="{StaticResource RoundedButtonStyle}" Visibility="Collapsed"><TextBlock Text="{loc:Tr 'Close'}" Margin="10,0"/></Button>
+                                <Button MinWidth="140" Height="36" HorizontalAlignment="Left" Cursor="Hand" Click="StartupManager_Click" Style="{DynamicResource UtilityPrimaryButtonStyle}" Content="{loc:Tr 'Launch'}"/>
+                                <TextBlock x:Name="lblStatusStartup" Text="{loc:Tr 'Running'}" Foreground="{DynamicResource ResultSuccessText}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
+                                <Button x:Name="btnCloseStartup" MinWidth="60" HorizontalAlignment="Center" Height="28" Margin="10,0,0,0" Cursor="Hand" Click="CloseStartup_Click" Style="{DynamicResource UtilityDangerSoftButtonStyle}" Visibility="Collapsed" Content="{loc:Tr 'Close'}"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
                     <Border Grid.Row="4" Grid.Column="0" Margin="10" Padding="15"
-                            Background="{DynamicResource PanelBackground}" CornerRadius="12"
+                            Background="{DynamicResource PanelBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1"
                             Effect="{StaticResource DropShadowEffect}">
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <TextBlock Text="{loc:Tr 'Malware Scan'}" FontSize="16" FontWeight="SemiBold"
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="1" Text="{loc:Tr 'Malware Scan'}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                <Border Background="#201E88E5" CornerRadius="4" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="{loc:Tr 'CLOUD'}" FontSize="10" FontWeight="Bold" Foreground="#FF1E88E5" />
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,0,0">
+                                <Border Background="#201E88E5" CornerRadius="4" Padding="3,1" VerticalAlignment="Center">
+                                    <TextBlock Text="{loc:Tr 'CLOUD'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentText}" />
                                 </Border>
-                                <Border Background="#20FF8C1A" CornerRadius="4" Padding="6,1" Margin="6,0,0,0" VerticalAlignment="Center"
+                                <Border Background="{DynamicResource BadgeWarningBackground}" CornerRadius="4" Padding="3,1" Margin="4,0,0,0" VerticalAlignment="Center"
                                         ToolTip="{loc:Tr 'The cloud malware scan is published for testing so it can be tried thoroughly and made stable. Results and behavior may still change.'}">
-                                    <TextBlock Text="{loc:Tr 'TESTING'}" FontSize="10" FontWeight="Bold" Foreground="#FFFF8C1A" />
+                                    <TextBlock Text="{loc:Tr 'TESTING'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource BadgeWarningText}" />
                                 </Border>
-                            </StackPanel>
+                                </StackPanel>
+                            </Grid>
                             <TextBlock Text="{loc:Tr 'Sends executables from running processes, startup items or selected folders to the cloud with the viruskov.com static engine over an encrypted connection and checks them for malware.'}"
                                        FontSize="13" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                             <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                                <Button MinWidth="140" Height="36" HorizontalAlignment="Left" Cursor="Hand" Click="MalwareScan_Click" Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Launch'}" Margin="10,0"/></Button>
-                                <TextBlock x:Name="lblStatusMalwareScan" Text="{loc:Tr 'Running'}" Foreground="LimeGreen" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
-                                <Button x:Name="btnCloseMalwareScan" MinWidth="60" HorizontalAlignment="Center" Height="28" Margin="10,0,0,0" Cursor="Hand" Click="CloseMalwareScan_Click" Background="#DC3545" Foreground="White" BorderThickness="0" Style="{StaticResource RoundedButtonStyle}" Visibility="Collapsed"><TextBlock Text="{loc:Tr 'Close'}" Margin="10,0"/></Button>
+                                <Button MinWidth="140" Height="36" HorizontalAlignment="Left" Cursor="Hand" Click="MalwareScan_Click" Style="{DynamicResource UtilityPrimaryButtonStyle}" Content="{loc:Tr 'Launch'}"/>
+                                <TextBlock x:Name="lblStatusMalwareScan" Text="{loc:Tr 'Running'}" Foreground="{DynamicResource ResultSuccessText}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"/>
+                                <Button x:Name="btnCloseMalwareScan" MinWidth="60" HorizontalAlignment="Center" Height="28" Margin="10,0,0,0" Cursor="Hand" Click="CloseMalwareScan_Click" Style="{DynamicResource UtilityDangerSoftButtonStyle}" Visibility="Collapsed" Content="{loc:Tr 'Close'}"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
                     <Border Grid.Row="4" Grid.Column="1" Margin="10" Padding="15"
-                            Background="{DynamicResource PanelBackground}" CornerRadius="12"
+                            Background="{DynamicResource PanelBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1"
                             Effect="{StaticResource DropShadowEffect}">
                         <StackPanel>
                             <TextBlock Text="{loc:Tr 'Shortcut Fixer'}"
-                                       FontSize="16" FontWeight="SemiBold"
+                                       FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                             <TextBlock Text="{loc:Tr 'Finds Desktop and Start Menu shortcuts whose program no longer exists. Shortcuts to programs that moved to a new version folder are repaired, the others are moved to the Recycle Bin.'}"
                                        FontSize="13" Foreground="{DynamicResource TextSecondary}"
                                        TextWrapping="Wrap" Margin="0,0,0,10"/>
-                            <ProgressBar x:Name="ShortcutProgress" Height="18" Minimum="0" Maximum="100" Value="0" IsIndeterminate="True"
-                                         Margin="0,0,0,5" Foreground="{DynamicResource ButtonNormalBackground}"
-                                         Background="#DDD" Visibility="Collapsed"/>
-                            <ListBox x:Name="ShortcutList" Height="120"
-                                     Background="{DynamicResource PanelBackground}"
-                                     Foreground="{DynamicResource TextPrimary}"
-                                     BorderBrush="Transparent" Margin="0,0,0,5" Visibility="Collapsed">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                            <Label x:Name="ShortcutResultLabel" FontWeight="Bold" FontSize="13"
-                                   Margin="0,5,0,0" Visibility="Collapsed"
-                                   HorizontalAlignment="Left" Foreground="{DynamicResource TextPrimary}"/>
+                            <ProgressBar x:Name="ShortcutProgress" Height="6" Style="{DynamicResource ModernLinearProgressStyle}" Minimum="0" Maximum="100" Value="0" IsIndeterminate="True"
+                                         Margin="0,2,0,10" Visibility="Collapsed"/>
+                            <ListBox x:Name="ShortcutList" Style="{DynamicResource ResultListStyle}" Height="156" Margin="0,0,0,5" Visibility="Collapsed" ItemTemplate="{DynamicResource FriendlyRowTemplate}"/>
+                            <Label x:Name="ShortcutResultLabel" Style="{DynamicResource ResultBannerStyle}" Margin="0,8,0,0" Visibility="Collapsed" Foreground="{DynamicResource TextPrimary}"/>
                             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                 <Button x:Name="ShortcutScan" Content="{loc:Tr 'Start Scan'}"
                                         MinWidth="140" HorizontalAlignment="Center" Height="36" Cursor="Hand" Click="ShortcutScan_Click"
-                                        Style="{StaticResource RoundedButtonStyle}"/>
+                                        Style="{DynamicResource UtilityPrimaryButtonStyle}"/>
                                 <Button x:Name="ShortcutReset"
                                         MinWidth="140" HorizontalAlignment="Center" Height="36" Cursor="Hand" Click="ShortcutReset_Click"
-                                        Visibility="Collapsed" Margin="8,0,0,0" Background="Blue"
-                                        Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Reset'}" Margin="10,0"/></Button>
+                                        Visibility="Collapsed" Margin="8,0,0,0"
+                                        Style="{DynamicResource UtilitySecondaryButtonStyle}" Content="{loc:Tr 'Reset'}"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
                     <Border x:Name="SecurityCard" Grid.Row="2" Grid.Column="0" Margin="10" Padding="15"
-                            Background="{DynamicResource PanelBackground}" CornerRadius="12"
+                            Background="{DynamicResource PanelBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1"
                             Effect="{StaticResource DropShadowEffect}">
                         <StackPanel>
                             <TextBlock Text="{loc:Tr 'Security Check'}"
-                                       FontSize="16" FontWeight="SemiBold"
+                                       FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                             <TextBlock Text="{loc:Tr 'Finds Windows settings that make your PC less secure, for example UAC, Windows Firewall or Defender turned off, AutoPlay on for USB drives, SMB 1.0, Remote Desktop without protection, blocked Task Manager or backdoors on the sign-in screen. Tick the settings to fix; the current values are saved first, so every fix can be undone.'}"
                                        FontSize="13" Foreground="{DynamicResource TextSecondary}"
                                        TextWrapping="Wrap" Margin="0,0,0,10"/>
-                            <ProgressBar x:Name="SecurityProgress" Height="18" Minimum="0" Maximum="100" Value="0" IsIndeterminate="True"
-                                         Margin="0,0,0,5" Foreground="{DynamicResource ButtonNormalBackground}"
-                                         Background="#DDD" Visibility="Collapsed"/>
+                            <ProgressBar x:Name="SecurityProgress" Height="6" Style="{DynamicResource ModernLinearProgressStyle}" Minimum="0" Maximum="100" Value="0" IsIndeterminate="True"
+                                         Margin="0,2,0,10" Visibility="Collapsed"/>
                             <ScrollViewer x:Name="SecurityListScroll" MaxHeight="320" VerticalScrollBarVisibility="Auto" Visibility="Collapsed" Margin="0,0,0,5">
                                 <ItemsControl x:Name="SecurityList">
                                     <ItemsControl.ItemTemplate>
@@ -297,7 +284,7 @@
                                                           IsChecked="{Binding IsSelected, Mode=TwoWay}" IsEnabled="{Binding CanFix}"
                                                           ToolTip="{loc:Tr 'Fix this setting'}"/>
                                                 <Button DockPanel.Dock="Right" Content="{loc:Tr 'Ignore'}" Tag="{Binding}" Click="IgnoreSecurityIssue_Click"
-                                                        Style="{StaticResource RoundedButtonStyle}" Padding="10,3" FontSize="11" Height="26" Margin="10,0,0,0" VerticalAlignment="Top"
+                                                        Style="{DynamicResource UtilityQuietButtonStyle}" Height="26" Margin="10,0,0,0" VerticalAlignment="Top"
                                                         ToolTip="{loc:Tr 'Do not show or report this warning again'}"/>
                                                 <StackPanel>
                                                     <DockPanel>
@@ -316,26 +303,24 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </ScrollViewer>
-                            <TextBlock x:Name="SecurityResultLabel" FontWeight="Bold" FontSize="13" TextWrapping="Wrap"
-                                       Margin="0,5,0,0" Visibility="Collapsed"
-                                       HorizontalAlignment="Left" Foreground="{DynamicResource TextPrimary}"/>
-                            <UniformGrid Rows="1" Margin="-4,10,-4,0">
-                                <Button x:Name="SecurityScan" Margin="4,0" Content="{loc:Tr 'Start Scan'}" Height="36" Cursor="Hand" Click="SecurityScan_Click"
-                                        Style="{StaticResource RoundedButtonStyle}"/>
-                                <Button x:Name="SecurityFix" Margin="4,0" Content="{loc:Tr 'Fix Selected'}" Height="36" Cursor="Hand" Click="SecurityFix_Click"
-                                        Visibility="Collapsed" Background="Crimson"
-                                        Style="{StaticResource RoundedButtonStyle}"/>
-                                <Button x:Name="SecurityUndo" Margin="4,0" Content="{loc:Tr 'Undo Fixes'}" Height="36" Cursor="Hand" Click="SecurityUndo_Click"
+                            <Label x:Name="SecurityResultLabel" Style="{DynamicResource ResultBannerStyle}" Margin="0,8,0,0" Visibility="Collapsed" Foreground="{DynamicResource TextPrimary}"/>
+                            <WrapPanel Margin="0,10,0,-8">
+                                <Button x:Name="SecurityScan" Margin="0,0,8,8" MinWidth="96" Content="{loc:Tr 'Start Scan'}" Height="36" Cursor="Hand" Click="SecurityScan_Click"
+                                        Style="{DynamicResource UtilityPrimaryButtonStyle}"/>
+                                <Button x:Name="SecurityFix" Margin="0,0,8,8" MinWidth="96" Content="{loc:Tr 'Fix Selected'}" Height="36" Cursor="Hand" Click="SecurityFix_Click"
                                         Visibility="Collapsed"
-                                        Style="{StaticResource RoundedButtonStyle}"/>
-                                <Button x:Name="SecurityReset" Margin="4,0" Content="{loc:Tr 'Reset'}" Height="36" Cursor="Hand" Click="SecurityReset_Click"
-                                        Visibility="Collapsed" Background="Blue"
-                                        Style="{StaticResource RoundedButtonStyle}"/>
-                            </UniformGrid>
-                            <Button x:Name="SecurityShowIgnored" Margin="0,8,0,0" Height="32" Cursor="Hand" Click="SecurityShowIgnored_Click"
-                                    Visibility="Collapsed" HorizontalAlignment="Left" Padding="14,0"
+                                        Style="{DynamicResource UtilityDangerButtonStyle}"/>
+                                <Button x:Name="SecurityUndo" Margin="0,0,8,8" MinWidth="96" Content="{loc:Tr 'Undo Fixes'}" Height="36" Cursor="Hand" Click="SecurityUndo_Click"
+                                        Visibility="Collapsed"
+                                        Style="{DynamicResource UtilitySecondaryButtonStyle}"/>
+                                <Button x:Name="SecurityReset" Margin="0,0,8,8" MinWidth="96" Content="{loc:Tr 'Reset'}" Height="36" Cursor="Hand" Click="SecurityReset_Click"
+                                        Visibility="Collapsed"
+                                        Style="{DynamicResource UtilitySecondaryButtonStyle}"/>
+                            </WrapPanel>
+                            <Button x:Name="SecurityShowIgnored" Margin="0,16,0,0" Height="32" Cursor="Hand" Click="SecurityShowIgnored_Click"
+                                    Visibility="Collapsed" HorizontalAlignment="Left"
                                     ToolTip="{loc:Tr 'Shows the ignored warnings again and checks the settings once more.'}"
-                                    Style="{StaticResource RoundedButtonStyle}"/>
+                                    Style="{DynamicResource UtilitySecondaryButtonStyle}"/>
                         </StackPanel>
                     </Border>
 

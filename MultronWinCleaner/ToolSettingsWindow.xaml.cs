@@ -12,16 +12,27 @@ namespace MultronWinCleaner
 
         private bool ownerClosed;
 
-        public ToolSettingsWindow(Window owner, string title, FrameworkElement content, double width)
+        public ToolSettingsWindow(Window owner, string title, FrameworkElement content, double width, double height = PreferredHeight, bool windowButtons = false)
         {
             InitializeComponent();
             Owner = owner;
+            string iconName = title == Loc.T("Cleaning Selections") ? "selections" : title == Loc.T("Folders, Drives and Files") || title == Loc.T("Found Files") ? "" : "settings";
+            if (iconName.Length > 0)
+                Icon = System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/Assets/Icons/mwc_" + iconName + ".ico"));
+            else if (owner.Icon != null)
+                Icon = owner.Icon;
             var workArea = SystemParameters.WorkArea;
             Width = Math.Min(width, workArea.Width * 0.95);
-            Height = Math.Min(PreferredHeight, workArea.Height * 0.85);
+            Height = Math.Min(height, workArea.Height * 0.85);
             MaxWidth = workArea.Width;
             MaxHeight = workArea.Height;
             Title = title;
+            if (windowButtons)
+            {
+                MinimizeWindowButton.Visibility = Visibility.Visible;
+                MaximizeWindowButton.Visibility = Visibility.Visible;
+                ShowInTaskbar = true;
+            }
             TitleText.Text = title;
             DataContext = owner.DataContext;
             Resources.MergedDictionaries.Add(owner.Resources);
@@ -52,6 +63,8 @@ namespace MultronWinCleaner
                     Hide();
             };
         }
+
+        public void SetFooter(FrameworkElement footer) => FooterHost.Content = footer;
 
         public void ShowOrActivate()
         {
@@ -89,5 +102,28 @@ namespace MultronWinCleaner
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e) => Hide();
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+        private Rect? restoreBounds;
+
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (restoreBounds is Rect bounds)
+            {
+                Left = bounds.Left;
+                Top = bounds.Top;
+                Width = bounds.Width;
+                Height = bounds.Height;
+                restoreBounds = null;
+                return;
+            }
+            restoreBounds = new Rect(Left, Top, Width, Height);
+            var workArea = SystemParameters.WorkArea;
+            Left = workArea.Left;
+            Top = workArea.Top;
+            Width = workArea.Width;
+            Height = workArea.Height;
+        }
     }
 }

@@ -65,7 +65,7 @@ namespace MultronWinCleaner
             elapsedTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             elapsedTimer.Tick += (s, e) => UpdateElapsed();
             SpinnerRotation.BeginAnimation(RotateTransform.AngleProperty,
-                new DoubleAnimation(0, 360, TimeSpan.FromSeconds(0.9)) { RepeatBehavior = RepeatBehavior.Forever });
+                new DoubleAnimation(0, 360, TimeSpan.FromSeconds(0.9)) { RepeatBehavior = RepeatBehavior.Forever, SpeedRatio = 1 });
             stopwatch.Start();
             elapsedTimer.Start();
         }
@@ -82,6 +82,8 @@ namespace MultronWinCleaner
 
         private void AddLine(string text, Brush brush, FontWeight weight, double indent)
         {
+            if (brush is SolidColorBrush solid)
+                brush = MultronWinCleaner.Processes.ThemeColors.ReadableBrush(solid.Color);
             lines.Add(new Line { Text = text, Brush = brush, Weight = weight, Indent = new Thickness(indent, 0, 0, 0) });
             DetailsList.ScrollIntoView(lines[^1]);
         }

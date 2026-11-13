@@ -51,6 +51,14 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="26"/>
                                             </Grid.ColumnDefinitions>
+                                            <Grid Grid.ColumnSpan="2" IsHitTestVisible="False">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
+                                                <Border CornerRadius="7,7,0,0" Background="{DynamicResource ControlGloss}"/>
+                                            </Grid>
+                                            <Border Grid.Column="1" Width="1" HorizontalAlignment="Left" Margin="0,6" Background="{DynamicResource BorderBrush}" Opacity="0.7" IsHitTestVisible="False"/>
                                             <Path x:Name="Arrow" Grid.Column="1" Data="M0,0 L4,4 L8,0" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6"
                                                   HorizontalAlignment="Center" VerticalAlignment="Center" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                                         </Grid>

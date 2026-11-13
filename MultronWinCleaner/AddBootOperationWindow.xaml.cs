@@ -1,54 +1,28 @@
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
+using MultronWinCleaner.Processes;
 
 namespace MultronWinCleaner
 {
     public partial class AddBootOperationWindow : Window
     {
-        public enum OperationType
-        {
-            Delete,
-            Move,
-            Rename,
-            ManualCommand
-        }
-
-        public class BootOperation
-        {
-            public OperationType Type { get; set; }
-            public string SourcePath { get; set; } = string.Empty;
-            public string DestinationPath { get; set; } = string.Empty;
-            public string ManualCommand { get; set; } = string.Empty;
-
-            public override string ToString()
-            {
-                return Type switch
-                {
-                    OperationType.Delete => Loc.F("Delete: {0}", SourcePath),
-                    OperationType.Move => Loc.F("Move: {0} -> {1}", SourcePath, DestinationPath),
-                    OperationType.Rename => Loc.F("Rename: {0} -> {1}", SourcePath, DestinationPath),
-                    OperationType.ManualCommand => Loc.F("ManualCommand: {0}", ManualCommand),
-                    _ => base.ToString() ?? "",
-                };
-            }
-        }
-
-        private ObservableCollection<BootOperation> bootOperations = new();
-
-        public BootOperation? ResultOperation { get; private set; }
+        private readonly ObservableCollection<BootOperation> operations = new();
 
         public AddBootOperationWindow()
         {
             InitializeComponent();
-
-            cmbOperationType.SelectionChanged += CmbOperationType_SelectionChanged;
+            foreach (var operation in BootOperations.Load())
+                operations.Add(operation);
+            lstBootOperations.ItemsSource = operations;
+            operations.CollectionChanged += (_, _) => RefreshList();
             cmbOperationType.SelectedIndex = 0;
- 
+            RefreshList();
         }
+
+        private BootOperationType SelectedType => (BootOperationType)Math.Max(0, cmbOperationType.SelectedIndex);
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -56,141 +30,165 @@ namespace MultronWinCleaner
                 DragMove();
         }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+        private void CmbOperationType_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) => UpdateFields();
+
+        private static Visibility Show(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
+
+        private void UpdateFields()
         {
-            Close();
+            var type = SelectedType;
+            bool preset = BootOperations.IsPreset(type);
+            bool program = type == BootOperationType.RunProgram;
+            bool emptyFolder = type == BootOperationType.EmptyFolder;
+            bool manual = type == BootOperationType.ManualCommand;
+            bool needsDestination = type == BootOperationType.Move || type == BootOperationType.Rename;
+
+            SourcePanel.Visibility = Show(!manual && !preset);
+            SourceFileButton.Visibility = Show(!emptyFolder);
+            SourceFolderButton.Visibility = Show(!program);
+            SourceLabel.Text = Loc.T(program ? "Program" : emptyFolder ? "Folder" : "File or folder");
+            DestinationPanel.Visibility = Show(needsDestination);
+            DestinationBrowseButton.Visibility = Show(type == BootOperationType.Move);
+            DestinationLabel.Text = Loc.T(type == BootOperationType.Rename ? "New name or full path" : "Destination");
+            CommandPanel.Visibility = Show(manual || program || preset);
+            CommandLabel.Text = Loc.T(program ? "Arguments (optional)" : "Command");
+
+            if (preset)
+                txtManualCommand.Text = BootOperations.PresetCommand(type);
+            else if (txtManualCommand.IsReadOnly)
+                txtManualCommand.Clear();
+            txtManualCommand.IsReadOnly = preset;
         }
 
-        private void CmbOperationType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void RefreshList()
         {
-            if (cmbOperationType.SelectedItem is ComboBoxItem selected)
-            {
-                var selectedStr = Loc.En(selected.Content);
+            EmptyListText.Visibility = operations.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            lstBootOperations.Visibility = operations.Count == 0 ? Visibility.Hidden : Visibility.Visible;
+        }
 
-                txtDestPath.IsEnabled = selectedStr == "Move" || selectedStr == "Rename";
-                txtSourcePath.IsEnabled = selectedStr != "ManualCommand";
-                txtManualCommand.IsEnabled = selectedStr == "ManualCommand";
+        private void SetStatus(string text, bool problem = false)
+        {
+            StatusText.Text = text;
+            StatusText.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, problem ? "UtilityDangerText" : "TextSecondary");
+        }
 
-              
-                txtSourcePath.Clear();
-                txtDestPath.Clear();
-                txtManualCommand.Clear();
-            }
+        private void BrowseSourceFile_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog { Title = Loc.T("Select a file"), CheckFileExists = true };
+            if (dialog.ShowDialog(this) == true)
+                txtSourcePath.Text = dialog.FileName;
+        }
+
+        private void BrowseSourceFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog { Title = Loc.T("Select a folder") };
+            if (dialog.ShowDialog(this) == true)
+                txtSourcePath.Text = dialog.FolderName;
+        }
+
+        private void BrowseDestination_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog { Title = Loc.T("Select a folder") };
+            if (dialog.ShowDialog(this) == true)
+                txtDestPath.Text = dialog.FolderName;
         }
 
         private void Add_Click(object sender, RoutedEventArgs e)
         {
-            if (cmbOperationType.SelectedItem is not ComboBoxItem selectedItem)
+            var operation = BootOperations.Create(SelectedType, txtSourcePath.Text, txtDestPath.Text, txtManualCommand.Text, out string error, out bool insideWindows);
+            if (operation == null)
             {
-                AppDialog.Show(Loc.T("Please select an operation type."), Loc.T("Input Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppDialog.Show(this, error, Loc.T("Input Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-
-            string typeStr = Loc.En(selectedItem.Content).Trim();
-
-            if (!Enum.TryParse(typeStr, true, out OperationType opType))
+            if (operations.Any(existing => existing.SameAs(operation)))
             {
-                AppDialog.Show(Loc.T("Invalid operation type."), Loc.T("Input Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppDialog.Show(this, Loc.T("This operation is already in the list."), Loc.T("Input Error"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+            if (insideWindows && AppDialog.Show(this, Loc.T("This item is inside the Windows folder. Changing it can stop Windows from starting. Continue?"), Loc.T("Add Boot Operation"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
 
-            BootOperation newOp;
-
-            switch (opType)
-            {
-                case OperationType.ManualCommand:
-                    string cmd = txtManualCommand.Text.Trim();
-                    if (string.IsNullOrWhiteSpace(cmd))
-                    {
-                        AppDialog.Show(Loc.T("Please enter a manual command."), Loc.T("Input Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-
-                    newOp = new BootOperation
-                    {
-                        Type = opType,
-                        ManualCommand = cmd
-                    };
-                    break;
-
-                case OperationType.Move:
-                case OperationType.Rename:
-                    if (string.IsNullOrWhiteSpace(txtSourcePath.Text))
-                    {
-                        AppDialog.Show(Loc.T("Please enter a source path."), Loc.T("Input Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-                    if (string.IsNullOrWhiteSpace(txtDestPath.Text))
-                    {
-                        AppDialog.Show(Loc.T("Please enter a destination path."), Loc.T("Input Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-
-                    newOp = new BootOperation
-                    {
-                        Type = opType,
-                        SourcePath = txtSourcePath.Text.Trim(),
-                        DestinationPath = txtDestPath.Text.Trim()
-                    };
-                    break;
-
-                case OperationType.Delete:
-                default:
-                    if (string.IsNullOrWhiteSpace(txtSourcePath.Text))
-                    {
-                        AppDialog.Show(Loc.T("Please enter a source path."), Loc.T("Input Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
-
-                    newOp = new BootOperation
-                    {
-                        Type = opType,
-                        SourcePath = txtSourcePath.Text.Trim()
-                    };
-                    break;
-            }
-
-            bootOperations.Add(newOp);
-
-         
+            operations.Add(operation);
+            lstBootOperations.SelectedItem = operation;
             txtSourcePath.Clear();
             txtDestPath.Clear();
             txtManualCommand.Clear();
+            UpdateFields();
+            SetStatus(string.Empty);
         }
 
-        private void RunCommand_Click(object sender, RoutedEventArgs e)
+        private void Schedule_Click(object sender, RoutedEventArgs e)
         {
-            if (lstBootOperations.SelectedItem is not BootOperation selected)
+            var pending = operations.Where(o => o.State != BootOperationState.Scheduled).ToList();
+            if (pending.Count == 0)
             {
-                AppDialog.Show(Loc.T("Please select an operation from the list."), Loc.T("Run Command"), MessageBoxButton.OK, MessageBoxImage.Information);
+                SetStatus(Loc.T("There are no waiting operations to schedule."));
                 return;
             }
 
-            try
+            int failed = 0;
+            string lastError = string.Empty;
+            foreach (var operation in pending)
             {
-                switch (selected.Type)
-                {
-                    case OperationType.ManualCommand:
-                        Process.Start(new ProcessStartInfo
-                        {
-                            FileName = "cmd.exe",
-                            Arguments = $"/c {selected.ManualCommand}",
-                            CreateNoWindow = true,
-                            UseShellExecute = false
-                        });
-                        AppDialog.Show(Loc.F("Ran command:\n{0}", selected.ManualCommand), Loc.T("Run Command"), MessageBoxButton.OK, MessageBoxImage.Information);
-                        break;
+                if (BootOperations.Schedule(operation, out string error))
+                    continue;
+                failed++;
+                lastError = error;
+            }
+            BootOperations.Save(operations);
 
-                     
-                    default:
-                        AppDialog.Show(Loc.F("No run code has been added for operation {0}.", selected), Loc.T("Run Command"), MessageBoxButton.OK, MessageBoxImage.Warning);
-                        break;
-                }
-            }
-            catch (Exception ex)
+            if (failed > 0)
+                SetStatus(Loc.F("{0} of {1} operation(s) could not be scheduled: {2}", failed, pending.Count, lastError), true);
+            else
+                SetStatus(Loc.F("{0} operation(s) scheduled. They run at the next restart.", pending.Count));
+        }
+
+        private async void RunNow_Click(object sender, RoutedEventArgs e)
+        {
+            if (lstBootOperations.SelectedItem is not BootOperation selected)
             {
-                AppDialog.Show(Loc.F("Error while running the command: {0}", ex.Message), Loc.T("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                AppDialog.Show(this, Loc.T("Please select an operation from the list."), Loc.T("Run Selected Now"), MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
+            if (selected.State == BootOperationState.Scheduled)
+            {
+                AppDialog.Show(this, Loc.T("This operation is already scheduled. Remove it from the list first to run it now."), Loc.T("Run Selected Now"), MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (AppDialog.Show(this, Loc.F("Run this operation now?\n{0}", selected.DetailsText), Loc.T("Run Selected Now"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+
+            RunNowButton.IsEnabled = false;
+            var result = await BootOperations.RunNowAsync(selected);
+            RunNowButton.IsEnabled = true;
+
+            if (result.Ok)
+            {
+                operations.Remove(selected);
+                SetStatus(result.Message);
+            }
+            else
+            {
+                selected.State = BootOperationState.Failed;
+                SetStatus(Loc.F("Error while running the command: {0}", result.Message), true);
+            }
+        }
+
+        private void RemoveOperation_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.Tag is not BootOperation operation)
+                return;
+            if (operation.State == BootOperationState.Scheduled && !BootOperations.Cancel(operation))
+            {
+                SetStatus(Loc.T("Could not cancel the scheduled operation."), true);
+                return;
+            }
+            operations.Remove(operation);
+            BootOperations.Save(operations);
+            SetStatus(string.Empty);
         }
     }
 }

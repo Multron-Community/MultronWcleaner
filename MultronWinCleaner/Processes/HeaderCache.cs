@@ -95,6 +95,17 @@ namespace MultronWinCleaner.Processes
             dirty = true;
         }
 
+        public static void Release()
+        {
+            lock (LoadLock)
+            {
+                if (dirty)
+                    return;
+                cache = null;
+                entryCount = 0;
+            }
+        }
+
         public static void Save()
         {
             if (!dirty || cache == null) return;

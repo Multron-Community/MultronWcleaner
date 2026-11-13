@@ -1,11 +1,14 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using Ookii.Dialogs.Wpf;
 
@@ -65,9 +68,69 @@ namespace MultronWinCleaner
             ".bak", ".backup", ".old", ".tmp", ".dmp", ".mdmp", ".log", ".etl", ".db", ".sqlite", ".mdf", ".ldf", ".sql"
         };
 
+        private static readonly HashSet<string> KnownExtensions = new(
+            VideoExtensions.Concat(MusicExtensions).Concat(PhotoExtensions).Concat(ArchiveExtensions)
+                .Concat(DocumentExtensions).Concat(ProgramExtensions).Concat(DiskImageExtensions).Concat(BackupExtensions),
+            StringComparer.OrdinalIgnoreCase);
+
+        private readonly List<CheckBox> extensionBoxes = new();
+
+        private void BuildExtensionChoices()
+        {
+            var groups = new (CheckBox Category, IEnumerable<string> Extensions)[]
+            {
+                (ChkVideos, VideoExtensions), (ChkMusic, MusicExtensions), (ChkPhotos, PhotoExtensions), (ChkArchives, ArchiveExtensions),
+                (ChkDocuments, DocumentExtensions), (ChkPrograms, ProgramExtensions), (ChkDiskImages, DiskImageExtensions), (ChkBackups, BackupExtensions)
+            };
+            foreach (var (category, extensions) in groups)
+            {
+                var boxes = new List<CheckBox>();
+                foreach (string extension in extensions)
+                {
+                    var box = new CheckBox { Content = extension, IsChecked = category.IsChecked, Margin = new Thickness(0, 0, 10, 4), MinWidth = 72 };
+                    box.SetResourceReference(ForegroundProperty, "TextPrimary");
+                    box.Click += (s, e) => category.IsChecked = boxes.Any(b => b.IsChecked == true);
+                    boxes.Add(box);
+                    extensionBoxes.Add(box);
+                    ExtensionChoices.Children.Add(box);
+                }
+                category.Click += (s, e) =>
+                {
+                    foreach (var box in boxes)
+                        box.IsChecked = category.IsChecked == true;
+                };
+            }
+        }
+
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => ApplySearch();
+
+        private void ApplySearch()
+        {
+            string query = SearchBox.Text.Trim();
+            var source = LargeFilesDataGrid.ItemsSource;
+            if (source == null)
+            {
+                SearchCountText.Text = string.Empty;
+                EmptyHint.Text = Loc.T("Results will appear here after a scan.");
+                return;
+            }
+
+            var view = CollectionViewSource.GetDefaultView(source);
+            view.Filter = query.Length == 0 ? null : item =>
+                item is LargeFileInfo file &&
+                (file.Name.Contains(query, StringComparison.OrdinalIgnoreCase) || file.Path.Contains(query, StringComparison.OrdinalIgnoreCase));
+
+            int shown = view.Cast<object>().Count();
+            SearchCountText.Text = query.Length == 0 ? string.Empty : Loc.F("{0} matches found", shown);
+            EmptyHint.Text = Loc.T(query.Length > 0 && shown == 0 ? "No matching files." : "Results will appear here after a scan.");
+        }
+
         public LargeFileFinder()
         {
             InitializeComponent();
+            BuildExtensionChoices();
+            DependencyPropertyDescriptor.FromProperty(ItemsControl.ItemsSourceProperty, typeof(DataGrid))
+                .AddValueChanged(LargeFilesDataGrid, (s, e) => ApplySearch());
 
             FolderListBox.Items.Clear();
             string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -77,6 +140,29 @@ namespace MultronWinCleaner
 
             SizeThresholdTextBox.Text = "1";
             SetDefaultUnitToGB();
+        }
+
+        public void ShowReport(List<LargeFileInfo> files)
+        {
+            foreach (DataGridColumn column in LargeFilesDataGrid.Columns)
+                column.SortDirection = null;
+            SizeColumn.Header = Loc.T("Size");
+            SizeColumn.SortDirection = System.ComponentModel.ListSortDirection.Descending;
+            sortDescending = false;
+            LargeFilesDataGrid.ItemsSource = files;
+            ScanResultLabel.Text = FoundText(files.Count, files.Sum(f => f.FileSizeBytes));
+            if (WindowState == WindowState.Minimized)
+                WindowState = WindowState.Normal;
+            Activate();
+        }
+
+        private void LargeFilesDataGrid_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            DependencyObject? node = e.OriginalSource as DependencyObject;
+            while (node != null && node is not DataGridRow)
+                node = node is System.Windows.Media.Visual ? System.Windows.Media.VisualTreeHelper.GetParent(node) : LogicalTreeHelper.GetParent(node);
+            if (node is DataGridRow row)
+                LargeFilesDataGrid.SelectedItem = row.Item;
         }
 
         private void SetDefaultUnitToGB()
@@ -99,6 +185,15 @@ namespace MultronWinCleaner
             }
         }
 
+        private ToolSettingsWindow? settingsWindow;
+
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            AdvancedPanel.Visibility = Visibility.Visible;
+            settingsWindow ??= new ToolSettingsWindow(this, Loc.T("Large File Finder Settings"), AdvancedPanel, 960, 720, windowButtons: true);
+            settingsWindow.ShowOrActivate();
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
                Visibility = Visibility.Collapsed;
@@ -113,8 +208,8 @@ namespace MultronWinCleaner
             public DateTime LastModified { get; set; }
             public DateTime LastAccessed { get; set; }
 
-            public string FormattedLastModified => LastModified.ToString("dd.MM.yyyy HH:mm");
-            public string FormattedLastAccessed => LastAccessed.ToString("dd.MM.yyyy HH:mm");
+            public string FormattedLastModified => LastModified.ToString("g", Loc.Culture);
+            public string FormattedLastAccessed => LastAccessed.ToString("g", Loc.Culture);
 
             public string TimeAgo
             {
@@ -122,17 +217,68 @@ namespace MultronWinCleaner
                 {
                     TimeSpan span = DateTime.Now - LastAccessed;
                     if (span.TotalDays >= 365)
-                        return Loc.F("{0} years ago", (int)(span.TotalDays / 365));
+                        return Ago((int)(span.TotalDays / 365), "1 year ago", "{0} years ago");
                     if (span.TotalDays >= 30)
-                        return Loc.F("{0} months ago", (int)(span.TotalDays / 30));
+                        return Ago((int)(span.TotalDays / 30), "1 month ago", "{0} months ago");
                     if (span.TotalDays >= 1)
-                        return Loc.F("{0} days ago", (int)span.TotalDays);
+                        return Ago((int)span.TotalDays, "1 day ago", "{0} days ago");
                     if (span.TotalHours >= 1)
-                        return Loc.F("{0} hours ago", (int)span.TotalHours);
+                        return Ago((int)span.TotalHours, "1 hour ago", "{0} hours ago");
                     return Loc.T("Recently");
                 }
             }
+
+            private static string Ago(int value, string one, string many) => value == 1 ? Loc.T(one) : Loc.F(many, value);
         } 
+        private static string FormatBytes(long bytes)
+        {
+            string[] units = { "B", "KB", "MB", "GB", "TB" };
+            double value = bytes;
+            int unit = 0;
+            while (value >= 1024 && unit < units.Length - 1)
+            {
+                value /= 1024;
+                unit++;
+            }
+            return value.ToString(unit == 0 ? "0" : "0.##", Loc.Culture) + " " + units[unit];
+        }
+
+        private static string FoundText(int count, long bytes) =>
+            count == 0 ? Loc.F("{0} large files found.", count) : Loc.F("{0} large files found ({1}).", count, FormatBytes(bytes));
+
+        private void MoveToRecycleBin_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = LargeFilesDataGrid.SelectedItems.OfType<LargeFileInfo>().ToList();
+            if (selected.Count == 0)
+                return;
+            long bytes = selected.Sum(f => f.FileSizeBytes);
+            if (AppDialog.Show(Loc.F("Move {0} file(s) ({1}) to the Recycle Bin?", selected.Count, FormatBytes(bytes)), Loc.T("Move to Recycle Bin"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+            var moved = new List<LargeFileInfo>();
+            int failed = 0;
+            foreach (var file in selected)
+            {
+                try
+                {
+                    if (File.Exists(file.Path))
+                        Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(file.Path,
+                            Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
+                            Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
+                    moved.Add(file);
+                }
+                catch
+                {
+                    failed++;
+                }
+            }
+            var remaining = (LargeFilesDataGrid.ItemsSource as IEnumerable<LargeFileInfo>)?.Except(moved).ToList() ?? new List<LargeFileInfo>();
+            LargeFilesDataGrid.ItemsSource = remaining;
+            string text = FoundText(remaining.Count, remaining.Sum(f => f.FileSizeBytes)) + " " + Loc.F("{0} file(s) moved to the Recycle Bin.", moved.Count);
+            if (failed > 0)
+                text += " " + Loc.F("{0} file(s) could not be moved.", failed);
+            ScanResultLabel.Text = text;
+        }
+
         private bool IsPathExcluded(string targetPath)
         {
             if (string.IsNullOrWhiteSpace(targetPath) || excludedPaths.Count == 0)
@@ -174,19 +320,10 @@ namespace MultronWinCleaner
                 return;
             }
             string selectedDateType = Loc.En((DateTypeComboBox.SelectedItem as ComboBoxItem)?.Content ?? "Last Accessed");
-
-            bool allowVideos = ChkVideos.IsChecked == true;
-            bool allowMusic = ChkMusic.IsChecked == true;
-            bool allowPhotos = ChkPhotos.IsChecked == true;
-            bool allowArchives = ChkArchives.IsChecked == true;
-            bool allowDocuments = ChkDocuments.IsChecked == true;
-            bool allowPrograms = ChkPrograms.IsChecked == true;
-            bool allowDiskImages = ChkDiskImages.IsChecked == true;
-            bool allowBackups = ChkBackups.IsChecked == true;
             bool allowOthers = ChkOthers.IsChecked == true;
+            var allowedExtensions = new HashSet<string>(extensionBoxes.Where(box => box.IsChecked == true).Select(box => (string)box.Content), StringComparer.OrdinalIgnoreCase);
 
-            if (!allowVideos && !allowMusic && !allowPhotos && !allowArchives && !allowDocuments &&
-                !allowPrograms && !allowDiskImages && !allowBackups && !allowOthers)
+            if (allowedExtensions.Count == 0 && !allowOthers)
             {
                 ScanResultLabel.Text = Loc.T("Please select at least one file type category to scan.");
                 return;
@@ -269,26 +406,7 @@ namespace MultronWinCleaner
                             var info = new FileInfo(file);
 
                             string ext = info.Extension;
-                            bool isVideo = VideoExtensions.Contains(ext);
-                            bool isMusic = MusicExtensions.Contains(ext);
-                            bool isPhoto = PhotoExtensions.Contains(ext);
-                            bool isArchive = ArchiveExtensions.Contains(ext);
-                            bool isDoc = DocumentExtensions.Contains(ext);
-                            bool isProgram = ProgramExtensions.Contains(ext);
-                            bool isDiskImage = DiskImageExtensions.Contains(ext);
-                            bool isBackup = BackupExtensions.Contains(ext);
-                            bool isOther = !isVideo && !isMusic && !isPhoto && !isArchive && !isDoc && !isProgram && !isDiskImage && !isBackup;
-
-                            bool matchesCategory =
-                                (isVideo && allowVideos) ||
-                                (isMusic && allowMusic) ||
-                                (isPhoto && allowPhotos) ||
-                                (isArchive && allowArchives) ||
-                                (isDoc && allowDocuments) ||
-                                (isProgram && allowPrograms) ||
-                                (isDiskImage && allowDiskImages) ||
-                                (isBackup && allowBackups) ||
-                                (isOther && allowOthers);
+                            bool matchesCategory = KnownExtensions.Contains(ext) ? allowedExtensions.Contains(ext) : allowOthers;
 
                             if (!matchesCategory)
                             {
@@ -327,7 +445,7 @@ namespace MultronWinCleaner
                                     {
                                         Name = info.Name,
                                         Path = info.FullName,
-                                        FormattedSize = $"{displaySize:F2} {selectedUnit}",
+                                        FormattedSize = displaySize.ToString("F2", Loc.Culture) + " " + selectedUnit,
                                         FileSizeBytes = info.Length,
                                         LastModified = info.LastWriteTime,
                                         LastAccessed = info.LastAccessTime
@@ -366,7 +484,7 @@ namespace MultronWinCleaner
                     }
                     else
                     {
-                        ScanResultLabel.Text = Loc.F("{0} large files found.", sortedList.Count);
+                        ScanResultLabel.Text = FoundText(sortedList.Count, sortedList.Sum(f => f.FileSizeBytes));
                     }
                 });
             }
@@ -518,10 +636,14 @@ namespace MultronWinCleaner
                     ? list.OrderByDescending(f => f.FileSizeBytes).ToList()
                     : list.OrderBy(f => f.FileSizeBytes).ToList();
 
+                var direction = sortDescending ? System.ComponentModel.ListSortDirection.Descending : System.ComponentModel.ListSortDirection.Ascending;
                 sortDescending = !sortDescending;
 
                 LargeFilesDataGrid.ItemsSource = null;
                 LargeFilesDataGrid.ItemsSource = list;
+                foreach (DataGridColumn column in LargeFilesDataGrid.Columns)
+                    column.SortDirection = null;
+                SizeColumn.SortDirection = direction;
             }
         }
 
@@ -546,6 +668,8 @@ namespace MultronWinCleaner
             ChkDiskImages.IsChecked = isChecked;
             ChkBackups.IsChecked = isChecked;
             ChkOthers.IsChecked = isChecked;
+            foreach (var box in extensionBoxes)
+                box.IsChecked = isChecked;
         }
 
         private void OpenFile_Click(object sender, RoutedEventArgs e)
@@ -629,9 +753,31 @@ namespace MultronWinCleaner
             }
         }
 
+        public static readonly string[] ExportHeader = { "File Name", "Path", "Size", "Bytes", "Last Used / Access", "Last Modified" };
+
+        public IEnumerable<string[]> ExportRows()
+        {
+            var view = LargeFilesDataGrid.ItemsSource == null ? null : CollectionViewSource.GetDefaultView(LargeFilesDataGrid.ItemsSource);
+            if (view == null)
+                yield break;
+            foreach (var file in view.OfType<LargeFileInfo>())
+                yield return new[] { file.Name, file.Path, file.FormattedSize, file.FileSizeBytes.ToString(System.Globalization.CultureInfo.InvariantCulture), file.FormattedLastAccessed, file.FormattedLastModified };
+        }
+
+        private void ExportListButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!ExportRows().Any())
+            {
+                AppDialog.Show(this, Loc.T("There is nothing to export yet. Run a scan first."), Loc.T("Export list"), MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            MultronWinCleaner.Processes.CsvExport.Save(this, "MultronWinCleaner_large_files", ExportHeader.Select(Loc.T), ExportRows());
+        }
+
         private void ClearListButton_Click(object sender, RoutedEventArgs e)
         {
             LargeFilesDataGrid.ItemsSource = null;
+            SearchBox.Clear();
             ScanResultLabel.Text = Loc.T("List Cleared!");
         }
 

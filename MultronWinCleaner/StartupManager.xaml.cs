@@ -32,12 +32,12 @@ namespace MultronWinCleaner
         public StartupApp? SelectedApp
         {
             get => selectedApp;
-            set { selectedApp = value; OnPropertyChanged(); btnRemove.IsEnabled = value != null; }
+            set { selectedApp = value; OnPropertyChanged(); }
         }
 
         private bool _isLoading = false;
         private HashSet<string> _knownItems = new();
-        private bool _notificationsEnabled = false;
+        private static bool _notificationsEnabled;
 
         public StartupManager(Utilities utilities)
         {
@@ -55,8 +55,12 @@ namespace MultronWinCleaner
                 if (IsVisible && IsLoaded)
                     await LoadStartupAppsFastAsync(isSilentRefresh: true);
             };
+            currentInstance?._monitoringCts?.Cancel();
+            currentInstance = this;
             StartRealTimeMonitoring();
         }
+
+        private static StartupManager? currentInstance;
 
         private volatile bool _isShown;
 
@@ -75,6 +79,7 @@ namespace MultronWinCleaner
         {
             _monitoringCts = new CancellationTokenSource();
             var token = _monitoringCts.Token;
+            StartChangeWatchers(token);
 
             System.Threading.Tasks.Task.Run(async () =>
             {
@@ -84,9 +89,9 @@ namespace MultronWinCleaner
                     {
                         if (_isShown || _notificationsEnabled)
                             await LoadStartupAppsFastAsync(true);
-                        await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(5), token);
+                        await WaitForChangeAsync(token);
                     }
-                    catch (TaskCanceledException) { break; }
+                    catch (OperationCanceledException) { break; }
                     catch (Exception ex) { Debug.WriteLine($"Real-time monitoring error: {ex.Message}"); }
                 }
             }, token);
@@ -113,9 +118,12 @@ namespace MultronWinCleaner
                         {
                             GetWinlogonEntries(allApps);
                             GetRegistryStartupApps(allApps);
+                            GetPolicyAndTerminalApps(allApps);
+                            GetWindowsValueEntries(allApps);
 
-                            if (!isSilentRefresh || DateTime.UtcNow - _lastTaskSchedulerScan > TaskSchedulerRefreshInterval)
+                            if (!isSilentRefresh || _taskListChanged || DateTime.UtcNow - _lastTaskSchedulerScan > TaskSchedulerRefreshInterval)
                             {
+                                _taskListChanged = false;
                                 var taskApps = new ConcurrentBag<StartupApp>();
                                 GetTaskSchedulerApps(taskApps);
                                 _cachedTaskApps = taskApps.ToList();
@@ -124,6 +132,10 @@ namespace MultronWinCleaner
                             foreach (var taskApp in _cachedTaskApps)
                                 allApps.Add(taskApp);
 
+                            GetServiceApps(allApps);
+                            GetPackagedStartupTasks(allApps);
+                            GetActiveSetupEntries(allApps);
+                            GetExtendedLocations(allApps);
                             GetStartupFolderApps(allApps);
                             tcs.SetResult(true);
                         }
@@ -137,12 +149,15 @@ namespace MultronWinCleaner
                     return tcs.Task;
                 });
 
-                var sortedApps = allApps.OrderBy(a => a.Name).ToList();
+                var liveAdvanced = new HashSet<string>(allApps.Where(a => a.Advanced != null && !a.IsAdvancedRecord).Select(a => a.Advanced!.Id));
+                var sortedApps = allApps
+                    .Where(a => !a.IsAdvancedRecord || !liveAdvanced.Contains(a.Advanced!.Id))
+                    .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(a => a.UniqueId, StringComparer.Ordinal)
+                    .ToList();
                 var currentHashes = new HashSet<string>(sortedApps.Select(a => a.UniqueId));
 
                 if (_knownItems == null) _knownItems = new HashSet<string>();
-
-                if (isSilentRefresh && _knownItems.SetEquals(currentHashes)) return;
 
                 var newItems = currentHashes.Except(_knownItems).ToList();
                 bool isInitialScan = _knownItems.Count == 0;
@@ -176,18 +191,29 @@ namespace MultronWinCleaner
 
                     foreach (var app in sortedApps)
                     {
-                        if (!StartupApps.Any(a => a.UniqueId == app.UniqueId))
+                        var existing = StartupApps.FirstOrDefault(a => a.UniqueId == app.UniqueId);
+                        if (existing != null)
                         {
-                            app.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(StartupApp.HasPendingChange)) CheckPendingChanges(); };
-                            app.HighImpactWarningAction = (msg) => ShowInAppWarning(msg);
-
-                            StartupApps.Add(app);
+                            if (!existing.HasPendingChange && existing.IsEnabled != app.IsEnabled)
+                                existing.IsEnabled = app.IsEnabled;
+                            continue;
                         }
+
+                        app.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(StartupApp.HasPendingChange)) CheckPendingChanges(); };
+                        app.HighImpactWarningAction = (msg) => ShowInAppWarning(msg);
+
+                        int index = 0;
+                        while (index < StartupApps.Count && string.Compare(StartupApps[index].Name, app.Name, StringComparison.OrdinalIgnoreCase) <= 0)
+                            index++;
+                        StartupApps.Insert(index, app);
                     }
+
+                    CheckPendingChanges();
+                    RefreshFilter();
                      
                     if (!isSilentRefresh)
                     {
-                        var highImpactApps = StartupApps.Where(a => a.IsEnabled && a.Impact == "High").Select(a => a.Name).ToList();
+                        var highImpactApps = StartupApps.Where(a => a.IsEnabled && a.Impact == "High" && !a.IsWindowsTask).Select(a => a.Name).ToList();
                         if (highImpactApps.Any())
                         {
                             string appNames = string.Join(", ", highImpactApps.Take(3));
@@ -241,17 +267,94 @@ namespace MultronWinCleaner
             SearchBox.Focus();
         }
 
+        private string _searchQuery = "";
+        private string _statusFilter = "All";
+
         private void ApplySearch(string query)
         {
+            _searchQuery = query;
+            RefreshFilter();
+        }
+
+        public async void RevealItem(string name, string path)
+        {
+            Show();
+            if (WindowState == WindowState.Minimized)
+                WindowState = WindowState.Normal;
+            Activate();
+            SearchBox.Text = "";
+            FilterAll.IsChecked = true;
+
+            StartupApp? item = null;
+            for (int attempt = 0; attempt < 20 && item == null; attempt++)
+            {
+                item = StartupApps.FirstOrDefault(a => a.Name == name && a.Path == path);
+                if (item == null)
+                    await System.Threading.Tasks.Task.Delay(300);
+            }
+            if (item == null)
+                return;
+
+            if (item.IsWindowsTask)
+                chkWindowsTasks.IsChecked = true;
+            RefreshFilter();
+            StartupAppsDataGrid.SelectedItem = item;
+            StartupAppsDataGrid.ScrollIntoView(item);
+            StartupAppsDataGrid.UpdateLayout();
+            await System.Threading.Tasks.Task.Delay(200);
+            StartupAppsDataGrid.ScrollIntoView(item);
+            var brush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
+            item.FlashBrush = brush;
+            brush.BeginAnimation(System.Windows.Media.SolidColorBrush.ColorProperty, new System.Windows.Media.Animation.ColorAnimation
+            {
+                From = System.Windows.Media.Color.FromArgb(0x00, 0xFF, 0x98, 0x00),
+                To = System.Windows.Media.Color.FromArgb(0xE0, 0xFF, 0x98, 0x00),
+                Duration = TimeSpan.FromMilliseconds(350),
+                AutoReverse = true,
+                RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+                SpeedRatio = 1
+            });
+            await System.Threading.Tasks.Task.Delay(5000);
+            item.FlashBrush = null;
+        }
+
+        private void Filter_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.Tag is string tag)
+                _statusFilter = tag;
+            RefreshFilter();
+        }
+
+        private void WindowsTasks_Changed(object sender, RoutedEventArgs e) => RefreshFilter();
+
+        private void RefreshFilter()
+        {
+            if (!IsInitialized) return;
             var view = CollectionViewSource.GetDefaultView(StartupApps);
             if (view == null) return;
+            bool showWindowsTasks = chkWindowsTasks.IsChecked == true;
+            view.Filter = item => item is StartupApp app
+                && (showWindowsTasks || !app.IsWindowsTask)
+                && (_statusFilter switch
+                {
+                    "Enabled" => app.IsEnabled,
+                    "Disabled" => !app.IsEnabled,
+                    "High" => app.IsEnabled && app.Impact == "High",
+                    _ => true
+                })
+                && (_searchQuery.Length == 0
+                    || app.Name.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+                    || app.Path.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase));
+            UpdateSummary();
+        }
 
-            if (query.Length == 0)
-                view.Filter = null;
-            else
-                view.Filter = item => item is StartupApp app
-                    && (app.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
-                        || app.Path.Contains(query, StringComparison.OrdinalIgnoreCase));
+        private void UpdateSummary()
+        {
+            int enabled = StartupApps.Count(a => a.IsEnabled && a.IsUserApp);
+            int high = StartupApps.Count(a => a.IsEnabled && a.IsUserApp && a.Impact == "High");
+            SummaryText.Text = Loc.F("{0} apps start with Windows", enabled);
+            HighImpactText.Text = Loc.F("{0} high impact", high);
+            HighImpactBadge.Visibility = high > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void tglShowNotifications_Checked(object sender, RoutedEventArgs e)
@@ -271,7 +374,8 @@ namespace MultronWinCleaner
             string[] keys = {
                 @"Software\Microsoft\Windows\CurrentVersion\Run",
                 @"Software\Microsoft\Windows\CurrentVersion\RunOnce",
-                @"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run"
+                @"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
+                @"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce"
             };
 
             foreach (var keyPath in keys)
@@ -281,7 +385,203 @@ namespace MultronWinCleaner
             }
         }
 
-        private void ReadRegKey(RegistryKey root, string subKey, ConcurrentBag<StartupApp> apps)
+        private void GetPolicyAndTerminalApps(ConcurrentBag<StartupApp> apps)
+        {
+            const string policy = @"Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run";
+            const string terminal = @"Software\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\";
+            ReadRegKey(Registry.CurrentUser, policy, apps, "Group Policy");
+            ReadRegKey(Registry.LocalMachine, policy, apps, "Group Policy");
+            ReadRegKey(Registry.LocalMachine, @"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run", apps, "Group Policy");
+            ReadRegKey(Registry.LocalMachine, terminal + "Run", apps, "Terminal Server");
+            ReadRegKey(Registry.LocalMachine, terminal + "RunOnce", apps, "Terminal Server");
+        }
+
+        private void AddReadOnlyEntry(ConcurrentBag<StartupApp> apps, string name, string command, string type, AdvancedSource? source = null)
+        {
+            apps.Add(new StartupApp
+            {
+                Name = name,
+                Path = command,
+                ValueName = name,
+                StartupType = type,
+                Advanced = source,
+                IsEnabled = true,
+                IsPresent = true,
+                Icon = GetIcon(command),
+                Impact = CalculateImpactAutomatically(command, name)
+            });
+        }
+
+        private static string DisplayName(string command, string fallback)
+        {
+            string? exe = SplitCommandLine(command).Exe;
+            return string.IsNullOrEmpty(exe) ? fallback : Path.GetFileNameWithoutExtension(exe);
+        }
+
+        private void GetWindowsValueEntries(ConcurrentBag<StartupApp> apps)
+        {
+            const string windows = @"Software\Microsoft\Windows NT\CurrentVersion\Windows";
+            const string winlogon = @"Software\Microsoft\Windows NT\CurrentVersion\Winlogon";
+
+            foreach (string valueName in new[] { "Load", "Run" })
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(windows, false);
+                    foreach (string part in (key?.GetValue(valueName) as string ?? "").Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                        AddReadOnlyEntry(apps, DisplayName(part, valueName), part, "Windows Load", ListSource(Registry.CurrentUser, windows, valueName, part, " "));
+                }
+                catch { }
+            }
+
+            foreach (var root in new[] { Registry.LocalMachine, Registry.CurrentUser })
+            {
+                try
+                {
+                    using var key = root.OpenSubKey(winlogon, false);
+                    foreach (string part in (key?.GetValue("Shell") as string ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        if (!part.Equals("explorer.exe", StringComparison.OrdinalIgnoreCase))
+                            AddReadOnlyEntry(apps, DisplayName(part, "Shell"), part, "Winlogon Shell", ListSource(root, winlogon, "Shell", part, ",", "explorer.exe"));
+                }
+                catch { }
+            }
+
+            foreach (string subKey in new[] { @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows", @"SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Windows" })
+            {
+                try
+                {
+                    using var key = Registry.LocalMachine.OpenSubKey(subKey, false);
+                    foreach (string part in (key?.GetValue("AppInit_DLLs") as string ?? "").Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                        AddReadOnlyEntry(apps, DisplayName(part, "AppInit_DLLs"), part, "AppInit DLL", ListSource(Registry.LocalMachine, subKey, "AppInit_DLLs", part, " "));
+                }
+                catch { }
+            }
+
+            try
+            {
+                using var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager", false);
+                if (key?.GetValue("BootExecute") is string[] entries)
+                    foreach (string entry in entries.Where(e => !string.IsNullOrWhiteSpace(e) && !e.StartsWith("autocheck ", StringComparison.OrdinalIgnoreCase)))
+                        AddReadOnlyEntry(apps, entry.Split(' ')[0], entry, "Boot Execute", ListSource(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control\Session Manager", "BootExecute", entry, "\0"));
+            }
+            catch { }
+        }
+
+        private void GetActiveSetupEntries(ConcurrentBag<StartupApp> apps)
+        {
+            foreach (string subKey in new[] { @"SOFTWARE\Microsoft\Active Setup\Installed Components", @"SOFTWARE\WOW6432Node\Microsoft\Active Setup\Installed Components" })
+            {
+                try
+                {
+                    using var root = Registry.LocalMachine.OpenSubKey(subKey, false);
+                    if (root == null) continue;
+                    foreach (string id in root.GetSubKeyNames())
+                    {
+                        try
+                        {
+                            using var item = root.OpenSubKey(id, false);
+                            string stub = item?.GetValue("StubPath") as string ?? "";
+                            if (string.IsNullOrWhiteSpace(stub) || (item?.GetValue("IsInstalled") is int installed && installed == 0)) continue;
+                            string? target = ResolveLaunchTarget(stub);
+                            if (string.IsNullOrEmpty(target) || target.StartsWith(WindowsFolderPrefix(), StringComparison.OrdinalIgnoreCase)) continue;
+                            string title = item?.GetValue(null) as string ?? "";
+                            AddReadOnlyEntry(apps, string.IsNullOrWhiteSpace(title) ? DisplayName(stub, id) : title, stub, "Active Setup", ValueSource(Registry.LocalMachine, $@"{subKey}\{id}", "StubPath"));
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+            }
+        }
+
+        private void GetServiceApps(ConcurrentBag<StartupApp> apps)
+        {
+            try
+            {
+                using var services = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services", false);
+                if (services == null) return;
+                foreach (string name in services.GetSubKeyNames())
+                {
+                    try
+                    {
+                        using var service = services.OpenSubKey(name, false);
+                        if (service?.GetValue("Start") is not int start || (start != 2 && start != 4)) continue;
+                        if (service.GetValue("Type") is not int type || (type & 0x30) == 0) continue;
+                        string image = service.GetValue("ImagePath") as string ?? "";
+                        if (string.IsNullOrWhiteSpace(image)) continue;
+                        string? target = ResolveLaunchTarget(image);
+                        bool thirdParty = IsThirdPartyFile(target);
+                        if (!thirdParty)
+                        {
+                            using var parameters = service.OpenSubKey("Parameters", false);
+                            string dll = parameters?.GetValue("ServiceDll") as string ?? service.GetValue("ServiceDll") as string ?? "";
+                            thirdParty = dll.Length > 0 && IsThirdPartyFile(ProbeFile(NormalizeSystemPath(dll)));
+                        }
+                        if (!thirdParty) continue;
+                        string display = service.GetValue("DisplayName") as string ?? name;
+                        if (display.StartsWith("@", StringComparison.Ordinal)) display = name;
+
+                        apps.Add(new StartupApp
+                        {
+                            Name = display,
+                            Path = image,
+                            ValueName = name,
+                            StartupType = "Service",
+                            IsServiceEntry = true,
+                            IsEnabled = start == 2,
+                            IsPresent = true,
+                            Icon = GetIcon(image),
+                            Impact = CalculateImpactAutomatically(image, display)
+                        });
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        private const string PackagedTasksKey = @"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData";
+
+        private void GetPackagedStartupTasks(ConcurrentBag<StartupApp> apps)
+        {
+            try
+            {
+                using var root = Registry.CurrentUser.OpenSubKey(PackagedTasksKey, false);
+                if (root == null) return;
+                foreach (string package in root.GetSubKeyNames())
+                {
+                    try
+                    {
+                        using var packageKey = root.OpenSubKey(package, false);
+                        if (packageKey == null) continue;
+                        foreach (string taskId in packageKey.GetSubKeyNames())
+                        {
+                            using var task = packageKey.OpenSubKey(taskId, false);
+                            if (task?.GetValue("State") is not int state) continue;
+                            string title = package.Split('_')[0];
+                            int dot = title.IndexOf('.');
+                            apps.Add(new StartupApp
+                            {
+                                Name = dot > 0 && dot < title.Length - 1 ? title.Substring(dot + 1) : title,
+                                Path = package,
+                                ValueName = "State",
+                                RegistryRoot = Registry.CurrentUser,
+                                RegistryPath = PackagedTasksKey + "\\" + package + "\\" + taskId,
+                                IsPackagedTask = true,
+                                StartupType = "Store App",
+                                IsEnabled = state == 2 || state == 4,
+                                IsPresent = true,
+                                Impact = "Low"
+                            });
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        private void ReadRegKey(RegistryKey root, string subKey, ConcurrentBag<StartupApp> apps, string? forcedType = null)
         {
             try
             {
@@ -293,7 +593,8 @@ namespace MultronWinCleaner
                     try
                     {
                         string path = key.GetValue(name)?.ToString() ?? "";
-                        bool enabled = !IsRegStartupDisabled(name, subKey, root);
+                        string? approvedKey = forcedType == null ? ApprovedKeyFor(subKey) : null;
+                        bool enabled = approvedKey == null || !IsApprovedDisabled(root, approvedKey, name);
 
                         apps.Add(new StartupApp
                         {
@@ -302,7 +603,8 @@ namespace MultronWinCleaner
                             ValueName = name,
                             RegistryRoot = root,
                             RegistryPath = subKey,
-                            StartupType = root == Registry.CurrentUser ? "Registry (User)" : "Registry (Machine)",
+                            ApprovedKey = approvedKey,
+                            StartupType = forcedType ?? (root == Registry.CurrentUser ? "Registry (User)" : "Registry (Machine)"),
                             IsEnabled = enabled,
                             IsPresent = true,
                             Icon = GetIcon(path),
@@ -324,7 +626,7 @@ namespace MultronWinCleaner
                 {
                     try
                     {
-                        if (task.Definition.Triggers.Any(tr => tr.TriggerType is TaskTriggerType.Logon or TaskTriggerType.Boot or TaskTriggerType.Registration))
+                        if (task.Definition.Triggers.Any(tr => tr.Enabled && tr.TriggerType is TaskTriggerType.Logon or TaskTriggerType.Boot))
                         {
                             var action = task.Definition.Actions.OfType<ExecAction>().FirstOrDefault();
                             string actionPath = action != null ? $"{action.Path} {action.Arguments}".Trim() : Loc.T("Task Action");
@@ -337,8 +639,10 @@ namespace MultronWinCleaner
                                 StartupType = "Scheduled Task",
                                 IsEnabled = task.Enabled,
                                 IsPresent = true,
-                                Impact = CalculateImpactAutomatically(actionPath, task.Name),
-                                Icon = action != null ? GetIcon(action.Path) : null
+                                CanToggleTask = true,
+                                IsWindowsTask = task.Path.StartsWith(@"\Microsoft\Windows\", StringComparison.OrdinalIgnoreCase),
+                                Impact = action != null ? CalculateImpactAutomatically($"\"{action.Path}\" {action.Arguments}", task.Name) : "Low",
+                                Icon = action != null ? GetIcon($"\"{action.Path}\" {action.Arguments}") : null
                             });
                         }
                     }
@@ -356,28 +660,38 @@ namespace MultronWinCleaner
 
         private void GetStartupFolderApps(ConcurrentBag<StartupApp> apps)
         {
-            string[] folders = { Environment.GetFolderPath(Environment.SpecialFolder.Startup), Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup) };
+            var folders = new[]
+            {
+                (Path: Environment.GetFolderPath(Environment.SpecialFolder.Startup), Root: Registry.CurrentUser),
+                (Path: Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), Root: Registry.LocalMachine)
+            };
 
             foreach (var folder in folders)
             {
                 try
                 {
-                    if (!Directory.Exists(folder)) continue;
+                    if (!Directory.Exists(folder.Path)) continue;
 
-                    foreach (var file in Directory.GetFiles(folder, "*.lnk"))
+                    foreach (var file in Directory.GetFiles(folder.Path))
                     {
                         try
                         {
+                            string fileName = Path.GetFileName(file);
+                            if (fileName.Equals("desktop.ini", StringComparison.OrdinalIgnoreCase)) continue;
+                            string title = Path.GetFileNameWithoutExtension(file);
+
                             apps.Add(new StartupApp
                             {
-                                Name = Path.GetFileNameWithoutExtension(file),
+                                Name = title,
                                 Path = file,
-                                ValueName = Path.GetFileName(file),
+                                ValueName = fileName,
+                                RegistryRoot = folder.Root,
+                                ApprovedKey = ApprovedStartupFolderKey,
                                 StartupType = "Startup Folder",
-                                IsEnabled = true,
+                                IsEnabled = !IsApprovedDisabled(folder.Root, ApprovedStartupFolderKey, fileName),
                                 IsPresent = true,
-                                Icon = GetIconFromShortcut(file),
-                                Impact = CalculateImpactAutomatically(file, Path.GetFileNameWithoutExtension(file))
+                                Icon = GetIcon(file),
+                                Impact = CalculateImpactAutomatically(file, title)
                             });
                         }
                         catch { }
@@ -402,8 +716,10 @@ namespace MultronWinCleaner
                         {
                             Name = Path.GetFileNameWithoutExtension(part),
                             Path = part,
+                            ValueName = Path.GetFileNameWithoutExtension(part),
                             StartupType = "Userinit (WinLogon)",
-                            IsEnabled = System.IO.File.Exists(part),
+                            Advanced = ListSource(Registry.LocalMachine, @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon", "Userinit", part, ",", Path.Combine(Environment.SystemDirectory, "userinit.exe")),
+                            IsEnabled = true,
                             IsPresent = true,
                             Icon = GetIcon(part),
                             Impact = CalculateImpactAutomatically(part, Path.GetFileNameWithoutExtension(part))
@@ -418,8 +734,231 @@ namespace MultronWinCleaner
         private const long HighThresholdBytes = 40L * 1024 * 1024;
         private const long MediumThresholdBytes = 10L * 1024 * 1024;
         private const long ManagedRuntimeOverheadBytes = 8L * 1024 * 1024;
-        private const int StabilityRetries = 3;
-        private const int StabilityDelayMs = 150;
+
+        private const string ApprovedBaseKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\";
+        private const string ApprovedStartupFolderKey = ApprovedBaseKey + "StartupFolder";
+
+        private static readonly HashSet<string> LauncherHosts = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "rundll32.exe", "regsvr32.exe", "cmd.exe", "powershell.exe", "pwsh.exe", "wscript.exe", "cscript.exe", "mshta.exe", "conhost.exe", "explorer.exe"
+        };
+
+        private static readonly HashSet<string> LaunchableExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".exe", ".dll", ".ocx", ".com", ".bat", ".cmd", ".ps1", ".vbs", ".vbe", ".js", ".jse", ".wsf", ".hta"
+        };
+
+        private static string? ApprovedKeyFor(string runSubKey)
+        {
+            if (!runSubKey.EndsWith(@"\Run", StringComparison.OrdinalIgnoreCase)) return null;
+            return ApprovedBaseKey + (runSubKey.Contains("WOW6432Node", StringComparison.OrdinalIgnoreCase) ? "Run32" : "Run");
+        }
+
+        private static bool IsApprovedDisabled(RegistryKey root, string approvedKey, string valueName)
+        {
+            try
+            {
+                using var key = root.OpenSubKey(approvedKey, false);
+                return key?.GetValue(valueName) is byte[] data && data.Length > 0 && (data[0] & 1) != 0;
+            }
+            catch { return false; }
+        }
+
+        private static string? ProbeFile(string candidate)
+        {
+            if (string.IsNullOrWhiteSpace(candidate)) return null;
+            candidate = candidate.Trim().Trim('"');
+            var names = System.IO.Path.HasExtension(candidate) ? new[] { candidate } : new[] { candidate, candidate + ".exe" };
+            foreach (string name in names)
+            {
+                try
+                {
+                    if (System.IO.Path.IsPathRooted(name))
+                    {
+                        if (System.IO.File.Exists(name)) return System.IO.Path.GetFullPath(name);
+                        continue;
+                    }
+                    var folders = new List<string> { Environment.SystemDirectory, Environment.GetFolderPath(Environment.SpecialFolder.Windows) };
+                    folders.AddRange((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries));
+                    foreach (string folder in folders)
+                    {
+                        string full;
+                        try { full = System.IO.Path.Combine(folder.Trim(), name); } catch { continue; }
+                        if (System.IO.File.Exists(full)) return System.IO.Path.GetFullPath(full);
+                    }
+                }
+                catch { }
+            }
+            return null;
+        }
+
+        private static (string? Exe, string Args) SplitCommandLine(string commandLine)
+        {
+            string line = Environment.ExpandEnvironmentVariables(commandLine ?? "").Trim();
+            if (line.Length == 0) return (null, "");
+            if (line[0] == '"')
+            {
+                int end = line.IndexOf('"', 1);
+                if (end < 0) return (ProbeFile(line) ?? line.Trim('"'), "");
+                string quoted = line.Substring(1, end - 1);
+                return (ProbeFile(quoted) ?? quoted, line.Substring(end + 1).Trim());
+            }
+            int space = -1;
+            do
+            {
+                space = line.IndexOf(' ', space + 1);
+                string found = space < 0 ? line : line.Substring(0, space);
+                string? file = ProbeFile(found);
+                if (file != null) return (file, space < 0 ? "" : line.Substring(space + 1).Trim());
+            } while (space >= 0);
+            int first = line.IndexOf(' ');
+            return (first < 0 ? line : line.Substring(0, first), first < 0 ? "" : line.Substring(first + 1).Trim());
+        }
+
+        private static List<string> SplitArguments(string args)
+        {
+            var result = new List<string>();
+            if (string.IsNullOrWhiteSpace(args)) return result;
+            IntPtr argv = NativeMethods.CommandLineToArgvW("x " + args, out int argc);
+            if (argv == IntPtr.Zero) return result;
+            try
+            {
+                for (int i = 1; i < argc; i++)
+                {
+                    string? value = Marshal.PtrToStringUni(Marshal.ReadIntPtr(argv, i * IntPtr.Size));
+                    if (!string.IsNullOrEmpty(value)) result.Add(value);
+                }
+            }
+            finally { NativeMethods.LocalFree(argv); }
+            return result;
+        }
+
+        private string? SelectedStartupTarget()
+        {
+            if (StartupAppsDataGrid.SelectedItem is not StartupApp app || string.IsNullOrWhiteSpace(app.Path))
+                return null;
+            string? target = null;
+            try
+            {
+                target = ResolveLaunchTarget(app.Path);
+            }
+            catch
+            {
+            }
+            if (!string.IsNullOrWhiteSpace(target) && (System.IO.File.Exists(target) || System.IO.Directory.Exists(target)))
+                return target;
+            return LongestExistingPath(app.Path) ?? app.Path.Trim().Trim('"');
+        }
+
+        private static string? LongestExistingPath(string commandLine)
+        {
+            string text = Environment.ExpandEnvironmentVariables(commandLine.Trim());
+            if (text.StartsWith("\""))
+            {
+                int end = text.IndexOf('"', 1);
+                if (end > 1)
+                {
+                    string quoted = text.Substring(1, end - 1);
+                    if (System.IO.File.Exists(quoted))
+                        return quoted;
+                }
+            }
+            string[] parts = text.Split(' ');
+            for (int count = parts.Length; count > 0; count--)
+            {
+                string candidate = string.Join(" ", parts, 0, count).Trim().Trim('"').TrimEnd(',');
+                if (candidate.Length > 2 && System.IO.File.Exists(candidate))
+                    return candidate;
+            }
+            return null;
+        }
+
+        private void StartupOpenLocation_Click(object sender, RoutedEventArgs e)
+        {
+            string? target = SelectedStartupTarget();
+            if (target == null)
+                return;
+            try
+            {
+                if (System.IO.File.Exists(target))
+                    System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + target + "\"");
+                else if (System.IO.Directory.Exists(target))
+                    System.Diagnostics.Process.Start("explorer.exe", "\"" + target + "\"");
+                else
+                    AppDialog.Show(Loc.T("The file could not be found."), Loc.T("Open file location"), MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                AppDialog.Show(Loc.F("Could not open folder: {0}", ex.Message), Loc.T("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void StartupCopyPath_Click(object sender, RoutedEventArgs e)
+        {
+            string? target = SelectedStartupTarget();
+            if (target == null)
+                return;
+            try
+            {
+                Clipboard.SetText(target);
+            }
+            catch
+            {
+            }
+        }
+
+        private static string? ResolveLaunchTarget(string commandLine, int depth = 0)
+        {
+            var (exe, args) = SplitCommandLine(commandLine);
+            if (string.IsNullOrEmpty(exe) || depth > 3) return exe;
+
+            if (exe.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+            {
+                string? target = ResolveShortcutTargetSta(exe);
+                return string.IsNullOrEmpty(target) ? null : ResolveLaunchTarget(target, depth + 1);
+            }
+
+            string fileName = System.IO.Path.GetFileName(exe);
+            var tokens = SplitArguments(args);
+
+            if (LauncherHosts.Contains(fileName))
+            {
+                string windows = WindowsFolderPrefix();
+                foreach (string raw in tokens)
+                {
+                    string token = Environment.ExpandEnvironmentVariables(raw);
+                    int comma = token.IndexOf(',');
+                    if (comma > 0) token = token.Substring(0, comma);
+                    if (!LaunchableExtensions.Contains(System.IO.Path.GetExtension(token))) continue;
+                    string? file = ProbeFile(token);
+                    if (file != null && !file.StartsWith(windows, StringComparison.OrdinalIgnoreCase))
+                        return file;
+                }
+                return exe;
+            }
+
+            if (fileName.Equals("Update.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                int flag = tokens.FindIndex(t => t.Equals("--processStart", StringComparison.OrdinalIgnoreCase) || t.Equals("--processStartAndWait", StringComparison.OrdinalIgnoreCase));
+                string? folder = System.IO.Path.GetDirectoryName(exe);
+                if (flag >= 0 && flag + 1 < tokens.Count && !string.IsNullOrEmpty(folder))
+                {
+                    string app = tokens[flag + 1];
+                    string? latest = Directory.GetDirectories(folder, "app-*")
+                        .OrderByDescending(d => Version.TryParse(System.IO.Path.GetFileName(d).Substring(4), out var v) ? v : new Version(0, 0))
+                        .Select(d => System.IO.Path.Combine(d, app))
+                        .FirstOrDefault(System.IO.File.Exists);
+                    if (latest != null) return latest;
+                    string beside = System.IO.Path.Combine(folder, app);
+                    if (System.IO.File.Exists(beside)) return beside;
+                }
+            }
+
+            return exe;
+        }
+
+        private static string WindowsFolderPrefix() =>
+            System.IO.Path.GetFullPath(Environment.GetFolderPath(Environment.SpecialFolder.Windows)).TrimEnd(System.IO.Path.DirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
 
         private string CalculateImpactAutomatically(string path, string appName)
         {
@@ -427,27 +966,11 @@ namespace MultronWinCleaner
 
             try
             {
-                if (path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
-                {
-                    string? target = ResolveShortcutTargetSta(path);
-                    if (!string.IsNullOrEmpty(target))
-                        path = target;
-                }
-
-                string? exePath = ExtractExecutablePath(path);
-                if (string.IsNullOrEmpty(exePath)) return "Low";
-
-            
-                exePath = Environment.ExpandEnvironmentVariables(exePath);
-
-                if (!System.IO.File.Exists(exePath)) return "Low";
+                string? exePath = ResolveLaunchTarget(path);
+                if (string.IsNullOrEmpty(exePath) || !System.IO.File.Exists(exePath)) return "Low";
 
                 string fullPathNormalized = Path.GetFullPath(exePath);
-                string winDirNormalized = Path.GetFullPath(
-                        Environment.GetFolderPath(Environment.SpecialFolder.Windows))
-                    .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-
-                if (fullPathNormalized.StartsWith(winDirNormalized, StringComparison.OrdinalIgnoreCase))
+                if (fullPathNormalized.StartsWith(WindowsFolderPrefix(), StringComparison.OrdinalIgnoreCase))
                     return "Low";
 
                 var info = new FileInfo(fullPathNormalized);
@@ -455,7 +978,7 @@ namespace MultronWinCleaner
                 if (ImpactCache.TryGetValue(fullPathNormalized, out var cached) && cached.Stamp == stamp)
                     return cached.Impact;
 
-                long weight = GetStableImportWeight(fullPathNormalized);
+                long weight = MeasureImportWeightOnce(fullPathNormalized);
                 string impact = weight > HighThresholdBytes ? "High" : weight > MediumThresholdBytes ? "Medium" : "Low";
                 ImpactCache[fullPathNormalized] = (stamp, impact);
                 return impact;
@@ -467,19 +990,6 @@ namespace MultronWinCleaner
 
         private static readonly ConcurrentDictionary<string, ((DateTime, long) Stamp, string Impact)> ImpactCache =
             new(StringComparer.OrdinalIgnoreCase);
-
-        private static long GetStableImportWeight(string exePath)
-        {
-            long previous = -1;
-            for (int attempt = 0; attempt < StabilityRetries; attempt++)
-            {
-                long current = MeasureImportWeightOnce(exePath);
-                if (current == previous) return current;
-                previous = current;
-                if (attempt < StabilityRetries - 1) Thread.Sleep(StabilityDelayMs);
-            }
-            return previous;
-        }
 
         private static long MeasureImportWeightOnce(string exePath)
         {
@@ -517,9 +1027,9 @@ namespace MultronWinCleaner
             while (queue.Count > 0 && scanned < maxScanned)
             {
                 var (dllName, depth) = queue.Dequeue();
-                scanned++;
 
                 if (!visited.Add(dllName)) continue;
+                scanned++;
 
                 string candidatePath = Path.Combine(exeDir, dllName);
                 if (!System.IO.File.Exists(candidatePath)) continue; 
@@ -550,7 +1060,7 @@ namespace MultronWinCleaner
                     var shell = new IWshRuntimeLibrary.WshShell();
                     var shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(lnkPath);
                     if (!string.IsNullOrEmpty(shortcut.TargetPath))
-                        target = shortcut.TargetPath;
+                        target = $"\"{shortcut.TargetPath}\" {shortcut.Arguments}".Trim();
                 }
                 catch { }
             });
@@ -560,19 +1070,6 @@ namespace MultronWinCleaner
             return target;
         }
 
-        private static string? ExtractExecutablePath(string commandLine)
-        {
-            IntPtr argv = NativeMethods.CommandLineToArgvW(commandLine, out int argc);
-            if (argv == IntPtr.Zero || argc == 0) return null;
-            try
-            {
-                IntPtr firstArgPtr = Marshal.ReadIntPtr(argv, 0);
-                return Marshal.PtrToStringUni(firstArgPtr);
-            }
-            finally { NativeMethods.LocalFree(argv); }
-        }
-
- 
         private static class PeImportAnalyzer
         {
             private const ushort IMAGE_DOS_SIGNATURE = 0x5A4D;
@@ -723,7 +1220,9 @@ namespace MultronWinCleaner
         private BitmapImage? GetIcon(string path)
         {
             if (string.IsNullOrWhiteSpace(path)) return null;
-            string exe = path.Trim('"').Split(' ')[0];
+            string? target = ResolveLaunchTarget(path);
+            string? exe = target != null && target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? target : SplitCommandLine(path).Exe;
+            if (string.IsNullOrEmpty(exe)) return null;
 
             if (IconCache.TryGetValue(exe, out var cachedIcon)) return cachedIcon;
             if (!System.IO.File.Exists(exe)) return null;
@@ -748,23 +1247,12 @@ namespace MultronWinCleaner
             catch { return null; }
         }
 
-        private BitmapImage? GetIconFromShortcut(string shortcut)
+        private void CheckPendingChanges()
         {
-            try { return GetIcon(((IWshShortcut)new WshShell().CreateShortcut(shortcut)).TargetPath); } catch { return null; }
+            int pending = StartupApps.Count(a => a.HasPendingChange);
+            btnApply.IsEnabled = pending > 0;
+            ApplyText.Text = pending > 0 ? Loc.F("Apply changes ({0})", pending) : Loc.T("Apply changes");
         }
-
-        private bool IsRegStartupDisabled(string name, string runSubKey, RegistryKey root)
-        {
-            try
-            {
-                string approvedKey = runSubKey.Replace(@"Run", @"Explorer\StartupApproved\Run");
-                using var key = root.OpenSubKey(approvedKey, false);
-                return key?.GetValue(name) is byte[] data && data.Length > 0 && (data[0] & 1) != 0;
-            }
-            catch { return false; }
-        }
-
-        private void CheckPendingChanges() => btnApply.IsEnabled = StartupApps.Any(a => a.HasPendingChange);
 
         private bool isMaximized = false;
         private double previousWidth, previousHeight, previousLeft, previousTop;
@@ -798,20 +1286,28 @@ namespace MultronWinCleaner
 
         private void ApplyButton_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var item in StartupApps.Where(a => a.HasPendingChange))
-                item.ApplyPendingChange();
+            var pending = StartupApps.Where(a => a.HasPendingChange).ToList();
+            int failed = pending.Count(item => !item.ApplyPendingChange());
+            _lastTaskSchedulerScan = DateTime.MinValue;
 
-            AppDialog.Show(Loc.T("Changes applied successfully!"), Loc.T("Success"), MessageBoxButton.OK, MessageBoxImage.Information);
+            if (failed == 0)
+                AppDialog.Show(Loc.T("Changes applied successfully!"), Loc.T("Success"), MessageBoxButton.OK, MessageBoxImage.Information);
             CheckPendingChanges();
+            RefreshFilter();
         }
 
         private void RemoveButton_Click(object sender, RoutedEventArgs e)
         {
-            if (SelectedApp == null) return;
-            if (AppDialog.Show(Loc.F("Are you sure you want to remove '{0}'?", SelectedApp.Name), Loc.T("Confirm Removal"), MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            if ((sender as FrameworkElement)?.DataContext is not StartupApp app || !app.CanRemove) return;
+            if (AppDialog.Show(Loc.F("Are you sure you want to remove '{0}'?", app.Name), Loc.T("Confirm Removal"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+            if (app.Remove())
             {
-                SelectedApp.Remove();
-                StartupApps.Remove(SelectedApp);
+                StartupApps.Remove(app);
+                _knownItems.Remove(app.UniqueId);
+                _lastTaskSchedulerScan = DateTime.MinValue;
+                CheckPendingChanges();
+                UpdateSummary();
             }
         }
 
@@ -820,8 +1316,17 @@ namespace MultronWinCleaner
         private void CloseButton_Click(object sender, RoutedEventArgs e) => Visibility = Visibility.Collapsed;
         private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
         private void TopBar_MouseDown(object sender, MouseButtonEventArgs e) { if (e.LeftButton == MouseButtonState.Pressed) DragMove(); }
-        private void AddButton_Click(object sender, RoutedEventArgs e) { }
-        private void AddOperationButton_Click(object sender, RoutedEventArgs e) { }
+
+        private async void AddButton_Click(object sender, RoutedEventArgs e)
+        {
+            new AddStartup { Owner = this }.ShowDialog();
+            await LoadStartupAppsFastAsync(isSilentRefresh: true);
+        }
+
+        private void AddOperationButton_Click(object sender, RoutedEventArgs e)
+        {
+            new AddBootOperationWindow { Owner = this }.ShowDialog();
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string p = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
@@ -872,7 +1377,7 @@ namespace MultronWinCleaner
 
         public class StartupApp : INotifyPropertyChanged
         {
-            public string UniqueId => $"{StartupType}|{Name}|{Path}";
+            public string UniqueId => $"{StartupType}|{RegistryPath}|{ValueName}|{Name}|{Path}";
 
             public BitmapImage? Icon { get; set; }
             public string Name { get; set; } = "";
@@ -881,14 +1386,30 @@ namespace MultronWinCleaner
             public string StartupType { get; set; } = "";
             public RegistryKey? RegistryRoot { get; set; }
             public string RegistryPath { get; set; } = "";
+            public string? ApprovedKey { get; set; }
+            public bool CanToggleTask { get; set; }
+            public bool IsWindowsTask { get; set; }
+            public bool IsServiceEntry { get; set; }
+            public bool IsPackagedTask { get; set; }
+            public bool IsUserApp => !IsWindowsTask && !IsServiceEntry && !StartupType.EndsWith("Provider") && StartupType is not ("Driver" or "Explorer Extension" or "Print Monitor");
+            private System.Windows.Media.SolidColorBrush? _flashBrush;
+            public System.Windows.Media.SolidColorBrush? FlashBrush { get => _flashBrush; set { _flashBrush = value; OnPropertyChanged(); } }
+            public AdvancedSource? Advanced { get; set; }
+            public bool IsAdvancedRecord { get; set; }
+            public bool CanToggle => Advanced != null || (ApprovedKey != null && RegistryRoot != null) || CanToggleTask || IsServiceEntry || IsPackagedTask;
+            private bool IsRegistryValueEntry => StartupType.StartsWith("Registry") || StartupType == "Group Policy" || StartupType == "Terminal Server";
+            public bool CanRemove => IsRegistryValueEntry || StartupType == "Scheduled Task" || StartupType == "Startup Folder";
+            public string? ToggleHint => Advanced != null ? Loc.T("Advanced item. Turning it off can stop Windows or other programs from working. Only change it if you know what it does.")
+                : CanToggle ? null : Loc.T("Windows manages this item, so it cannot be turned off here.");
 
             private bool _isEnabled, _isPresent, _pendingEnabled;
             public bool IsPresent { get => _isPresent; set { _isPresent = value; OnPropertyChanged(); OnPropertyChanged(nameof(Status)); OnPropertyChanged(nameof(StatusText)); OnPropertyChanged(nameof(IsCheckboxEnabled)); } }
-            public bool IsEnabled { get => _isEnabled; set { _isEnabled = value; _pendingEnabled = value; OnPropertyChanged(); OnPropertyChanged(nameof(Status)); OnPropertyChanged(nameof(StatusText)); } }
-            public bool IsCheckboxEnabled => IsPresent;
+            public bool IsEnabled { get => _isEnabled; set { _isEnabled = value; _pendingEnabled = value; OnPropertyChanged(); OnPropertyChanged(nameof(Status)); OnPropertyChanged(nameof(StatusText)); OnPropertyChanged(nameof(EffectiveImpact)); OnPropertyChanged(nameof(ImpactScore)); OnPropertyChanged(nameof(ImpactText)); } }
+            public bool IsCheckboxEnabled => IsPresent && CanToggle;
             public string Impact { get; set; } = "Low";
-            public int ImpactScore => Impact == "High" ? 3 : (Impact == "Medium" ? 2 : 1);
-            public string ImpactText => Loc.T(Impact);
+            public string EffectiveImpact => IsEnabled ? Impact : "None";
+            public int ImpactScore => EffectiveImpact switch { "High" => 3, "Medium" => 2, "None" => 0, _ => 1 };
+            public string ImpactText => Loc.T(EffectiveImpact);
             public string StartupTypeText => Loc.T(StartupType);
             public string StatusText => Loc.T(Status);
 
@@ -899,6 +1420,14 @@ namespace MultronWinCleaner
                 get => _pendingEnabled;
                 set
                 {
+                    if (!value && Advanced != null && _isEnabled && _pendingEnabled
+                        && AppDialog.Show($"{Name}\n\n{Loc.T("Advanced item. Turning it off can stop Windows or other programs from working. Only change it if you know what it does.")}",
+                            Loc.T("Turn off this item?"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    {
+                        Application.Current.Dispatcher.BeginInvoke(new System.Action(() => OnPropertyChanged(nameof(PendingEnabled))), DispatcherPriority.Background);
+                        return;
+                    }
+
                     _pendingEnabled = value; 
                     if (value == true && Impact == "High")
                     {
@@ -944,53 +1473,90 @@ namespace MultronWinCleaner
                 }
             }
 
-            public void ApplyPendingChange()
+            public bool ApplyPendingChange()
             {
-                if (!HasPendingChange) return;
+                if (!HasPendingChange) return true;
                 try
                 {
-                    if (StartupType.StartsWith("Registry") && RegistryRoot != null)
+                    if (Advanced != null)
                     {
-                        string appKey = RegistryPath.Replace(@"Run", @"Explorer\StartupApproved\Run");
-                        using var key = RegistryRoot.CreateSubKey(appKey, true);
-                        key?.SetValue(ValueName, new byte[] { (byte)(_pendingEnabled ? 0x02 : 0x03), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, RegistryValueKind.Binary);
+                        if (_pendingEnabled) Advanced.TurnOn();
+                        else Advanced.TurnOff(Name, Path, StartupType);
                     }
-                    else if (StartupType == "Scheduled Task")
+                    else if (ApprovedKey != null && RegistryRoot != null)
+                    {
+                        using var key = RegistryRoot.CreateSubKey(ApprovedKey, true);
+                        key.SetValue(ValueName, new byte[] { (byte)(_pendingEnabled ? 0x02 : 0x03), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, RegistryValueKind.Binary);
+                    }
+                    else if (IsServiceEntry)
+                    {
+                        using var service = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\" + ValueName, true)
+                            ?? throw new InvalidOperationException(ValueName);
+                        service.SetValue("Start", _pendingEnabled ? 2 : 4, RegistryValueKind.DWord);
+                    }
+                    else if (IsPackagedTask && RegistryRoot != null)
+                    {
+                        using var task = RegistryRoot.OpenSubKey(RegistryPath, true) ?? throw new InvalidOperationException(RegistryPath);
+                        task.SetValue(ValueName, _pendingEnabled ? 2 : 1, RegistryValueKind.DWord);
+                    }
+                    else if (CanToggleTask)
                     {
                         using var ts = new TaskService();
-                        var task = ts.GetTask(ValueName);
-                        if (task != null) task.Enabled = _pendingEnabled;
+                        var task = ts.GetTask(ValueName) ?? throw new InvalidOperationException(Loc.T("The task no longer exists."));
+                        task.Enabled = _pendingEnabled;
+                    }
+                    else
+                    {
+                        PendingEnabled = _isEnabled;
+                        return false;
                     }
                     IsEnabled = _pendingEnabled;
+                    return true;
                 }
-                catch (Exception ex) { AppDialog.Show(Loc.F("Error applying changes: {0}", ex.Message), Loc.T("Error"), MessageBoxButton.OK, MessageBoxImage.Error); }
+                catch (Exception ex)
+                {
+                    AppDialog.Show(Loc.F("Error applying changes: {0}", ex.Message), Loc.T("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
+                }
             }
 
-            public void Remove()
+            public bool Remove()
             {
                 try
                 {
-                    if (StartupType.StartsWith("Registry") && RegistryRoot != null)
+                    if (IsRegistryValueEntry && RegistryRoot != null)
                     {
-                        using var key = RegistryRoot.OpenSubKey(RegistryPath, true);
-                        key?.DeleteValue(ValueName, false);
+                        using var key = RegistryRoot.OpenSubKey(RegistryPath, true) ?? throw new InvalidOperationException(RegistryPath);
+                        key.DeleteValue(ValueName, false);
                     }
                     else if (StartupType == "Scheduled Task")
                     {
                         using var ts = new TaskService();
                         var task = ts.GetTask(ValueName);
-                        if (task != null)
-                        {
-                            task.Folder.DeleteTask(task.Name);
-                        }
+                        task?.Folder.DeleteTask(task.Name);
                     }
-                    else if (StartupType == "Startup Folder" && System.IO.File.Exists(Path))
+                    else if (StartupType == "Startup Folder")
                     {
-                        System.IO.File.Delete(Path);
+                        if (System.IO.File.Exists(Path)) System.IO.File.Delete(Path);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+
+                    if (ApprovedKey != null && RegistryRoot != null)
+                    {
+                        using var approved = RegistryRoot.OpenSubKey(ApprovedKey, true);
+                        approved?.DeleteValue(ValueName, false);
                     }
                     IsPresent = false;
+                    return true;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppDialog.Show(Loc.F("Could not remove '{0}': {1}", Name, ex.Message), Loc.T("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
+                }
             }
 
             public event PropertyChangedEventHandler? PropertyChanged;

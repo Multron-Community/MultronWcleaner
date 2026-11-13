@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:MultronWinCleaner"
         Title="{loc:Tr 'Notify'}"
-        Width="350" MinHeight="160"
+        Width="376" MinHeight="96"
         SizeToContent="Height"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -35,10 +35,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#FF1976D2"/>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#FF1565C0"/>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.72"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -47,67 +47,98 @@
         </Style>
     </Window.Resources>
 
-    <Border CornerRadius="14"
+    <Border x:Name="Card" CornerRadius="16" Margin="12"
             Background="{DynamicResource PanelBackground}"
-            Padding="20"
             BorderThickness="1"
-            BorderBrush="{DynamicResource BorderBrush}" >
+            BorderBrush="{DynamicResource BorderBrush}">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Opacity="0.34" BlurRadius="22" ShadowDepth="4" Direction="270"/>
+        </Border.Effect>
         <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+            <Border x:Name="Wash" CornerRadius="16" IsHitTestVisible="False"/>
+            <StackPanel Margin="16,11,10,15">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Width="24" Height="24" VerticalAlignment="Center" Cursor="Hand"
+                            Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="CloseBd" Background="Transparent" CornerRadius="6">
+                                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="9" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="CloseBd" Property="Background" Value="#26808080"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Image Source="pack://application:,,,/Assets/mwc_icon.ico" Width="16" Height="16" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,7,0"/>
+                    <TextBlock VerticalAlignment="Center" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis">
+                        <Run Text="Multron Win Cleaner" FontWeight="SemiBold"/><Run Text="  ·  "/><Run x:Name="TimeText"/>
+                    </TextBlock>
+                </DockPanel>
+                <Grid Margin="0,12,4,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid Width="52" Height="52" VerticalAlignment="Top">
+                        <Ellipse x:Name="IconRing" StrokeThickness="2" Opacity="0" RenderTransformOrigin="0.5,0.5" IsHitTestVisible="False">
+                            <Ellipse.RenderTransform>
+                                <ScaleTransform/>
+                            </Ellipse.RenderTransform>
+                        </Ellipse>
+                        <Border x:Name="IconBorder" CornerRadius="26" Background="#FF42A5F5" RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform/>
+                            </Border.RenderTransform>
+                            <Grid>
+                                <Ellipse Margin="6,3,6,24" IsHitTestVisible="False">
+                                    <Ellipse.Fill>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#40FFFFFF" Offset="0"/>
+                                            <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                                <TextBlock x:Name="IconText" Text="&#xE73E;"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontSize="22"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
 
+                    <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="Status" Text="{loc:Tr 'Memory Cleaned'}"
+                                   Foreground="{DynamicResource TextPrimary}"
+                                   FontSize="15.5"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"/>
 
-            <Border Width="50" Height="50"
-                    CornerRadius="25" VerticalAlignment="Center" HorizontalAlignment="Center">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop x:Name="IconStart" Color="#FF42A5F5" Offset="0"/>
-                        <GradientStop x:Name="IconEnd" Color="#FF1565C0" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
-                <TextBlock x:Name="IconText" Text="✓"
-                           FontSize="28"
-                           Foreground="White"
-                           FontWeight="Bold"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
-            </Border>
+                        <TextBlock x:Name="DetailsText"
+                                   Text="{loc:Tr 'Your system memory has been optimized successfully.'}"
+                                   Foreground="{DynamicResource TextSecondary}"
+                                   FontSize="12.5" Margin="0,3,0,0" TextWrapping="Wrap"/>
 
-            <StackPanel Grid.Column="1" Margin="15,0,0,0" VerticalAlignment="Center">
-                <Grid>
-                    <TextBlock x:Name="Status" Text="{loc:Tr 'Memory Cleaned'}"
-                               Foreground="{DynamicResource Text}"
-                               FontSize="20"
-                               FontWeight="SemiBold"
-                               TextTrimming="CharacterEllipsis" Margin="0,0,28,0" />
+                        <Border x:Name="AmountBadge" CornerRadius="8" Padding="9,3,9,4" Margin="0,9,0,0" HorizontalAlignment="Left" Background="#2642A5F5">
+                            <TextBlock x:Name="AmountText"
+                                       Text="{loc:Tr 'Cleaned: 0 MB'}"
+                                       Foreground="{DynamicResource AccentText}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
 
-                    <Button Width="24" Content="✕"
-                            HorizontalAlignment="Right"
-                            Background="Transparent" BorderThickness="0"
-                            Foreground="{DynamicResource SecondaryText}"
-                            FontSize="14" FontWeight="Bold"
-                            Cursor="Hand" Click="CloseButton_Click"
-                            ToolTip="{loc:Tr 'Close'}" Margin="0,0,0,3"/>
+                        <Button x:Name="DetailsButton"
+                                Content="{loc:Tr 'Show Details'}"
+                                Style="{StaticResource DetailsButtonStyle}"
+                                HorizontalAlignment="Left" Margin="0,11,0,0"
+                                Visibility="Collapsed" Click="DetailsButton_Click"/>
+                    </StackPanel>
                 </Grid>
-
-                <TextBlock x:Name="DetailsText"
-                           Text="{loc:Tr 'Your system memory has been optimized successfully.'}"
-                           Foreground="{DynamicResource SecondaryText}"
-                           FontSize="13" Margin="0,6,0,0" TextWrapping="Wrap" />
-
-                <TextBlock x:Name="AmountText"
-                           Text="{loc:Tr 'Cleaned: 0 MB'}"
-                           Foreground="#FF1E88E5"
-                           FontSize="14" FontWeight="Bold" Margin="0,12,0,0"
-                           TextTrimming="CharacterEllipsis" />
-
-                <Button x:Name="DetailsButton"
-                        Content="{loc:Tr 'Show Details'}"
-                        Style="{StaticResource DetailsButtonStyle}"
-                        HorizontalAlignment="Left" Margin="0,12,0,0"
-                        Visibility="Collapsed" Click="DetailsButton_Click" />
             </StackPanel>
         </Grid>
     </Border>

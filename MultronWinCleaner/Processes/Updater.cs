@@ -31,7 +31,7 @@ namespace MultronWinCleaner.Processes
                         break;
                     await main.Dispatcher.InvokeAsync(() => {
                         main.StatusLoad.Text = text + ".";
-                        main.StatusLoad.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1e88e5"));
+                        main.StatusLoad.Foreground = MultronWinCleaner.Processes.ThemeColors.ReadableBrush("#1e88e5");
                     });
 
                     await Task.Delay(1000, cancellationToken);
@@ -247,7 +247,11 @@ namespace MultronWinCleaner.Processes
                         started = true;
                         cts.Cancel();
                     }
-                    main.Dispatcher.BeginInvoke(() => main.StatusLoad.Text = Loc.F("Downloading Latest Database {0}%", percent));
+                    main.Dispatcher.BeginInvoke(() =>
+                    {
+                        main.StatusLoad.Text = Loc.F("Downloading Latest Database {0}%", percent);
+                        main.SetLoadingProgress(percent);
+                    });
                 });
                 await UpdateDatabaseAsync(progress);
                 await cts.CancelAsync();
@@ -273,7 +277,7 @@ namespace MultronWinCleaner.Processes
 
         public const string AppUpdateSettingKey = "appautoupdate";
         private const string AppLastCheckSettingKey = "applastcheck";
-        public static readonly Version CurrentAppVersion = new Version("1.28.0");
+        public static readonly Version CurrentAppVersion = new Version("1.29.0");
 
         public static bool IsAppAutoUpdateEnabled() => ReadSetting(AppUpdateSettingKey) != "0";
 

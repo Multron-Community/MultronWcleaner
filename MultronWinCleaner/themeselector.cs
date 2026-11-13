@@ -20,6 +20,8 @@ namespace MultronWinCleaner
             App.Current.Resources.Clear();
             App.Current.Resources.MergedDictionaries.Add(theme);
             Appearance.Apply();
+            MultronWinCleaner.Processes.ThemeColors.Refresh();
+            MultronWinCleaner.Processes.OrbHover.RetintAll();
          
 
         }

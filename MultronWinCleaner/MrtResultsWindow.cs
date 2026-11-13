@@ -13,6 +13,7 @@ namespace MultronWinCleaner
         {
             Owner = owner;
             Title = Loc.T("Microsoft MRT Results");
+            Icon = System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/Assets/Icons/mwc_malware.ico"));
             Width = 720;
             Height = 560;
             MinWidth = 480;

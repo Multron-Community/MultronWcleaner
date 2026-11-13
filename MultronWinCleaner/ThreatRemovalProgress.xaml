@@ -1,4 +1,4 @@
-<Window
+<Window xmlns:mwcp="clr-namespace:MultronWinCleaner.Processes"
     x:Class="MultronWinCleaner.ThreatRemovalProgress"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -11,14 +11,14 @@
     Background="Transparent"
     WindowStartupLocation="CenterScreen"
     ShowInTaskbar="True"
-    Icon="pack://application:,,,/Assets/mwc_utilities.ico"
+    Icon="pack://application:,,,/Assets/Icons/mwc_malware.ico"
     FontFamily="Segoe UI">
 
     <Window.Resources>
         <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
     </Window.Resources>
 
-    <Border Margin="14" CornerRadius="14" Background="{DynamicResource WindowBackground}" BorderBrush="#26FFFFFF" BorderThickness="1">
+    <Border mwcp:RoundedClip.Enabled="True" Margin="14" CornerRadius="14" Background="{DynamicResource WindowBackground}" BorderBrush="#26FFFFFF" BorderThickness="1">
         <Border.Effect>
             <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.35" Color="Black"/>
         </Border.Effect>
@@ -35,8 +35,8 @@
                 <DockPanel LastChildFill="False" Margin="16,0,8,0">
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
                         <TextBlock x:Name="WindowTitleText" Text="{loc:Tr 'Removing Threats'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                        <Border Background="#20FF8C1A" CornerRadius="4" Padding="5,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="{loc:Tr 'TESTING'}" FontSize="10" FontWeight="Bold" Foreground="#FFFF8C1A"/>
+                        <Border Background="{DynamicResource BadgeWarningBackground}" CornerRadius="4" Padding="5,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Tr 'TESTING'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource BadgeWarningText}"/>
                         </Border>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
@@ -71,7 +71,7 @@
             </Grid>
 
             <StackPanel Grid.Row="2" Margin="22,18,22,0">
-                <ProgressBar x:Name="RemovalProgressBar" Height="8" Minimum="0" Maximum="100" Value="0"
+                <ProgressBar x:Name="RemovalProgressBar" Style="{DynamicResource ModernLinearProgressStyle}" Height="8" Minimum="0" Maximum="100" Value="0"
                              Foreground="#FFDC3545" Background="#22888888" BorderThickness="0"/>
                 <DockPanel Margin="0,6,0,0">
                     <TextBlock x:Name="PercentText" Text="0%" DockPanel.Dock="Right" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="8,0,0,0"/>
@@ -96,12 +96,12 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                            <TextBlock x:Name="RemovedCountText" Text="0" FontSize="20" FontWeight="Bold" Foreground="#FF28A745" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="RemovedCountText" Text="0" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ResultSuccessText}" HorizontalAlignment="Center"/>
                             <TextBlock x:Name="RemovedLabelText" Text="{loc:Tr 'Removed'}" FontSize="11" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center"/>
                         </StackPanel>
                         <Border Grid.Column="1" Background="#22888888" Margin="0,4"/>
                         <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                            <TextBlock x:Name="RebootCountText" Text="0" FontSize="20" FontWeight="Bold" Foreground="#FFFF9800" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="RebootCountText" Text="0" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource WarningText}" HorizontalAlignment="Center"/>
                             <TextBlock Text="{loc:Tr 'At Restart'}" FontSize="11" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center"/>
                         </StackPanel>
                         <Border Grid.Column="3" Background="#22888888" Margin="0,4"/>
@@ -146,10 +146,10 @@
             </StackPanel>
 
             <DockPanel Grid.Row="3" Margin="22,16,22,20" LastChildFill="False">
-                <Button x:Name="OpenLogButton" DockPanel.Dock="Left" Content="{loc:Tr 'Open Log'}" Height="34" Padding="14,0" Click="OpenLog_Click"
-                        Style="{StaticResource ModernButtonStyle}" Margin="0,0,8,0" ToolTip="{loc:Tr 'Opens the log file of this operation.'}"/>
-                <Button DockPanel.Dock="Left" Content="{loc:Tr 'Copy Details'}" Height="34" Padding="14,0" Click="CopyDetails_Click"
-                        Style="{StaticResource ModernButtonStyle}"/>
+                <Button x:Name="OpenLogButton" DockPanel.Dock="Left" MinWidth="90" Height="34" Padding="0" Click="OpenLog_Click"
+                        Style="{StaticResource ModernButtonStyle}" Margin="0,0,8,0" ToolTip="{loc:Tr 'Opens the log file of this operation.'}"><TextBlock Text="{loc:Tr 'Open Log'}" Margin="14,0"/></Button>
+                <Button DockPanel.Dock="Left" MinWidth="90" Height="34" Padding="0" Click="CopyDetails_Click"
+                        Style="{StaticResource ModernButtonStyle}"><TextBlock Text="{loc:Tr 'Copy Details'}" Margin="14,0"/></Button>
                 <Button x:Name="DoneButton" DockPanel.Dock="Right" MinWidth="90" HorizontalAlignment="Center" Height="34" Click="Close_Click"
                         Style="{StaticResource RoundedButtonStyle}" Visibility="Collapsed"><TextBlock Text="{loc:Tr 'Close'}" Margin="10,0"/></Button>
                 <Button x:Name="StopButton" DockPanel.Dock="Right" MinWidth="100" HorizontalAlignment="Center" Height="34" Click="Stop_Click"

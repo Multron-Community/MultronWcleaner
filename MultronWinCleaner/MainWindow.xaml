@@ -1,5 +1,6 @@
 <Window x:Class="Multron_Win_Cleaner.MainWindow"
         xmlns:local="clr-namespace:Multron_Win_Cleaner"
+        xmlns:mwcp="clr-namespace:MultronWinCleaner.Processes"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:MultronWinCleaner"
@@ -51,13 +52,13 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
-                        <Border x:Name="thumbBorder" CornerRadius="4" Background="{DynamicResource TextPrimary}" Opacity="0.25" Margin="2,0,2,0"/>
+                        <Border x:Name="thumbBorder" CornerRadius="4" Background="{DynamicResource ScrollThumbBrush}" BorderBrush="{DynamicResource ScrollThumbEdge}" BorderThickness="1" Opacity="0.55" Margin="2,0,2,0"/>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="thumbBorder" Property="Opacity" Value="0.55"/>
+                                <Setter TargetName="thumbBorder" Property="Opacity" Value="0.8"/>
                             </Trigger>
                             <Trigger Property="IsDragging" Value="True">
-                                <Setter TargetName="thumbBorder" Property="Opacity" Value="0.80"/>
+                                <Setter TargetName="thumbBorder" Property="Opacity" Value="1"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -107,13 +108,13 @@
                                             <Thumb>
                                                 <Thumb.Template>
                                                     <ControlTemplate TargetType="Thumb">
-                                                        <Border x:Name="thumbBorderH" CornerRadius="4" Background="{DynamicResource TextPrimary}" Opacity="0.25" Margin="0,2,0,2"/>
+                                                        <Border x:Name="thumbBorderH" CornerRadius="4" Background="{DynamicResource ScrollThumbBrush}" BorderBrush="{DynamicResource ScrollThumbEdge}" BorderThickness="1" Opacity="0.55" Margin="0,2,0,2"/>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="thumbBorderH" Property="Opacity" Value="0.55"/>
+                                                                <Setter TargetName="thumbBorderH" Property="Opacity" Value="0.8"/>
                                                             </Trigger>
                                                             <Trigger Property="IsDragging" Value="True">
-                                                                <Setter TargetName="thumbBorderH" Property="Opacity" Value="0.80"/>
+                                                                <Setter TargetName="thumbBorderH" Property="Opacity" Value="1"/>
                                                             </Trigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
@@ -143,7 +144,17 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Effect="{StaticResource DropShadowSoft}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                            <Grid>
+                                <Border CornerRadius="8" BorderThickness="1" BorderBrush="{DynamicResource ControlEdge}" IsHitTestVisible="False"/>
+                                <Grid Margin="1" IsHitTestVisible="False">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Border CornerRadius="7,7,0,0" Background="{DynamicResource ControlGloss}"/>
+                                </Grid>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -384,33 +395,96 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="TitleBarAccentButtonStyle" TargetType="Button" BasedOn="{StaticResource TitleBarActionButtonStyle}">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Padding" Value="12,0" />
+        <Style x:Key="TitleBarIconGlyph" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AccentText}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                    <Setter Property="Foreground" Value="White" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="TitleBarIconButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid x:Name="root" RenderTransformOrigin="0.5,0.5">
-                            <Grid.RenderTransform>
-                                <ScaleTransform ScaleX="1" ScaleY="1" />
-                            </Grid.RenderTransform>
-                            <Border Background="{DynamicResource AccentColorBrush}" CornerRadius="8" />
-                            <Border x:Name="overlay" Background="Black" Opacity="0" CornerRadius="8" />
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                        <Grid Background="Transparent">
+                            <Border x:Name="hover" Background="{DynamicResource TextPrimary}" Opacity="0" CornerRadius="7" Margin="2" />
+                            <ContentPresenter x:Name="icon" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                <ContentPresenter.RenderTransform>
+                                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                                </ContentPresenter.RenderTransform>
+                            </ContentPresenter>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="overlay" Storyboard.TargetProperty="Opacity" To="0.15" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetName="hover" Storyboard.TargetProperty="Opacity" To="0.12" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetName="icon" Storyboard.TargetProperty="RenderTransform.ScaleX" To="1.14" Duration="0:0:0.18" />
+                                            <DoubleAnimation Storyboard.TargetName="icon" Storyboard.TargetProperty="RenderTransform.ScaleY" To="1.14" Duration="0:0:0.18" />
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="overlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2" />
+                                            <DoubleAnimation Storyboard.TargetName="hover" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2" />
+                                            <DoubleAnimation Storyboard.TargetName="icon" Storyboard.TargetProperty="RenderTransform.ScaleX" To="1" Duration="0:0:0.2" />
+                                            <DoubleAnimation Storyboard.TargetName="icon" Storyboard.TargetProperty="RenderTransform.ScaleY" To="1" Duration="0:0:0.2" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="hover" Property="Opacity" Value="0.2" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TitleBarAccentButtonStyle" TargetType="Button" BasedOn="{StaticResource TitleBarActionButtonStyle}">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="root" RenderTransformOrigin="0.5,0.5" Background="Transparent">
+                            <Grid.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1" />
+                            </Grid.RenderTransform>
+                            <Border Background="{DynamicResource TextPrimary}" Opacity="0.07" CornerRadius="10" />
+                            <Border BorderBrush="{DynamicResource TextPrimary}" BorderThickness="1" Opacity="0.18" CornerRadius="10" />
+                            <Border x:Name="hoverFill" Opacity="0" CornerRadius="10">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#FF2A8FE8" Offset="0" />
+                                        <GradientStop Color="#FF1976D2" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="White" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="hoverFill" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="hoverFill" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2" />
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.ExitActions>
@@ -429,27 +503,7 @@
         </Style>
 
 
-        <Style x:Key="ResetButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-            <Setter Property="Background" Value="#FF1E88E5" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Effect="{StaticResource DropShadowSoft}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#FF1976D2" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#FF1565C0" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <Style x:Key="ResetButtonStyle" TargetType="Button" BasedOn="{StaticResource UtilityPrimaryButtonStyle}"/>
 
         <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
             <Setter Property="Background" Value="{DynamicResource PanelBackground}" />
@@ -474,9 +528,23 @@
             </Setter>
         </Style>
 
+        <Style x:Key="CardStatusText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="LineHeight" Value="19"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,3,0,0"/>
+            <Style.Triggers>
+                <Trigger Property="Text" Value="">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <local:ScanButtonIconConverter x:Key="ScanButtonIconConverter"/>
 
         <Style x:Key="RoundScanButtonStyle" TargetType="Button">
+            <Setter Property="mwcp:OrbHover.Enabled" Value="True"/>
             <Setter Property="Width" Value="130"/>
             <Setter Property="Height" Value="130"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -484,21 +552,73 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid>
+                        <Grid x:Name="OrbRoot" RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
+                            <Ellipse x:Name="OrbAura" IsHitTestVisible="False" Margin="-30" Opacity="0" RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.RenderTransform>
+                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                            <Ellipse x:Name="OrbHalo" IsHitTestVisible="False" StrokeThickness="2" Opacity="0" RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.RenderTransform>
+                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
                             <Ellipse x:Name="CircleBg"
-                                     Fill="{Binding Content, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ScanButtonIconConverter}, ConverterParameter=Fill}"
-                                     Effect="{Binding Content, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ScanButtonIconConverter}, ConverterParameter=Glow}"/>
+                                     Fill="{Binding Content, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ScanButtonIconConverter}, ConverterParameter=Fill}"/>
+                            <Canvas x:Name="OrbLiquid" IsHitTestVisible="False" Opacity="0" Width="130" Height="130">
+                                <Canvas.Clip>
+                                    <EllipseGeometry Center="65,65" RadiusX="65" RadiusY="65"/>
+                                </Canvas.Clip>
+                                <Canvas x:Name="OrbLiquidLevel">
+                                    <Canvas.RenderTransform>
+                                        <TranslateTransform Y="130"/>
+                                    </Canvas.RenderTransform>
+                                    <Path x:Name="OrbLiquidBack" Data="M0,5 Q32.5,-5 65,5 T130,5 T195,5 T260,5 L260,220 L0,220 Z" Fill="#22FFFFFF">
+                                        <Path.RenderTransform>
+                                            <TranslateTransform X="-65" Y="-3"/>
+                                        </Path.RenderTransform>
+                                    </Path>
+                                    <Path x:Name="OrbLiquidFront" Data="M0,5 Q32.5,-5 65,5 T130,5 T195,5 T260,5 L260,220 L0,220 Z" Fill="#30FFFFFF">
+                                        <Path.RenderTransform>
+                                            <TranslateTransform/>
+                                        </Path.RenderTransform>
+                                    </Path>
+                                </Canvas>
+                            </Canvas>
+                            <Ellipse IsHitTestVisible="False" StrokeThickness="2">
+                                <Ellipse.Stroke>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#4DFFFFFF" Offset="0"/>
+                                        <GradientStop Color="#0DFFFFFF" Offset="0.5"/>
+                                        <GradientStop Color="#40000000" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Ellipse.Stroke>
+                            </Ellipse>
+                            <Ellipse IsHitTestVisible="False" Width="104" Height="64" VerticalAlignment="Top" Margin="0,5,0,0">
+                                <Ellipse.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#30FFFFFF" Offset="0"/>
+                                        <GradientStop Color="#0DFFFFFF" Offset="0.6"/>
+                                        <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Ellipse x:Name="OrbRim" IsHitTestVisible="False" StrokeThickness="2.5" Margin="2" Opacity="0"/>
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ScanButtonIconConverter}}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="30" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="White" TextElement.FontWeight="Bold" TextElement.FontSize="16"/>
+                                <TextBlock x:Name="OrbGlyph" Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ScanButtonIconConverter}}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="30" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,5">
+                                    <TextBlock.RenderTransform>
+                                        <TranslateTransform/>
+                                    </TextBlock.RenderTransform>
+                                </TextBlock>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="White" TextElement.FontFamily="Bahnschrift, Century Gothic, Segoe UI" TextElement.FontWeight="SemiBold" TextElement.FontSize="18"/>
                             </StackPanel>
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CircleBg" Property="Opacity" Value="0.9"/>
-                            </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="CircleBg" Property="Opacity" Value="0.75"/>
+                                <Setter TargetName="CircleBg" Property="Opacity" Value="0.9"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="CircleBg" Property="Opacity" Value="0.45"/>
@@ -514,9 +634,22 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ProgressBar">
                         <Grid Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
-                            <Ellipse Stroke="#331E88E5" StrokeThickness="15" />
-                            <Path x:Name="PART_Indicator" Stroke="#FF1E88E5" StrokeThickness="15"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                            <Ellipse Stroke="#1A1E88E5" StrokeThickness="12"/>
+                            <Ellipse Stroke="#14FFFFFF" StrokeThickness="1"/>
+                            <Ellipse Stroke="#26000000" StrokeThickness="1" Margin="11"/>
+                            <Path x:Name="PART_Indicator" StrokeThickness="12" StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                                <Path.Stroke>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#FF5AB0F7" Offset="0"/>
+                                        <GradientStop Color="#FF1E88E5" Offset="0.55"/>
+                                        <GradientStop Color="#FF1565C0" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Path.Stroke>
+                                <Path.Effect>
+                                    <DropShadowEffect Color="#FF1E88E5" BlurRadius="10" ShadowDepth="0" Opacity="0.35"/>
+                                </Path.Effect>
+                            </Path>
+                            <Ellipse x:Name="PART_Head" Width="5" Height="5" Fill="#E6FFFFFF" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" Visibility="Collapsed"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -532,7 +665,12 @@
                     <ControlTemplate TargetType="ToggleButton">
                         <Grid>
                             <Border x:Name="SwitchBorder" CornerRadius="12" Background="{DynamicResource ButtonBackground}" BorderBrush="{DynamicResource ButtonForeground}" BorderThickness="1" />
-                            <Ellipse x:Name="SwitchKnob" Fill="{DynamicResource ButtonForeground}" Width="16" Height="16" Margin="4,0" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                            <Border CornerRadius="11" Margin="1" IsHitTestVisible="False" Background="{DynamicResource InsetShade}"/>
+                            <Ellipse x:Name="SwitchKnob" Fill="{DynamicResource ButtonForeground}" Width="16" Height="16" Margin="4,0" HorizontalAlignment="Left" VerticalAlignment="Center" Stroke="#33000000" StrokeThickness="0.5">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.5"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
@@ -609,7 +747,7 @@
         <Grid>
             <Grid.Background>
                 <RadialGradientBrush GradientOrigin="0.0,0.0" Center="0.1,0.0" RadiusX="0.8" RadiusY="0.8">
-                    <GradientStop Color="#0D1E88E5" Offset="0" />
+                    <GradientStop Color="#0A2D5FD0" Offset="0" />
                     <GradientStop Color="#00000000" Offset="1" />
                 </RadialGradientBrush>
             </Grid.Background>
@@ -641,25 +779,121 @@
 
                 <Grid x:Name="LoadingOverlay" Background="{DynamicResource WindowBackground}" Panel.ZIndex="9999" Visibility="Visible" MouseLeftButtonDown="LoadingOverlay_MouseLeftButtonDown" IsVisibleChanged="LoadingOverlay_IsVisibleChanged">
                     <Grid Background="#14000000">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Grid Width="64" Height="64" Margin="0,0,0,25">
-                                <Ellipse Stroke="{DynamicResource TextPrimary}" StrokeThickness="4" Opacity="0.12"/>
-                                <Path Data="M 32,4 A 28,28 0 0 1 60,32" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
-                                    <Path.Stroke>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#FF1E88E5" Offset="0"/>
-                                            <GradientStop Color="#001E88E5" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Path.Stroke>
-                                    <Path.RenderTransform>
-                                        <RotateTransform x:Name="LoadingSpinnerRotation" Angle="0"/>
-                                    </Path.RenderTransform>
-                                </Path>
-                            </Grid>
-                            <TextBlock Text="MULTRON WIN CLEANER" Foreground="{DynamicResource TextPrimary}" FontSize="14" FontFamily="Bahnschrift, Century Gothic, Segoe UI" FontWeight="Bold" Margin="0,0,0,8" HorizontalAlignment="Center"/>
-                            <TextBlock Name="StatusLoad" Text="{loc:Tr 'Loading, please wait...'}" Foreground="{DynamicResource TextSecondary}" FontSize="13" HorizontalAlignment="Center" FontWeight="Medium"/>
-                            <TextBlock Name="LanguageLoad" Text="{x:Static loc:Loc.StartupLanguageText}" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" Opacity="0.8" Margin="0,6,0,0" HorizontalAlignment="Center"/>
-                        </StackPanel>
+                        <Ellipse Width="560" Height="560" IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush>
+                                    <GradientStop Color="#241E88E5" Offset="0"/>
+                                    <GradientStop Color="#0D1E88E5" Offset="0.55"/>
+                                    <GradientStop Color="#001E88E5" Offset="1"/>
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <Border x:Name="LoadingCard" Width="400" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="32,30,32,26" CornerRadius="20"
+                                Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1" Effect="{StaticResource DropShadowSoft}">
+                            <Border.RenderTransform>
+                                <TranslateTransform x:Name="LoadingCardShift"/>
+                            </Border.RenderTransform>
+                            <StackPanel>
+                                <Grid Width="84" Height="84" HorizontalAlignment="Center" Margin="0,0,0,18">
+                                    <Ellipse x:Name="LoadingLogoGlow" Width="64" Height="64" IsHitTestVisible="False" Opacity="0.5" RenderTransformOrigin="0.5,0.5">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#661E88E5" Offset="0"/>
+                                                <GradientStop Color="#001E88E5" Offset="1"/>
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                        <Ellipse.RenderTransform>
+                                            <ScaleTransform x:Name="LoadingLogoGlowScale"/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                    <Ellipse Stroke="#FF1E88E5" StrokeThickness="4" Opacity="0.15"/>
+                                    <Path Data="M 42,4 A 38,38 0 0 1 80,42" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
+                                        <Path.Stroke>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#FF42A5F5" Offset="0"/>
+                                                <GradientStop Color="#001E88E5" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Stroke>
+                                        <Path.RenderTransform>
+                                            <RotateTransform x:Name="LoadingSpinnerRotation" Angle="0"/>
+                                        </Path.RenderTransform>
+                                    </Path>
+                                    <Image Source="pack://application:,,,/Assets/mwc_icon.ico" Width="40" Height="40" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </Grid>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,22">
+                                    <TextBlock Text="MULTRON WIN CLEANER" Foreground="{DynamicResource TextPrimary}" FontSize="15" FontFamily="Bahnschrift, Century Gothic, Segoe UI" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <Border x:Name="LoadingVersionBadge" Background="#261E88E5" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock x:Name="LoadingVersionText" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentText}"/>
+                                    </Border>
+                                </StackPanel>
+                                <Grid x:Name="LoadingStepUpdate" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="34"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border x:Name="LoadingStepUpdateChip" Width="24" Height="24" CornerRadius="12" Background="#1A808080" HorizontalAlignment="Left" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform/>
+                                        </Border.RenderTransform>
+                                        <TextBlock x:Name="LoadingStepUpdateIcon" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11.5" HorizontalAlignment="Center" VerticalAlignment="Center" Text="&#xE91F;" Foreground="{DynamicResource TextSecondary}" RenderTransformOrigin="0.5,0.5">
+                                            <TextBlock.RenderTransform>
+                                                <RotateTransform/>
+                                            </TextBlock.RenderTransform>
+                                        </TextBlock>
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="{loc:Tr 'Checking for updates'}" FontSize="13" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="LoadingStepUpdateState" Grid.Column="2" FontSize="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                                </Grid>
+                                <Grid x:Name="LoadingStepDatabase" Margin="0,0,0,18">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="34"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border x:Name="LoadingStepDatabaseChip" Width="24" Height="24" CornerRadius="12" Background="#1A808080" HorizontalAlignment="Left" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform/>
+                                        </Border.RenderTransform>
+                                        <TextBlock x:Name="LoadingStepDatabaseIcon" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11.5" HorizontalAlignment="Center" VerticalAlignment="Center" Text="&#xE91F;" Foreground="{DynamicResource TextSecondary}" RenderTransformOrigin="0.5,0.5">
+                                            <TextBlock.RenderTransform>
+                                                <RotateTransform/>
+                                            </TextBlock.RenderTransform>
+                                        </TextBlock>
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="{loc:Tr 'Loading the cleaning database'}" FontSize="13" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="LoadingStepDatabaseState" Grid.Column="2" FontSize="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                                </Grid>
+                                <Grid x:Name="LoadingTrack" Height="6" ClipToBounds="True">
+                                    <Border CornerRadius="3" Background="#26808080"/>
+                                    <Border x:Name="LoadingFill" CornerRadius="3" HorizontalAlignment="Left" Width="0">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                <GradientStop Color="#FF1E88E5" Offset="0"/>
+                                                <GradientStop Color="#FF42A5F5" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                    <Border x:Name="LoadingSweep" CornerRadius="3" Width="90" HorizontalAlignment="Left" Visibility="Collapsed">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                <GradientStop Color="#001E88E5" Offset="0"/>
+                                                <GradientStop Color="#FF42A5F5" Offset="0.5"/>
+                                                <GradientStop Color="#001E88E5" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Border.RenderTransform>
+                                            <TranslateTransform x:Name="LoadingSweepShift" X="-90"/>
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                                <DockPanel Margin="0,8,0,0">
+                                    <TextBlock x:Name="LoadingPercent" DockPanel.Dock="Right" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="10,0,0,0"/>
+                                    <TextBlock Name="StatusLoad" Text="{loc:Tr 'Loading, please wait...'}" Foreground="{DynamicResource TextSecondary}" FontSize="12" FontWeight="Medium" TextWrapping="Wrap"/>
+                                </DockPanel>
+                                <TextBlock Name="LanguageLoad" Text="{x:Static loc:Loc.StartupLanguageText}" Foreground="{DynamicResource TextSecondary}" FontSize="11" Opacity="0.7" Margin="0,14,0,0" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
                     </Grid>
                 </Grid>
 
@@ -669,38 +903,51 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Background="{DynamicResource PanelBackground}" BorderBrush="#1AFFFFFF" BorderThickness="0,0,0,1" MouseDown="TopBar_MouseDown">
-                        <Grid Margin="20,0">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                <TextBlock Text="MULTRON WIN CLEANER" FontSize="15" FontFamily="Bahnschrift, Century Gothic, Segoe UI" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
-                                <Border Background="#201E88E5" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="v1.28 beta" FontSize="11" FontWeight="Bold" Foreground="#FF1E88E5" />
+                    <Border Grid.Row="0" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="0,0,0,1" MouseDown="TopBar_MouseDown">
+                        <Grid x:Name="TopBarGrid" Margin="20,0" SizeChanged="TopBarGrid_SizeChanged">
+                            <StackPanel x:Name="TopBarLeft" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" UseLayoutRounding="True" SnapsToDevicePixels="True" TextOptions.TextFormattingMode="Display">
+                                <Image Source="pack://application:,,,/Assets/mwc_icon.ico" Width="28" Height="28" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality">
+                                    <Image.RenderTransform>
+                                        <TranslateTransform Y="3"/>
+                                    </Image.RenderTransform>
+                                </Image>
+                                <TextBlock Text="MULTRON WIN CLEANER" FontSize="15" FontFamily="Bahnschrift, Century Gothic, Segoe UI" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Margin="0,5,0,0"/>
+                                <Border x:Name="TopBarVersion" Background="#201E88E5" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="v1.29 beta" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentText}" />
                                 </Border>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <StackPanel x:Name="TopBarRight" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,0">
-                                    <ToggleButton x:Name="ToggleThemeSwitch" Style="{StaticResource ToggleSwitchStyle}" Checked="ToggleThemeSwitch_Checked" Unchecked="ToggleThemeSwitch_Unchecked" />
-                                    <TextBlock Text="{loc:Tr 'Dark Mode'}" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="SemiBold" FontSize="13"/>
+                                    <ToggleButton x:Name="ToggleThemeSwitch" Style="{StaticResource ToggleSwitchStyle}" Checked="ToggleThemeSwitch_Checked" Unchecked="ToggleThemeSwitch_Unchecked" ToolTip="{loc:Tr 'Dark Mode'}" />
+                                    <TextBlock x:Name="TopBarThemeLabel" Text="{loc:Tr 'Dark Mode'}" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="SemiBold" FontSize="13"/>
                                 </StackPanel>
-                                <Button Style="{StaticResource TitleBarActionButtonStyle}" Padding="8,0" Click="OpenDiscord_Click" ToolTip="Discord" Margin="0,0,6,0">
-                                    <Path Stretch="Uniform" Fill="#5865F2" Width="18" Height="18" Data="M17.5 4.96c-1.33-.6-2.76-1.03-4.26-1.25-.19.34-.4.75-.56 1.12-1.57-.23-3.14-.23-4.69 0-.17-.37-.38-.78-.57-1.12-1.5.22-2.93.65-4.26 1.25C.13 10.63-.4 16.2.22 21.68c1.78 1.3 3.51 2.08 5.23 2.6.43-.58.82-1.19 1.16-1.83-1.68-.62-2.31-1.65-2.31-1.65s.19.12.51.29c.14.07.28.14.41.21.32.14.65.26.98.37 2.1.72 4.31.96 6.55.96 2.23 0 4.45-.24 6.55-.96.33-.11.66-.23.98-.37.14-.07.27-.14.41-.21.32-.17.51-.29.51-.29s-.62 1.03-2.31 1.65c.34.64.73 1.25 1.16 1.83 1.72-.52 3.45-1.3 5.23-2.6.68-6.17-.43-11.64-2.92-16.72zM7.74 17.54c-1.14 0-2.07-1.04-2.07-2.31 0-1.27.92-2.31 2.07-2.31 1.16 0 2.08 1.05 2.07 2.31 0 1.27-.92 2.31-2.07 2.31zm8.52 0c-1.14 0-2.07-1.04-2.07-2.31 0-1.27.92-2.31 2.07-2.31 1.16 0 2.08 1.05 2.07 2.31 0 1.27-.92 2.31-2.07 2.31z" />
-                                </Button>
-                                <Button Style="{StaticResource TitleBarActionButtonStyle}" Padding="8,0" Click="OpenGitHub_Click" ToolTip="GitHub" Margin="0,0,6,0">
-                                    <Path Stretch="Uniform" Fill="{DynamicResource TextPrimary}" Width="18" Height="18" Data="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                                </Button>
-                                <Button Style="{StaticResource TitleBarActionButtonStyle}" Padding="8,0" Click="OpenPatreon_Click" ToolTip="{loc:Tr 'Support Multron on Patreon'}" Margin="0,0,6,0">
-                                    <Path Stretch="Uniform" Fill="#FF424D" Width="16" Height="16" Data="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003" />
-                                </Button>
+                                <Grid Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <Border Background="{DynamicResource TextPrimary}" Opacity="0.07" CornerRadius="10" />
+                                    <Border BorderBrush="{DynamicResource TextPrimary}" BorderThickness="1" Opacity="0.18" CornerRadius="10" />
+                                    <StackPanel Orientation="Horizontal" Margin="2">
+                                        <Button Style="{StaticResource TitleBarIconButtonStyle}" Click="OpenDiscord_Click" ToolTip="Discord">
+                                        <Path Stretch="Uniform" Fill="#5865F2" Width="18" Height="18" Data="M17.5 4.96c-1.33-.6-2.76-1.03-4.26-1.25-.19.34-.4.75-.56 1.12-1.57-.23-3.14-.23-4.69 0-.17-.37-.38-.78-.57-1.12-1.5.22-2.93.65-4.26 1.25C.13 10.63-.4 16.2.22 21.68c1.78 1.3 3.51 2.08 5.23 2.6.43-.58.82-1.19 1.16-1.83-1.68-.62-2.31-1.65-2.31-1.65s.19.12.51.29c.14.07.28.14.41.21.32.14.65.26.98.37 2.1.72 4.31.96 6.55.96 2.23 0 4.45-.24 6.55-.96.33-.11.66-.23.98-.37.14-.07.27-.14.41-.21.32-.17.51-.29.51-.29s-.62 1.03-2.31 1.65c.34.64.73 1.25 1.16 1.83 1.72-.52 3.45-1.3 5.23-2.6.68-6.17-.43-11.64-2.92-16.72zM7.74 17.54c-1.14 0-2.07-1.04-2.07-2.31 0-1.27.92-2.31 2.07-2.31 1.16 0 2.08 1.05 2.07 2.31 0 1.27-.92 2.31-2.07 2.31zm8.52 0c-1.14 0-2.07-1.04-2.07-2.31 0-1.27.92-2.31 2.07-2.31 1.16 0 2.08 1.05 2.07 2.31 0 1.27-.92 2.31-2.07 2.31z" />
+                                        </Button>
+                                        <Border Width="1" Margin="0,8" Background="{DynamicResource TextPrimary}" Opacity="0.15" />
+                                        <Button Style="{StaticResource TitleBarIconButtonStyle}" Click="OpenGitHub_Click" ToolTip="GitHub">
+                                        <Path Stretch="Uniform" Fill="{DynamicResource TextPrimary}" Width="18" Height="18" Data="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                                        </Button>
+                                        <Border Width="1" Margin="0,8" Background="{DynamicResource TextPrimary}" Opacity="0.15" />
+                                        <Button Style="{StaticResource TitleBarIconButtonStyle}" Click="OpenPatreon_Click" ToolTip="{loc:Tr 'Support Multron on Patreon'}">
+                                        <Path Stretch="Uniform" Fill="#FF424D" Width="16" Height="16" Data="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003" />
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
                                 <Button Style="{StaticResource TitleBarAccentButtonStyle}" Click="OpenSettings_Click" ToolTip="{loc:Tr 'Settings'}" Margin="0,0,6,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" FontWeight="Normal" VerticalAlignment="Center" />
-                                        <TextBlock Text="{loc:Tr 'Settings'}" Margin="7,0,0,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" FontWeight="Normal" VerticalAlignment="Center" Style="{StaticResource TitleBarIconGlyph}" />
+                                        <TextBlock x:Name="TopBarSettingsLabel" Text="{loc:Tr 'Settings'}" Margin="7,0,0,0" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource TitleBarAccentButtonStyle}" Click="UtilitiesButton_Click" ToolTip="{loc:Tr 'Utilities'}" Margin="0,0,16,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE90F;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" FontWeight="Normal" VerticalAlignment="Center" />
-                                        <TextBlock Text="{loc:Tr 'Utilities'}" Margin="7,0,0,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="&#xE90F;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" FontWeight="Normal" VerticalAlignment="Center" Style="{StaticResource TitleBarIconGlyph}" />
+                                        <TextBlock x:Name="TopBarUtilitiesLabel" Text="{loc:Tr 'Utilities'}" Margin="7,0,0,0" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
 
@@ -718,124 +965,190 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
  
-                        <Border Grid.Column="0" Background="{DynamicResource PanelBackground}" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="16" Effect="{StaticResource DropShadowSoft}">
+                        <Border x:Name="MainLeftPanel" Grid.Column="0" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1" CornerRadius="16" Effect="{StaticResource DropShadowSoft}">
                             <Border Background="#0C000000" CornerRadius="16" Padding="20">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
                                     <Grid Grid.Row="0" Width="220" Height="220" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10,0,0">
                                         <ProgressBar x:Name="progressBar1" Minimum="0" Maximum="100" Value="0" Width="220" Height="220" Background="Transparent" BorderBrush="Transparent" BorderThickness="0" Style="{StaticResource CircularProgressBarStyle}" ValueChanged="ProgressBar1_ValueChanged" />
                                         <Button x:Name="buttonStartScan" Style="{StaticResource RoundScanButtonStyle}" Content="{loc:Tr 'Scan'}" Click="ButtonStartScan_Click" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="ProgressPercentText" Visibility="Collapsed" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,19" IsHitTestVisible="False"/>
                                     </Grid>
 
-                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="10,16,10,0">
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock x:Name="label1_Copy" Text="{loc:Tr 'Ready for the scan'}" Foreground="{DynamicResource TextPrimary}" FontSize="14" FontWeight="Medium" TextAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,5"/>
-                                            <TextBlock x:Name="labelDiskSize" Text="{loc:Tr 'Size on disk: 0 Byte'}" Foreground="{DynamicResource TextSecondary}" FontSize="13" FontWeight="Normal" TextAlignment="Center" TextWrapping="Wrap" />
-                                            <TextBlock x:Name="labelStartupClean" Foreground="#FF28A745" FontSize="13" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
-                                            <TextBlock x:Name="labelAutoClean" Foreground="#FF28A745" FontSize="13" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="Collapsed" />
-                                            <TextBlock x:Name="labelShred" Foreground="#FF28A745" Visibility="Collapsed" FontSize="13" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,0" />
-                                            <Border x:Name="RestartRequiredPanel" Visibility="Collapsed" Margin="0,12,0,0" Padding="12,10" CornerRadius="10"
-                                                    Background="#26FF5722" BorderBrush="#FFFF5722" BorderThickness="2">
+                                    <ScrollViewer x:Name="StatusScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="10,16,10,0">
+                                        <StackPanel x:Name="StatusContent" HorizontalAlignment="Stretch" SizeChanged="NoticeLayout_SizeChanged">
+                                            <TextBlock x:Name="label1_Copy" Text="{loc:Tr 'Ready to scan'}" Foreground="{DynamicResource TextPrimary}" FontSize="14" FontWeight="Medium" TextAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                            <TextBlock x:Name="LastLogText" Visibility="Collapsed" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" TextAlignment="Center" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="34" Margin="6,-4,6,10"/>
+                                            <Border x:Name="ResultCard" Visibility="Collapsed" Margin="0,0,0,6" Padding="14,12" CornerRadius="12"
+                                                    Background="#1A2EB872" BorderBrush="#802EB872" BorderThickness="1">
                                                 <StackPanel>
-                                                    <TextBlock x:Name="RestartRequiredTitle" Text="{loc:Tr 'Cleaning done! Restart required.'}" Foreground="#FFFF5722" FontSize="17" FontWeight="Bold"
-                                                               TextAlignment="Center" TextWrapping="Wrap"/>
-                                                    <TextBlock x:Name="RestartRequiredText" Foreground="{DynamicResource TextPrimary}" FontSize="13" FontWeight="SemiBold"
-                                                               TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,8"/>
-                                                    <Button Content="{loc:Tr 'Restart now'}" Click="RestartNow_Click" Style="{StaticResource ModernButtonStyle}"
-                                                            Background="#FFFF5722" Foreground="White" Padding="16,8" HorizontalAlignment="Center"/>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <TextBlock x:Name="ResultIcon" Text="&#xE73E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource ResultSuccessText}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                        <TextBlock x:Name="ResultTitle" Foreground="{DynamicResource TextPrimary}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                    </StackPanel>
+                                                    <TextBlock x:Name="ResultAmount" Foreground="{DynamicResource ResultSuccessText}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                                    <TextBlock x:Name="ResultAmountCaption" Foreground="{DynamicResource TextSecondary}" FontSize="12" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                                                    <StackPanel x:Name="ResultDetails" Margin="0,10,0,0"/>
+                                                    <TextBlock x:Name="ResultTime" Foreground="{DynamicResource TextSecondary}" FontSize="11" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                                                 </StackPanel>
                                             </Border>
+                                            <Border x:Name="ScanLivePanel" Visibility="Collapsed" Margin="0,0,0,6" Padding="12,10" CornerRadius="12"
+                                                    Background="#141E88E5" BorderBrush="#4D1E88E5" BorderThickness="1">
+                                                <StackPanel>
+                                                    <TextBlock x:Name="ScanLiveHeader" Text="{loc:Tr 'Scanning'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentText}" HorizontalAlignment="Center"/>
+                                                    <TextBlock x:Name="ScanLiveTitle" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                                    <TextBlock x:Name="ScanLiveDetail" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" TextAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border x:Name="RestartRequiredPanel" Visibility="Collapsed" Margin="0,2,0,6" Padding="12,8" CornerRadius="10"
+                                                    Background="{DynamicResource WarningTint}" BorderBrush="{DynamicResource WarningBorder}" BorderThickness="1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="&#xE777;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource WarningText}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                    <TextBlock x:Name="RestartRequiredTitle" Grid.Column="1" Text="{loc:Tr 'Restart required'}" Foreground="{DynamicResource WarningText}" FontSize="13.5" FontWeight="SemiBold"
+                                                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                    <TextBlock x:Name="RestartRequiredText" Visibility="Collapsed"/>
+                                                    <Button Grid.Column="2" Content="{loc:Tr 'Restart now'}" Click="RestartNow_Click" Style="{StaticResource ModernButtonStyle}"
+                                                            Background="#FFE0561F" Foreground="White" Padding="12,6" FontSize="12.5" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border x:Name="DiskPanel" Margin="4,6,4,0" Padding="12,8,12,9" CornerRadius="10" Background="#0F808080" BorderBrush="#1F808080" BorderThickness="1">
+                                                <StackPanel>
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Left" Text="&#xEDA2;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                        <TextBlock x:Name="labelDiskPercent" DockPanel.Dock="Right" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                        <TextBlock x:Name="labelDiskName" Foreground="{DynamicResource TextPrimary}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                                                    </DockPanel>
+                                                    <Grid Height="6" Margin="0,7,0,6">
+                                                        <Border CornerRadius="3" Background="#26808080"/>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition x:Name="DiskUsedColumn" Width="0*"/>
+                                                                <ColumnDefinition x:Name="DiskFreeColumn" Width="1*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Border x:Name="DiskUsedBar" CornerRadius="3" Background="#FF1E88E5"/>
+                                                        </Grid>
+                                                    </Grid>
+                                                    <TextBlock x:Name="labelDiskSize" Text="{loc:Tr 'Size on disk: 0 Byte'}" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock x:Name="labelStartupClean" Foreground="{DynamicResource ResultSuccessText}" FontSize="13" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
+                                            <TextBlock x:Name="labelAutoClean" Foreground="{DynamicResource ResultSuccessText}" FontSize="13" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="Collapsed" />
+                                            <TextBlock x:Name="labelShred" Foreground="{DynamicResource ResultSuccessText}" Visibility="Collapsed" FontSize="13" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </ScrollViewer>
 
-                                    <StackPanel Grid.Row="2" VerticalAlignment="Bottom" Margin="0,20,0,0">
-                                        <Button x:Name="ButtonLockedFiles" Style="{StaticResource ResetButtonStyle}" Padding="0,14" FontSize="15" Content="{loc:Tr 'Show Locked Files'}" Click="ButtonLocked_Click" Visibility="Collapsed" Margin="0,0,0,12" HorizontalAlignment="Stretch" />
-                                        <Button x:Name="buttonReset" Style="{StaticResource ModernButtonStyle}" Padding="0,14" FontSize="15" Content="{loc:Tr 'Reset'}" Click="ButtonReset_Click" Visibility="Collapsed" HorizontalAlignment="Stretch" />
+                                    <Border x:Name="NoticeArea" Grid.Row="2" Visibility="Collapsed" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,12,0,0">
+                                        <Grid>
+                                            <ScrollViewer x:Name="NoticeScroll" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled" Margin="10,0,4,0" Padding="0,0,6,0">
+                                                <StackPanel x:Name="NoticeStack" SizeChanged="NoticeLayout_SizeChanged"/>
+                                            </ScrollViewer>
+                                            <Thumb x:Name="NoticeResizeGrip" VerticalAlignment="Top" Height="14" Margin="0,-19,0,0" Cursor="SizeNS"
+                                                   ToolTip="{loc:Tr 'Drag to make the messages area larger or smaller. Double-click to reset.'}"
+                                                   DragDelta="NoticeResizeGrip_DragDelta" DragCompleted="NoticeResizeGrip_DragCompleted" PreviewMouseLeftButtonDown="NoticeResizeGrip_PreviewMouseLeftButtonDown">
+                                                <Thumb.Template>
+                                                    <ControlTemplate TargetType="Thumb">
+                                                        <Grid Background="Transparent">
+                                                            <Border x:Name="Pill" Width="40" Height="4" CornerRadius="2" Background="{DynamicResource BorderBrush}" Opacity="0.7"
+                                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource AccentText}"/>
+                                                                <Setter TargetName="Pill" Property="Width" Value="56"/>
+                                                                <Setter TargetName="Pill" Property="Opacity" Value="1"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsDragging" Value="True">
+                                                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource AccentText}"/>
+                                                                <Setter TargetName="Pill" Property="Width" Value="56"/>
+                                                                <Setter TargetName="Pill" Property="Opacity" Value="1"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Thumb.Template>
+                                            </Thumb>
+                                        </Grid>
+                                    </Border>
+
+                                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom" Margin="0,20,0,0">
+                                        <Button x:Name="ButtonLockedFiles" Style="{StaticResource ResetButtonStyle}" Padding="0,10" FontSize="14" Content="{loc:Tr 'Show Locked Files'}" Click="ButtonLocked_Click" Visibility="Collapsed" Margin="4,0,4,8" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="buttonReset" Style="{StaticResource ModernButtonStyle}" Padding="0,10" FontSize="14" Content="{loc:Tr 'Reset'}" Click="ButtonReset_Click" Visibility="Collapsed" Margin="4,0,4,0" HorizontalAlignment="Stretch" />
                                     </StackPanel>
                                 </Grid>
                             </Border>
                         </Border>
  
-                        <Border Grid.Column="1" Panel.ZIndex="4" Background="{DynamicResource PanelBackground}" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="16" Margin="20,0,0,0" Effect="{StaticResource DropShadowSoft}">
+                        <Border x:Name="MainRightPanel" Grid.Column="1" Panel.ZIndex="4" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1" CornerRadius="16" Margin="20,0,0,0" Effect="{StaticResource DropShadowSoft}">
                             <Border Background="#0C000000" CornerRadius="16" Padding="24">
                                 <Grid x:Name="Panel">
 
                                 
                                     <Grid x:Name="LockedFilesWindowOverlay" Panel.ZIndex="50" Visibility="Collapsed" Grid.ColumnSpan="10" Grid.RowSpan="10" Margin="-30">
-
-                                    
-                                        <Border Background="#A0000000" />
- 
-                                        <Border HorizontalAlignment="Center" VerticalAlignment="Center" 
-                MaxWidth="850" MaxHeight="700" Margin="60" 
-                Background="{DynamicResource PanelBackground}" BorderBrush="#33FFFFFF" 
-                BorderThickness="1" CornerRadius="16" Effect="{StaticResource DropShadowSoft}">
+                                        <Border Background="#A0000000" MouseDown="CloseLockedFiles_MouseDown"/>
+                                        <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MaxWidth="860" MaxHeight="720" Margin="50"
+                                                Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="1" CornerRadius="16" Effect="{StaticResource DropShadowSoft}">
                                             <Grid>
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="Auto"/>
-                                                   
                                                     <RowDefinition Height="Auto"/>
-                                              
                                                     <RowDefinition Height="*"/>
-                                                    
                                                     <RowDefinition Height="Auto"/>
-                                            
                                                 </Grid.RowDefinitions>
- 
-                                                <Border Grid.Row="0" Background="#0A000000" BorderBrush="#1AFFFFFF" BorderThickness="0,0,0,1" CornerRadius="16,16,0,0" Padding="20,16">
-                                                    <Grid>
-                                                        <StackPanel Orientation="Horizontal">
-                                                        
-                                                            <StackPanel VerticalAlignment="Center">
-                                                                <TextBlock Text="{loc:Tr 'Locked Files &amp; Processes'}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                                                                <TextBlock Text="{loc:Tr 'These files are currently locked. Select the processes you want to terminate.'}" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                                                            </StackPanel>
+
+                                                <Border Grid.Row="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" CornerRadius="16,16,0,0" Padding="20,16">
+                                                    <DockPanel>
+                                                        <Button DockPanel.Dock="Right" Content="✕" VerticalAlignment="Top" Style="{StaticResource DangerIconButtonStyle}" Click="CloseLockedFiles_Click" ToolTip="{loc:Tr 'Close Window'}"/>
+                                                        <Border DockPanel.Dock="Left" Width="40" Height="40" CornerRadius="20" Background="#261E88E5" Margin="0,0,14,0" VerticalAlignment="Center">
+                                                            <TextBlock Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="18" Foreground="{DynamicResource AccentText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                                            <TextBlock Text="{loc:Tr 'Locked Files &amp; Processes'}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                                                            <TextBlock Text="{loc:Tr 'These files are currently locked. Select the processes you want to terminate.'}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,3,0,0"/>
                                                         </StackPanel>
-                                                        <Button Content="✕" HorizontalAlignment="Right" Style="{StaticResource DangerIconButtonStyle}" Click="CloseLockedFiles_Click" ToolTip="{loc:Tr 'Close Window'}"/>
-                                                    </Grid>
+                                                    </DockPanel>
                                                 </Border>
 
-                                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="20,20,20,10">
-                                                    <Grid Margin="0,0,16,0">
-                                                        <TextBox Name="ProcessBox" Style="{StaticResource ModernTextBoxStyle}" Width="250" TextChanged="ProcessBox_TextChanged" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
-                                                        <TextBlock Name="SearchPText" Text="{loc:Tr 'Search Process'}" IsHitTestVisible="False" Foreground="Gray" Margin="14,0,0,0" VerticalAlignment="Center">
-                                                            <TextBlock.Style>
-                                                                <Style TargetType="TextBlock">
-                                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding Text.Length, ElementName=ProcessBox}" Value="0">
-                                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </TextBlock.Style>
-                                                        </TextBlock>
-                                                    </Grid>
+                                                <Grid Grid.Row="1" Margin="20,16,20,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="12"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox Name="ProcessBox" Grid.Column="0" Style="{DynamicResource SearchPillBoxStyle}" Tag="{loc:Tr 'Search Process'}" TextChanged="ProcessBox_TextChanged" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    <TextBox Name="SearchBox" Grid.Column="2" Style="{DynamicResource SearchPillBoxStyle}" Tag="{loc:Tr 'Search File Or Group'}" TextChanged="SearchBox_TextChanged" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </Grid>
 
-                                                    <Grid>
-                                                        <TextBox Name="SearchBox" Style="{StaticResource ModernTextBoxStyle}" Width="250" TextChanged="SearchBox_TextChanged" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
-                                                        <TextBlock Name="SearchText" Text="{loc:Tr 'Search File Or Group'}" IsHitTestVisible="False" Foreground="Gray" Margin="14,0,0,0" VerticalAlignment="Center">
-                                                            <TextBlock.Style>
-                                                                <Style TargetType="TextBlock">
-                                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding Text.Length, ElementName=SearchBox}" Value="0">
-                                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </TextBlock.Style>
-                                                        </TextBlock>
-                                                    </Grid>
-                                                </StackPanel>
-
-                                                <ScrollViewer Grid.Row="2" x:Name="MainScrollViewer" Margin="20,10,20,10" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ScrollChanged="MainScrollViewer_ScrollChanged">
-                                                    <ListBox x:Name="listBoxProcesses" Background="Transparent" BorderThickness="0" ItemContainerStyle="{x:Null}">
+                                                <ScrollViewer Grid.Row="2" x:Name="MainScrollViewer" Margin="20,8,12,8" Padding="0,0,8,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ScrollChanged="MainScrollViewer_ScrollChanged">
+                                                    <ListBox x:Name="listBoxProcesses" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch">
+                                                        <ListBox.Template>
+                                                            <ControlTemplate TargetType="ListBox">
+                                                                <ItemsPresenter/>
+                                                            </ControlTemplate>
+                                                        </ListBox.Template>
+                                                        <ListBox.ItemContainerStyle>
+                                                            <Style TargetType="ListBoxItem">
+                                                                <Setter Property="Focusable" Value="False"/>
+                                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                                <Setter Property="Template">
+                                                                    <Setter.Value>
+                                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                                            <ContentPresenter/>
+                                                                        </ControlTemplate>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </Style>
+                                                        </ListBox.ItemContainerStyle>
                                                         <ListBox.GroupStyle>
                                                             <GroupStyle>
                                                                 <GroupStyle.ContainerStyle>
@@ -843,15 +1156,20 @@
                                                                         <Setter Property="Template">
                                                                             <Setter.Value>
                                                                                 <ControlTemplate TargetType="{x:Type GroupItem}">
-                                                                                    <Expander IsExpanded="True" Background="#0C000000" BorderBrush="#1AFFFFFF" BorderThickness="1" Margin="0,0,0,12">
-                                                                                        <Expander.Header>
-                                                                                            <StackPanel Orientation="Horizontal" Margin="0,10">
-                                                                                               
-                                                                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                                                                                            </StackPanel>
-                                                                                        </Expander.Header>
-                                                                                        <ItemsPresenter Margin="10,0,10,10"/>
-                                                                                    </Expander>
+                                                                                    <Border Background="#0D808080" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,10">
+                                                                                        <Expander IsExpanded="True" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextPrimary}" Padding="4,2">
+                                                                                            <Expander.Header>
+                                                                                                <DockPanel Margin="2,8,6,8" LastChildFill="True">
+                                                                                                    <Border DockPanel.Dock="Right" CornerRadius="9" Padding="9,2" Margin="12,0,0,0" Background="#1F1E88E5" VerticalAlignment="Center">
+                                                                                                        <TextBlock Text="{Binding ItemCount}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"/>
+                                                                                                    </Border>
+                                                                                                    <TextBlock DockPanel.Dock="Left" Text="&#xE8B7;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                                                                                                    <TextBlock Text="{Binding Name}" ToolTip="{Binding Name}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                                                                </DockPanel>
+                                                                                            </Expander.Header>
+                                                                                            <ItemsPresenter Margin="8,0,8,10"/>
+                                                                                        </Expander>
+                                                                                    </Border>
                                                                                 </ControlTemplate>
                                                                             </Setter.Value>
                                                                         </Setter>
@@ -861,107 +1179,123 @@
                                                         </ListBox.GroupStyle>
                                                         <ListBox.ItemTemplate>
                                                             <DataTemplate>
-                                                                <Border Background="{DynamicResource SecondaryPanelBackground}" CornerRadius="6" Padding="12,10" Margin="0,3">
-                                                                    <StackPanel Orientation="Horizontal">
-                                                                        <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                                        <StackPanel VerticalAlignment="Center">
-                                                                            <TextBlock Text="{Binding DisplayName}" Foreground="{DynamicResource TextPrimary}" FontSize="13" FontWeight="Medium"/>
-                                                                            <TextBlock Text="{Binding FilePath}" Foreground="{DynamicResource TextSecondary}" FontSize="11" Margin="0,2,0,0"/>
-                                                                        </StackPanel>
-                                                                    </StackPanel>
+                                                                <Border Background="{DynamicResource SecondaryPanelBackground}" CornerRadius="8" Padding="12,9" Margin="0,3">
+                                                                    <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Center" Padding="10,0,0,0" ToolTip="{Binding FilePathWithoutSize}">
+                                                                        <DockPanel>
+                                                                            <Border DockPanel.Dock="Left" Width="30" Height="30" CornerRadius="8" Background="#1FFF8A3D" Margin="0,0,11,0" VerticalAlignment="Center">
+                                                                                <TextBlock Text="&#xECAA;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource ResultProblemText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                            </Border>
+                                                                            <StackPanel VerticalAlignment="Center">
+                                                                                <TextBlock Text="{Binding DisplayName}" Foreground="{DynamicResource TextPrimary}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                                                <TextBlock Text="{Binding FilePath}" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+                                                                            </StackPanel>
+                                                                        </DockPanel>
+                                                                    </CheckBox>
                                                                 </Border>
                                                             </DataTemplate>
                                                         </ListBox.ItemTemplate>
                                                     </ListBox>
                                                 </ScrollViewer>
- 
-                                            
+
+                                                <Border Grid.Row="3" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="20,12">
+                                                    <DockPanel>
+                                                        <Button DockPanel.Dock="Right" Content="{loc:Tr 'Close'}" Click="CloseLockedFiles_Click" Style="{DynamicResource UtilityPrimaryButtonStyle}" Height="34" Padding="18,0"/>
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <Button Content="{loc:Tr 'Select All'}" Click="LockedSelectAll_Click" Style="{DynamicResource UtilitySecondaryButtonStyle}" Height="34" Padding="14,0" Margin="0,0,8,0"/>
+                                                            <Button Content="{loc:Tr 'Unselect All'}" Click="LockedUnselectAll_Click" Style="{DynamicResource UtilitySecondaryButtonStyle}" Height="34" Padding="14,0"/>
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                </Border>
                                             </Grid>
                                         </Border>
                                     </Grid>
-                                    <ScrollViewer x:Name="Datagridscroll" Panel.ZIndex="2" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="{DynamicResource PanelBackground}">
-                                        <StackPanel Orientation="Vertical">
-                                            <Border x:Name="ComponentStorePanel" Visibility="Collapsed" Margin="0,0,0,20" Padding="16,12"
-                                                    CornerRadius="10" BorderThickness="1" BorderBrush="#661E88E5" Background="#141E88E5">
+                                    <Border Panel.ZIndex="2" Background="{DynamicResource PanelBackground}" Visibility="{Binding Visibility, ElementName=Datagridscroll}" IsHitTestVisible="False">
+                                        <Border Background="#0C000000"/>
+                                    </Border>
+                                    <ScrollViewer x:Name="Datagridscroll" ScrollChanged="Datagridscroll_ScrollChanged" PreviewMouseWheel="Datagridscroll_PreviewMouseWheel" IsVisibleChanged="Datagridscroll_IsVisibleChanged" Panel.ZIndex="2" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="Transparent">
+                                        <StackPanel x:Name="ResultsStack" Orientation="Vertical" Margin="2,2,4,2">
+                                            <Border x:Name="ComponentStorePanel" Visibility="Collapsed" Margin="0,0,0,14" Padding="18,14"
+                                                    CornerRadius="12" BorderThickness="1" BorderBrush="#661E88E5" Background="#141E88E5">
                                                 <DockPanel>
-                                                    <Grid Width="30" Height="30" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                        <Ellipse x:Name="ComponentStoreIcon" Fill="#FF1E88E5"/>
-                                                        <TextBlock Text="⚙" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Grid Width="36" Height="36" DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,1,14,0">
+                                                        <Image Source="pack://application:,,,/Assets/Icons/mwc_dism.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                        <Ellipse x:Name="ComponentStoreIcon" Fill="#FF1E88E5" Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Stroke="{DynamicResource PanelBackground}" StrokeThickness="2"/>
                                                     </Grid>
-                                                    <CheckBox x:Name="ComponentStoreRun" DockPanel.Dock="Right" Content="{loc:Tr 'Clean during cleaning'}" VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed" Foreground="{DynamicResource TextPrimary}"/>
-                                                    <StackPanel VerticalAlignment="Center">
+                                                    <StackPanel>
                                                         <TextBlock Text="{loc:Tr 'Windows Component Store (DISM)'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                                                        <TextBlock x:Name="ComponentStoreStatus" Text="" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                        <TextBlock x:Name="ComponentStoreStatus" Text="" Style="{StaticResource CardStatusText}"/>
+                                                        <WrapPanel Orientation="Horizontal">
+                                                            <CheckBox x:Name="ComponentStoreRun" Content="{loc:Tr 'Clean during cleaning'}" VerticalAlignment="Center" Margin="0,10,0,0" Visibility="Collapsed" Foreground="{DynamicResource TextPrimary}"/>
+                                                        </WrapPanel>
                                                     </StackPanel>
                                                 </DockPanel>
                                             </Border>
 
-                                            <Border x:Name="ComponentHealthPanel" Visibility="Collapsed" Margin="0,0,0,20" Padding="16,12"
-                                                    CornerRadius="10" BorderThickness="1" BorderBrush="#661E88E5" Background="#141E88E5">
+                                            <Border x:Name="ComponentHealthPanel" Visibility="Collapsed" Margin="0,0,0,14" Padding="18,14"
+                                                    CornerRadius="12" BorderThickness="1" BorderBrush="#661E88E5" Background="#141E88E5">
                                                 <DockPanel>
-                                                    <Grid Width="30" Height="30" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                        <Ellipse x:Name="ComponentHealthIcon" Fill="#FF1E88E5"/>
-                                                        <TextBlock Text="✚" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Grid Width="36" Height="36" DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,1,14,0">
+                                                        <Image Source="pack://application:,,,/Assets/Icons/mwc_dism.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                        <Ellipse x:Name="ComponentHealthIcon" Fill="#FF1E88E5" Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Stroke="{DynamicResource PanelBackground}" StrokeThickness="2"/>
                                                     </Grid>
-                                                    <CheckBox x:Name="ComponentHealthRun" DockPanel.Dock="Right" Content="{loc:Tr 'Repair during cleaning'}" VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed" Foreground="{DynamicResource TextPrimary}"/>
-                                                    <StackPanel VerticalAlignment="Center">
+                                                    <StackPanel>
                                                         <TextBlock Text="{loc:Tr 'Component Store Health (DISM)'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                                                        <TextBlock x:Name="ComponentHealthStatus" Text="" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                        <TextBlock x:Name="ComponentHealthStatus" Text="" Style="{StaticResource CardStatusText}"/>
+                                                        <WrapPanel Orientation="Horizontal">
+                                                            <CheckBox x:Name="ComponentHealthRun" Content="{loc:Tr 'Repair during cleaning'}" VerticalAlignment="Center" Margin="0,10,0,0" Visibility="Collapsed" Foreground="{DynamicResource TextPrimary}"/>
+                                                        </WrapPanel>
                                                     </StackPanel>
                                                 </DockPanel>
                                             </Border>
 
-                                            <Border x:Name="SystemFilesPanel" Visibility="Collapsed" Margin="0,0,0,20" Padding="16,12"
-                                                    CornerRadius="10" BorderThickness="1" BorderBrush="#661E88E5" Background="#141E88E5">
+                                            <Border x:Name="SystemFilesPanel" Visibility="Collapsed" Margin="0,0,0,14" Padding="18,14"
+                                                    CornerRadius="12" BorderThickness="1" BorderBrush="#661E88E5" Background="#141E88E5">
                                                 <DockPanel>
-                                                    <Grid Width="30" Height="30" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                        <Ellipse x:Name="SystemFilesIcon" Fill="#FF1E88E5"/>
-                                                        <TextBlock Text="✓" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Grid Width="36" Height="36" DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,1,14,0">
+                                                        <Image Source="pack://application:,,,/Assets/Icons/mwc_sfc.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                        <Ellipse x:Name="SystemFilesIcon" Fill="#FF1E88E5" Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Stroke="{DynamicResource PanelBackground}" StrokeThickness="2"/>
                                                     </Grid>
-                                                    <CheckBox x:Name="SystemFilesRun" DockPanel.Dock="Right" Content="{loc:Tr 'Repair during cleaning'}" VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed" Foreground="{DynamicResource TextPrimary}"/>
-                                                    <StackPanel VerticalAlignment="Center">
+                                                    <StackPanel>
                                                         <TextBlock Text="{loc:Tr 'Windows System Files (SFC)'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                                                        <TextBlock x:Name="SystemFilesStatus" Text="" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                        <TextBlock x:Name="SystemFilesStatus" Text="" Style="{StaticResource CardStatusText}"/>
+                                                        <WrapPanel Orientation="Horizontal">
+                                                            <CheckBox x:Name="SystemFilesRun" Content="{loc:Tr 'Repair during cleaning'}" VerticalAlignment="Center" Margin="0,10,0,0" Visibility="Collapsed" Foreground="{DynamicResource TextPrimary}"/>
+                                                        </WrapPanel>
                                                     </StackPanel>
                                                 </DockPanel>
                                             </Border>
 
-                                            <Border x:Name="FirewallResultsPanel" Visibility="Collapsed" Margin="0,0,0,20" Padding="16,12"
-                                                    CornerRadius="10" BorderThickness="1" BorderBrush="#66DC3545" Background="#14DC3545">
+                                            <Border x:Name="FirewallResultsPanel" Visibility="Collapsed" Margin="0,0,0,14" Padding="18,14"
+                                                    CornerRadius="12" BorderThickness="1" BorderBrush="#66DC3545" Background="#14DC3545">
                                                 <StackPanel>
                                                     <DockPanel>
-                                                        <Grid Width="30" Height="30" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                            <Ellipse x:Name="FirewallResultsIcon" Fill="#FFDC3545"/>
-                                                            <Path Data="M12,1 L3,5 V11 C3,16.55 6.84,21.74 12,23 C17.16,21.74 21,16.55 21,11 V5 Z"
-                                                                  Fill="White" Stretch="Uniform" Width="13" Height="14"/>
+                                                        <Grid Width="36" Height="36" DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,1,14,0">
+                                                            <Image Source="pack://application:,,,/Assets/Icons/mwc_firewall.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                            <Ellipse x:Name="FirewallResultsIcon" Fill="#FFDC3545" Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Stroke="{DynamicResource PanelBackground}" StrokeThickness="2"/>
                                                         </Grid>
-                                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <Button x:Name="FirewallStatusButton" Content="{loc:Tr 'Show Status'}" Style="{StaticResource ResetButtonStyle}" Visibility="Collapsed"
-                                                                    Padding="14,6" FontSize="12" Margin="0,0,8,0" Click="FirewallStatusButton_Click"/>
-                                                            <Button x:Name="FirewallResultsToggle" Content="{loc:Tr 'Show Rules'}" Style="{StaticResource ResetButtonStyle}"
-                                                                    Padding="14,6" FontSize="12" Margin="0,0,8,0" Click="FirewallResultsToggle_Click"/>
-                                                            <Button x:Name="FirewallRemoveButton" Content="{loc:Tr 'Remove Rules'}" Style="{StaticResource ResetButtonStyle}"
-                                                                    Padding="14,6" FontSize="12" Click="FirewallRemoveButton_Click"/>
-                                                            <Button x:Name="FirewallCancelButton" Content="✕" ToolTip="{loc:Tr 'Skip the firewall rule check'}" Style="{StaticResource ResetButtonStyle}"
-                                                                    Width="32" Height="32" Padding="0" Margin="8,0,0,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"
-                                                                    Visibility="Collapsed" Click="ScanStepCancelButton_Click"/>
-                                                        </StackPanel>
-                                                        <StackPanel VerticalAlignment="Center">
+                                                        <StackPanel>
                                                             <TextBlock Text="{loc:Tr 'Firewall Rules'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                                                            <TextBlock x:Name="FirewallResultsStatus" Text="" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                            <TextBlock x:Name="FirewallResultsStatus" Text="" Style="{StaticResource CardStatusText}"/>
+                                                            <WrapPanel Orientation="Horizontal">
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <Button x:Name="FirewallStatusButton" Content="{loc:Tr 'Show Status'}" Style="{StaticResource ResetButtonStyle}" Visibility="Collapsed"
+                                                                            Padding="14,6" FontSize="12" Margin="0,10,8,0" Click="FirewallStatusButton_Click"/>
+                                                                    <Button x:Name="FirewallResultsToggle" Content="{loc:Tr 'Show Rules'}" Style="{StaticResource ResetButtonStyle}"
+                                                                            Padding="14,6" FontSize="12" Margin="0,10,8,0" Click="FirewallResultsToggle_Click"/>
+                                                                    <Button Margin="0,10,0,0" x:Name="FirewallRemoveButton" Content="{loc:Tr 'Remove Rules'}" Style="{StaticResource ResetButtonStyle}"
+                                                                            Padding="14,6" FontSize="12" Click="FirewallRemoveButton_Click"/>
+                                                                    <Button x:Name="FirewallCancelButton" Content="✕" ToolTip="{loc:Tr 'Skip the firewall rule check'}" Style="{StaticResource ResetButtonStyle}"
+                                                                            Width="32" Height="32" Padding="0" Margin="8,10,0,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"
+                                                                            Visibility="Collapsed" Click="ScanStepCancelButton_Click"/>
+                                                                </StackPanel>
+                                                            </WrapPanel>
                                                         </StackPanel>
                                                     </DockPanel>
-                                                    <ItemsControl x:Name="FirewallRulesList" Margin="42,10,0,0" Visibility="Collapsed">
+                                                    <ItemsControl x:Name="FirewallRulesList" Margin="50,10,0,0" Visibility="Collapsed">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <Border Background="{DynamicResource SecondaryPanelBackground}" CornerRadius="6" Padding="10,6" Margin="0,3">
-                                                                    <StackPanel>
-                                                                        <StackPanel Orientation="Horizontal">
-                                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0"/>
-                                                                            <TextBlock Text="{Binding Direction}" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                                                                        </StackPanel>
-                                                                        <TextBlock Text="{Binding ApplicationPath}" FontSize="11" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                                                                    </StackPanel>
+                                                                    <ContentPresenter Content="{Binding}" ContentTemplate="{DynamicResource FriendlyRowTemplate}"/>
                                                                 </Border>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
@@ -969,42 +1303,37 @@
                                                 </StackPanel>
                                             </Border>
 
-                                            <Border x:Name="ShortcutResultsPanel" Visibility="Collapsed" Margin="0,0,0,20" Padding="16,12"
-                                                    CornerRadius="10" BorderThickness="1" BorderBrush="#661E88E5" Background="#141E88E5">
+                                            <Border x:Name="ShortcutResultsPanel" Visibility="Collapsed" Margin="0,0,0,14" Padding="18,14"
+                                                    CornerRadius="12" BorderThickness="1" BorderBrush="#661E88E5" Background="#141E88E5">
                                                 <StackPanel>
                                                     <DockPanel>
-                                                        <Grid Width="30" Height="30" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                            <Ellipse x:Name="ShortcutResultsIcon" Fill="#FF1E88E5"/>
-                                                            <TextBlock Text="↗" Foreground="White" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        <Grid Width="36" Height="36" DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,1,14,0">
+                                                            <Image Source="pack://application:,,,/Assets/Icons/mwc_shortcuts.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                            <Ellipse x:Name="ShortcutResultsIcon" Fill="#FF1E88E5" Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Stroke="{DynamicResource PanelBackground}" StrokeThickness="2"/>
                                                         </Grid>
-                                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <Button x:Name="ShortcutStatusButton" Content="{loc:Tr 'Show Status'}" Style="{StaticResource ResetButtonStyle}" Visibility="Collapsed"
-                                                                    Padding="14,6" FontSize="12" Margin="0,0,8,0" Click="ShortcutStatusButton_Click"/>
-                                                            <Button x:Name="ShortcutResultsToggle" Content="{loc:Tr 'Show Shortcuts'}" Style="{StaticResource ResetButtonStyle}"
-                                                                    Padding="14,6" FontSize="12" Margin="0,0,8,0" Click="ShortcutResultsToggle_Click"/>
-                                                            <Button x:Name="ShortcutFixButton" Content="{loc:Tr 'Fix Shortcuts'}" Style="{StaticResource ResetButtonStyle}"
-                                                                    Padding="14,6" FontSize="12" Click="ShortcutFixButton_Click"/>
-                                                            <Button x:Name="ShortcutCancelButton" Content="✕" ToolTip="{loc:Tr 'Skip the shortcut check'}" Style="{StaticResource ResetButtonStyle}"
-                                                                    Width="32" Height="32" Padding="0" Margin="8,0,0,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"
-                                                                    Visibility="Collapsed" Click="ScanStepCancelButton_Click"/>
-                                                        </StackPanel>
-                                                        <StackPanel VerticalAlignment="Center">
+                                                        <StackPanel>
                                                             <TextBlock Text="{loc:Tr 'Shortcuts'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                                                            <TextBlock x:Name="ShortcutResultsStatus" Text="" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                            <TextBlock x:Name="ShortcutResultsStatus" Text="" Style="{StaticResource CardStatusText}"/>
+                                                            <WrapPanel Orientation="Horizontal">
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <Button x:Name="ShortcutStatusButton" Content="{loc:Tr 'Show Status'}" Style="{StaticResource ResetButtonStyle}" Visibility="Collapsed"
+                                                                            Padding="14,6" FontSize="12" Margin="0,10,8,0" Click="ShortcutStatusButton_Click"/>
+                                                                    <Button x:Name="ShortcutResultsToggle" Content="{loc:Tr 'Show Shortcuts'}" Style="{StaticResource ResetButtonStyle}"
+                                                                            Padding="14,6" FontSize="12" Margin="0,10,8,0" Click="ShortcutResultsToggle_Click"/>
+                                                                    <Button Margin="0,10,0,0" x:Name="ShortcutFixButton" Content="{loc:Tr 'Fix Shortcuts'}" Style="{StaticResource ResetButtonStyle}"
+                                                                            Padding="14,6" FontSize="12" Click="ShortcutFixButton_Click"/>
+                                                                    <Button x:Name="ShortcutCancelButton" Content="✕" ToolTip="{loc:Tr 'Skip the shortcut check'}" Style="{StaticResource ResetButtonStyle}"
+                                                                            Width="32" Height="32" Padding="0" Margin="8,10,0,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"
+                                                                            Visibility="Collapsed" Click="ScanStepCancelButton_Click"/>
+                                                                </StackPanel>
+                                                            </WrapPanel>
                                                         </StackPanel>
                                                     </DockPanel>
-                                                    <ItemsControl x:Name="ShortcutResultsList" Margin="42,10,0,0" Visibility="Collapsed">
+                                                    <ItemsControl x:Name="ShortcutResultsList" Margin="50,10,0,0" Visibility="Collapsed">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <Border Background="{DynamicResource SecondaryPanelBackground}" CornerRadius="6" Padding="10,6" Margin="0,3">
-                                                                    <StackPanel>
-                                                                        <StackPanel Orientation="Horizontal">
-                                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0"/>
-                                                                            <TextBlock Text="{Binding Location}" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                                                                        </StackPanel>
-                                                                        <TextBlock Text="{Binding TargetPath}" FontSize="11" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                                                                        <TextBlock Text="{Binding Action}" FontSize="11" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                                                                    </StackPanel>
+                                                                    <ContentPresenter Content="{Binding}" ContentTemplate="{DynamicResource FriendlyRowTemplate}"/>
                                                                 </Border>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
@@ -1012,31 +1341,33 @@
                                                 </StackPanel>
                                             </Border>
 
-                                            <Border x:Name="SecurityResultsPanel" Visibility="Collapsed" Margin="0,0,0,20" Padding="16,12"
-                                                    CornerRadius="10" BorderThickness="1" BorderBrush="#661E88E5" Background="#141E88E5">
+                                            <Border x:Name="SecurityResultsPanel" Visibility="Collapsed" Margin="0,0,0,14" Padding="18,14"
+                                                    CornerRadius="12" BorderThickness="1" BorderBrush="#661E88E5" Background="#141E88E5">
                                                 <StackPanel>
                                                     <DockPanel>
-                                                        <Grid Width="30" Height="30" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                            <Ellipse x:Name="SecurityResultsIcon" Fill="#FF1E88E5"/>
-                                                            <TextBlock Text="🛡" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        <Grid Width="36" Height="36" DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,1,14,0">
+                                                            <Image Source="pack://application:,,,/Assets/Icons/mwc_security.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                            <Ellipse x:Name="SecurityResultsIcon" Fill="#FF1E88E5" Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Stroke="{DynamicResource PanelBackground}" StrokeThickness="2"/>
                                                         </Grid>
-                                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <Button x:Name="SecurityStatusButton" Content="{loc:Tr 'Show Status'}" Style="{StaticResource ResetButtonStyle}" Visibility="Collapsed"
-                                                                    Padding="14,6" FontSize="12" Margin="0,0,8,0" Click="SecurityStatusButton_Click"/>
-                                                            <Button x:Name="SecurityResultsToggle" Content="{loc:Tr 'Show Issues'}" Style="{StaticResource ResetButtonStyle}"
-                                                                    Padding="14,6" FontSize="12" Margin="0,0,8,0" Click="SecurityResultsToggle_Click"/>
-                                                            <Button x:Name="SecurityFixButton" Content="{loc:Tr 'Fix Selected'}" Style="{StaticResource ResetButtonStyle}"
-                                                                    Padding="14,6" FontSize="12" Click="SecurityFixButton_Click"/>
-                                                            <Button x:Name="SecurityCancelButton" Content="✕" ToolTip="{loc:Tr 'Skip the security check'}" Style="{StaticResource ResetButtonStyle}"
-                                                                    Width="32" Height="32" Padding="0" Margin="8,0,0,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"
-                                                                    Visibility="Collapsed" Click="ScanStepCancelButton_Click"/>
-                                                        </StackPanel>
-                                                        <StackPanel VerticalAlignment="Center">
+                                                        <StackPanel>
                                                             <TextBlock Text="{loc:Tr 'Security Settings'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                                                            <TextBlock x:Name="SecurityResultsStatus" Text="" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                            <TextBlock x:Name="SecurityResultsStatus" Text="" Style="{StaticResource CardStatusText}"/>
+                                                            <WrapPanel Orientation="Horizontal">
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <Button x:Name="SecurityStatusButton" Content="{loc:Tr 'Show Status'}" Style="{StaticResource ResetButtonStyle}" Visibility="Collapsed"
+                                                                            Padding="14,6" FontSize="12" Margin="0,10,8,0" Click="SecurityStatusButton_Click"/>
+                                                                    <Button x:Name="SecurityResultsToggle" Content="{loc:Tr 'Show Issues'}" Style="{StaticResource ResetButtonStyle}"
+                                                                            Padding="14,6" FontSize="12" Margin="0,10,8,0" Click="SecurityResultsToggle_Click"/>
+                                                                    <Button Margin="0,10,0,0" x:Name="SecurityFixButton" Content="{loc:Tr 'Fix Selected'}" Style="{StaticResource ResetButtonStyle}"
+                                                                            Padding="14,6" FontSize="12" Click="SecurityFixButton_Click"/>
+                                                                    <Button x:Name="SecurityCancelButton" Content="✕" ToolTip="{loc:Tr 'Skip the security check'}" Style="{StaticResource ResetButtonStyle}"
+                                                                            Width="32" Height="32" Padding="0" Margin="8,10,0,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"
+                                                                            Visibility="Collapsed" Click="ScanStepCancelButton_Click"/>
+                                                                </StackPanel>
+                                                            </WrapPanel>
                                                         </StackPanel>
                                                     </DockPanel>
-                                                    <ItemsControl x:Name="SecurityResultsList" Margin="42,10,0,0" Visibility="Collapsed">
+                                                    <ItemsControl x:Name="SecurityResultsList" Margin="50,10,0,0" Visibility="Collapsed">
                                                         <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <Border Background="{DynamicResource SecondaryPanelBackground}" CornerRadius="6" Padding="10,6" Margin="0,3">
@@ -1067,60 +1398,86 @@
                                                 </StackPanel>
                                             </Border>
 
-                                            <Border x:Name="DuplicateResultsPanel" Visibility="Collapsed" Margin="0,0,0,20" Padding="16,12"
-                                                    CornerRadius="10" BorderThickness="1" BorderBrush="#66FF9800" Background="#14FF9800">
+                                            <Border x:Name="DuplicateResultsPanel" Visibility="Collapsed" Margin="0,0,0,14" Padding="18,14"
+                                                    CornerRadius="12" BorderThickness="1" BorderBrush="#66FF9800" Background="#14FF9800">
                                                 <DockPanel>
-                                                    <Grid Width="30" Height="30" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                        <Ellipse x:Name="DuplicateResultsIcon" Fill="#FFFF9800"/>
-                                                        <TextBlock Text="⧉" Foreground="White" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Grid Width="36" Height="36" DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,1,14,0">
+                                                        <Image Source="pack://application:,,,/Assets/Icons/mwc_duplicates.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                        <Ellipse x:Name="DuplicateResultsIcon" Fill="#FFFF9800" Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Stroke="{DynamicResource PanelBackground}" StrokeThickness="2"/>
                                                     </Grid>
-                                                    <Button x:Name="DuplicateCancelButton" DockPanel.Dock="Right" Content="✕" ToolTip="{loc:Tr 'Cancel the duplicate file search'}" Style="{StaticResource ResetButtonStyle}"
-                                                            Width="32" Height="32" Padding="0" Margin="8,0,0,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"
-                                                            Visibility="Collapsed" Click="DuplicateCancelButton_Click"/>
-                                                    <Button x:Name="DuplicateResultsButton" DockPanel.Dock="Right" Content="{loc:Tr 'Show Files'}" Style="{StaticResource ResetButtonStyle}"
-                                                            Padding="14,6" FontSize="12" VerticalAlignment="Center" Click="DuplicateResultsButton_Click"/>
-                                                    <StackPanel VerticalAlignment="Center">
+                                                    <StackPanel>
                                                         <TextBlock Text="{loc:Tr 'Duplicate Files'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                                                        <TextBlock x:Name="DuplicateResultsStatus" Text="" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                        <TextBlock x:Name="DuplicateResultsStatus" Text="" Style="{StaticResource CardStatusText}"/>
+                                                        <WrapPanel Orientation="Horizontal">
+                                                            <Button Margin="0,10,0,0" x:Name="DuplicateResultsButton" Content="{loc:Tr 'Show Files'}" Style="{StaticResource ResetButtonStyle}"
+                                                                    Padding="14,6" FontSize="12" VerticalAlignment="Center" Click="DuplicateResultsButton_Click"/>
+                                                            <Button x:Name="DuplicateCancelButton" Content="✕" ToolTip="{loc:Tr 'Cancel the duplicate file search'}" Style="{StaticResource ResetButtonStyle}"
+                                                                    Width="32" Height="32" Padding="0" Margin="8,10,0,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"
+                                                                    Visibility="Collapsed" Click="DuplicateCancelButton_Click"/>
+                                                        </WrapPanel>
                                                     </StackPanel>
                                                 </DockPanel>
                                             </Border>
 
-                                            <Border x:Name="MalwareResultsPanel" Visibility="Collapsed" Margin="0,0,0,20" Padding="16,12"
-                                                    CornerRadius="10" BorderThickness="1" BorderBrush="#33888888" Background="#0C1E88E5">
+                                            <Border x:Name="LargeFilesResultsPanel" Visibility="Collapsed" Margin="0,0,0,14" Padding="18,14"
+                                                    CornerRadius="12" BorderThickness="1" BorderBrush="#66FF9800" Background="#14FF9800">
+                                                <DockPanel>
+                                                    <Grid Width="36" Height="36" DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,1,14,0">
+                                                        <Image Source="pack://application:,,,/Assets/Icons/mwc_largefiles.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                        <Ellipse x:Name="LargeFilesResultsIcon" Fill="#FFFF9800" Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Stroke="{DynamicResource PanelBackground}" StrokeThickness="2"/>
+                                                    </Grid>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{loc:Tr 'Large Files'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                                                        <TextBlock x:Name="LargeFilesResultsStatus" Text="" Style="{StaticResource CardStatusText}"/>
+                                                        <WrapPanel Orientation="Horizontal">
+                                                            <Button Margin="0,10,0,0" x:Name="LargeFilesResultsButton" Content="{loc:Tr 'Show Files'}" Style="{StaticResource ResetButtonStyle}"
+                                                                    Padding="14,6" FontSize="12" VerticalAlignment="Center" Visibility="Collapsed" Click="LargeFilesResultsButton_Click"/>
+                                                        </WrapPanel>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+
+                                            <Border x:Name="MalwareResultsPanel" Visibility="Collapsed" Margin="0,0,0,14" Padding="18,14"
+                                                    CornerRadius="12" BorderThickness="1" BorderBrush="#33888888" Background="#0C1E88E5">
                                                 <StackPanel>
                                                     <DockPanel>
-                                                        <Grid Width="30" Height="30" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                            <Ellipse x:Name="MalwareResultsIcon" Fill="#FF1E88E5"/>
-                                                            <Path Data="M12,1 L3,5 V11 C3,16.55 6.84,21.74 12,23 C17.16,21.74 21,16.55 21,11 V5 Z"
-                                                                  Fill="White" Stretch="Uniform" Width="13" Height="14"/>
+                                                        <Grid Width="36" Height="36" DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,1,14,0">
+                                                            <Image Source="pack://application:,,,/Assets/Icons/mwc_malware.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                            <Ellipse x:Name="MalwareResultsIcon" Fill="#FF1E88E5" Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3" Stroke="{DynamicResource PanelBackground}" StrokeThickness="2"/>
                                                         </Grid>
-                                                        <Button x:Name="MalwareCancelButton" DockPanel.Dock="Right" Content="✕" ToolTip="{loc:Tr 'Cancel the malware scan'}" Style="{StaticResource ResetButtonStyle}"
-                                                                Width="32" Height="32" Padding="0" Margin="8,0,0,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"
-                                                                Visibility="Collapsed" Click="MalwareCancelButton_Click"/>
-                                                        <Button x:Name="MalwareResultsButton" DockPanel.Dock="Right" Content="{loc:Tr 'Open Results'}" Style="{StaticResource ResetButtonStyle}"
-                                                                Padding="14,6" FontSize="12" VerticalAlignment="Center" Click="MalwareResultsButton_Click"/>
-                                                        <Button x:Name="MalwareMrtResultsButton" DockPanel.Dock="Right" Content="{loc:Tr 'MRT Results'}" Style="{StaticResource ResetButtonStyle}"
-                                                                Padding="14,6" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed"
-                                                                ToolTip="{loc:Tr 'Shows what Microsoft MRT found, with its full report from mrt.log.'}" Click="MrtResultsButton_Click"/>
-                                                        <Button x:Name="MalwareMrtRemoveButton" DockPanel.Dock="Right" Content="{loc:Tr 'Remove with MRT'}" Style="{StaticResource ResetButtonStyle}"
-                                                                Background="#FFDC3545" Padding="14,6" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed"
-                                                                ToolTip="{loc:Tr 'Runs Microsoft MRT again and lets it remove the malicious software it finds.'}" Click="MrtRemoveButton_Click"/>
-                                                        <ComboBox x:Name="MalwarePanelModeBox" Visibility="Collapsed" DockPanel.Dock="Right" Width="130" Height="32" Margin="0,0,8,0" VerticalAlignment="Center"
-                                                                  Style="{StaticResource PanelComboBoxStyle}" ToolTip="{loc:Tr 'Scan type used for the next malware scan'}" SelectionChanged="MalwarePanelModeBox_SelectionChanged">
-                                                            <ComboBoxItem Content="{loc:Tr 'Quick Scan'}"/>
-                                                            <ComboBoxItem Content="{loc:Tr 'Full Scan'}"/>
-                                                            <ComboBoxItem Content="{loc:Tr 'Custom Scan'}"/>
-                                                        </ComboBox>
-                                                        <StackPanel VerticalAlignment="Center">
+                                                        <StackPanel>
                                                             <TextBlock x:Name="MalwareResultsTitle" Text="{loc:Tr 'Multron Malware Scan Cloud'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                                                            <TextBlock x:Name="MalwareResultsStatus" Text="" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                            <TextBlock x:Name="MalwareResultsStatus" Text="" Style="{StaticResource CardStatusText}"/>
+                                                            <WrapPanel Orientation="Horizontal">
+                                                                <ComboBox x:Name="MalwarePanelModeBox" Visibility="Collapsed" Width="170" Height="32" Margin="0,10,8,0" VerticalAlignment="Center"
+                                                                          Style="{StaticResource PanelComboBoxStyle}" ToolTip="{loc:Tr 'Scan type used for the next malware scan'}" SelectionChanged="MalwarePanelModeBox_SelectionChanged">
+                                                                    <ComboBoxItem Content="{loc:Tr 'Quick Scan'}"/>
+                                                                    <ComboBoxItem Content="{loc:Tr 'Full Scan'}"/>
+                                                                    <ComboBoxItem Content="{loc:Tr 'Custom Scan'}"/>
+                                                                    <ComboBoxItem Content="{loc:Tr 'Running Apps'}"/>
+                                                                    <ComboBoxItem Content="{loc:Tr 'Running &amp; Startup'}"/>
+                                                                    <ComboBoxItem Content="{loc:Tr 'Critical Scan'}"/>
+                                                                </ComboBox>
+                                                                <Button x:Name="MalwareMrtRemoveButton" Content="{loc:Tr 'Remove with MRT'}" Style="{StaticResource ResetButtonStyle}"
+                                                                        Background="#FFDC3545" Padding="14,6" FontSize="12" Margin="0,10,8,0" VerticalAlignment="Center" Visibility="Collapsed"
+                                                                        ToolTip="{loc:Tr 'Runs Microsoft MRT again and lets it remove the malicious software it finds.'}" Click="MrtRemoveButton_Click"/>
+                                                                <Button x:Name="MalwareMrtResultsButton" Content="{loc:Tr 'MRT Results'}" Style="{StaticResource ResetButtonStyle}"
+                                                                        Padding="14,6" FontSize="12" Margin="0,10,8,0" VerticalAlignment="Center" Visibility="Collapsed"
+                                                                        ToolTip="{loc:Tr 'Shows what Microsoft MRT found, with its full report from mrt.log.'}" Click="MrtResultsButton_Click"/>
+                                                                <Button Margin="0,10,0,0" x:Name="MalwareResultsButton" Content="{loc:Tr 'Open Results'}" Style="{StaticResource ResetButtonStyle}"
+                                                                        Padding="14,6" FontSize="12" VerticalAlignment="Center" Click="MalwareResultsButton_Click"/>
+                                                                <Button x:Name="MalwareCancelButton" Content="✕" ToolTip="{loc:Tr 'Cancel the malware scan'}" Style="{StaticResource ResetButtonStyle}"
+                                                                        Width="32" Height="32" Padding="0" Margin="8,10,0,0" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"
+                                                                        Visibility="Collapsed" Click="MalwareCancelButton_Click"/>
+                                                            </WrapPanel>
                                                         </StackPanel>
                                                     </DockPanel>
 
-                                                    <loc:CloudScanView x:Name="MainCloudScanView" Margin="42,10,0,0"/>
+                                                    <ContentControl x:Name="MalwareRestartHost" Visibility="Collapsed" Margin="50,4,0,0" Focusable="False"/>
 
-                                                    <ItemsControl x:Name="MalwareThreatsList" Margin="42,10,0,0" Visibility="Collapsed" MaxHeight="320"
+                                                    <loc:CloudScanView x:Name="MainCloudScanView" Margin="50,10,0,0"/>
+
+                                                    <ItemsControl x:Name="MalwareThreatsList" Margin="50,10,0,0" Visibility="Collapsed" MaxHeight="320"
                                                                   VirtualizingPanel.IsVirtualizing="True"
                                                                   VirtualizingPanel.VirtualizationMode="Recycling"
                                                                   VirtualizingPanel.ScrollUnit="Pixel"
@@ -1147,9 +1504,20 @@
                                                                     <StackPanel>
                                                                         <StackPanel Orientation="Horizontal">
                                                                             <Border Background="#261E88E5" CornerRadius="4" Padding="6,1" Margin="0,0,8,0" VerticalAlignment="Center">
-                                                                                <TextBlock Text="{Binding Source}" FontSize="10.5" FontWeight="Bold" Foreground="#FF1E88E5"/>
+                                                                                <TextBlock Text="{Binding Source}" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource AccentText}"/>
                                                                             </Border>
-                                                                            <TextBlock Text="{Binding VerdictText}" FontWeight="Bold" FontSize="12" Foreground="#FFDC3545" Margin="0,0,8,0"/>
+                                                                            <TextBlock Text="{Binding VerdictText}" FontWeight="Bold" FontSize="12" Margin="0,0,8,0">
+                                                                                <TextBlock.Style>
+                                                                                    <Style TargetType="TextBlock">
+                                                                                        <Setter Property="Foreground" Value="#FFDC3545"/>
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding IsSuspicious}" Value="True">
+                                                                                                <Setter Property="Foreground" Value="{DynamicResource VerdictSuspiciousText}"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </TextBlock.Style>
+                                                                            </TextBlock>
                                                                             <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0"/>
                                                                             <TextBlock Text="{Binding ThreatName}" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
                                                                         </StackPanel>
@@ -1162,16 +1530,24 @@
                                                 </StackPanel>
                                             </Border>
 
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,20" VerticalAlignment="Center">
-                                                <Label Content="{loc:Tr 'Search for directory:'}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextForeground}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <Grid Margin="0,0,16,0">
-                                                    <TextBox Style="{StaticResource ModernTextBoxStyle}" Width="220" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" TextChanged="TextBox_TextChanged" />
-                                                </Grid>
-                                                <Button Content="{loc:Tr 'Select All'}" Click="SelectAll_AllGroups_Click" Style="{StaticResource ModernButtonStyle}" Background="#FF1E88E5" Foreground="White" Margin="0,0,8,0" />
-                                                <Button Content="{loc:Tr 'Unselect All'}" Click="UnselectAll_AllGroups_Click" Style="{StaticResource ModernButtonStyle}" Background="Transparent" BorderThickness="1" BorderBrush="Gray" Foreground="{DynamicResource TextForeground}" />
-                                            </StackPanel>
+                                            <DockPanel x:Name="FoundFilesToolbar" Margin="0,0,0,14">
+                                                <Button DockPanel.Dock="Right" Content="{loc:Tr 'Unselect All'}" Click="UnselectAll_AllGroups_Click" Style="{DynamicResource UtilityNeutralButtonStyle}" Height="36" Padding="16,0" VerticalAlignment="Center"/>
+                                                <Button DockPanel.Dock="Right" Content="{loc:Tr 'Select All'}" Click="SelectAll_AllGroups_Click" Style="{DynamicResource UtilityPrimaryButtonStyle}" Height="36" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <ComboBox x:Name="ResultsMatchMode" DockPanel.Dock="Right" Width="190" Height="36" Margin="0,0,8,0" VerticalAlignment="Center" SelectedIndex="0"
+                                                          Style="{StaticResource PanelComboBoxStyle}" ToolTip="{loc:Tr 'Choose whether what you type can be part of the name or must be the whole name.'}" SelectionChanged="ResultsSearchMode_SelectionChanged">
+                                                    <ComboBoxItem Content="{loc:Tr 'Part of the name'}"/>
+                                                    <ComboBoxItem Content="{loc:Tr 'Exact name'}"/>
+                                                </ComboBox>
+                                                <ComboBox x:Name="ResultsSearchMode" DockPanel.Dock="Right" Width="180" Height="36" Margin="0,0,8,0" VerticalAlignment="Center" SelectedIndex="0"
+                                                          Style="{StaticResource PanelComboBoxStyle}" ToolTip="{loc:Tr 'Choose where the search looks.'}" SelectionChanged="ResultsSearchMode_SelectionChanged">
+                                                    <ComboBoxItem Content="{loc:Tr 'Files and folders'}"/>
+                                                    <ComboBoxItem Content="{loc:Tr 'Folders only'}"/>
+                                                    <ComboBoxItem Content="{loc:Tr 'Files only'}"/>
+                                                </ComboBox>
+                                                <TextBox x:Name="ResultsFilterBox" Style="{DynamicResource SearchPillBoxStyle}" Tag="{loc:Tr 'Search files or folders'}" Margin="0,0,16,0" VerticalAlignment="Center" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" TextChanged="TextBox_TextChanged"/>
+                                            </DockPanel>
 
-                                            <DataGrid Name="dataGridGroups" ItemsSource="{Binding Groups}" CanUserAddRows="False" Background="Transparent" BorderThickness="0" RowHeaderWidth="0" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" IsReadOnly="True" HeadersVisibility="Column" RowDetailsVisibilityMode="Visible" AutoGenerateColumns="False" Foreground="{DynamicResource TextForeground}">
+                                            <DataGrid Name="dataGridGroups" ItemsSource="{Binding Groups}" CanUserAddRows="False" Background="Transparent" BorderThickness="0" RowHeaderWidth="0" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" IsReadOnly="True" HeadersVisibility="Column" RowDetailsVisibilityMode="Visible" AutoGenerateColumns="False" ScrollViewer.HorizontalScrollBarVisibility="Disabled" RequestBringIntoView="DataGridGroups_RequestBringIntoView" Foreground="{DynamicResource TextForeground}">
                                                 <DataGrid.Resources>
                                                     <Style TargetType="DataGridCell">
                                                         <Setter Property="Background" Value="Transparent" />
@@ -1188,17 +1564,36 @@
                                                 </DataGrid.Columns>
                                                 <DataGrid.RowDetailsTemplate>
                                                     <DataTemplate>
-                                                        <Expander IsExpanded="False" Background="Transparent" Foreground="{DynamicResource TextForeground}" Header="{Binding ExpanderHeader}">
+                                                        <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Background="Transparent" Foreground="{DynamicResource TextPrimary}" Header="{Binding}">
+                                                            <Expander.HeaderTemplate>
+                                                                <DataTemplate>
+                                                                    <DockPanel Background="Transparent">
+                                                                        <DockPanel.ContextMenu>
+                                                                            <ContextMenu>
+                                                                                <MenuItem Header="{loc:Tr 'Open folder'}" Click="OpenGroupFolder_Click"/>
+                                                                                <MenuItem Header="{loc:Tr 'Copy path'}" Click="CopyGroupPath_Click"/>
+                                                                                <Separator/>
+                                                                                <MenuItem Header="{loc:Tr 'Always skip this folder (add to Exceptions)'}" Click="SkipGroupFolder_Click"/>
+                                                                            </ContextMenu>
+                                                                        </DockPanel.ContextMenu>
+                                                                        <Border DockPanel.Dock="Right" CornerRadius="9" Padding="9,2" Margin="12,0,0,0" Background="#1F1E88E5" VerticalAlignment="Center">
+                                                                            <TextBlock Text="{Binding SummaryText}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"/>
+                                                                        </Border>
+                                                                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                                                                        <TextBlock Text="{Binding Path}" ToolTip="{Binding Path}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                                                    </DockPanel>
+                                                                </DataTemplate>
+                                                            </Expander.HeaderTemplate>
                                                             <StackPanel Margin="16,8">
                                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                                                    <Button Content="{loc:Tr 'Select All'}" Click="SelectAll_Click" Tag="{Binding}" Style="{StaticResource ModernButtonStyle}" Background="#FF1E88E5" Foreground="White" Margin="0,0,8,0" Padding="12,6"/>
-                                                                    <Button Content="{loc:Tr 'Unselect All'}" Click="UnselectAll_Click" Tag="{Binding}" Style="{StaticResource ModernButtonStyle}" Background="Transparent" BorderThickness="1" BorderBrush="Gray" Foreground="{DynamicResource TextForeground}" Padding="12,6"/>
+                                                                    <Button Content="{loc:Tr 'Select All'}" Click="SelectAll_Click" Tag="{Binding}" Style="{DynamicResource UtilityPrimaryButtonStyle}" Height="30" FontSize="12" Margin="0,0,8,0" Padding="12,0"/>
+                                                                    <Button Content="{loc:Tr 'Unselect All'}" Click="UnselectAll_Click" Tag="{Binding}" Style="{DynamicResource UtilitySecondaryButtonStyle}" Height="30" FontSize="12" Padding="12,0"/>
                                                                 </StackPanel>
-                                                                <ScrollViewer Name="ListBoxScroll" Height="180" Background="Transparent" ScrollChanged="FilesListBox_ScrollChanged">
-                                                                    <ListBox ItemsSource="{Binding Files}" Background="Transparent" BorderThickness="0">
+                                                                <ScrollViewer Name="ListBoxScroll" Height="280" Background="Transparent" HorizontalScrollBarVisibility="Disabled" ScrollChanged="FilesListBox_ScrollChanged">
+                                                                    <ListBox ItemsSource="{Binding Files}" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemContainerStyle="{DynamicResource ResultListItemStyle}">
                                                                         <ListBox.ItemTemplate>
                                                                             <DataTemplate>
-                                                                                <CheckBox Content="{Binding FileName}" IsChecked="{Binding IsChecked, Mode=TwoWay}" Margin="4,4" Foreground="{DynamicResource TextForeground}" Checked="CheckBox2_Checked" Unchecked="CheckBox2_Unchecked">
+                                                                                <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top" Padding="8,0,0,0" ToolTip="{Binding Path}" Foreground="{DynamicResource TextPrimary}" Checked="CheckBox2_Checked" Unchecked="CheckBox2_Unchecked">
                                                                                     <CheckBox.ContextMenu>
                                                                                         <ContextMenu>
                                                                                             <MenuItem Header="{loc:Tr 'Open file location'}" Click="OpenFileLocation_Click"/>
@@ -1206,6 +1601,18 @@
                                                                                             <MenuItem Header="{loc:Tr 'Always skip this file (add to Exceptions)'}" Click="AddToExceptions_Click"/>
                                                                                         </ContextMenu>
                                                                                     </CheckBox.ContextMenu>
+                                                                                    <Grid>
+                                                                                        <Grid.ColumnDefinitions>
+                                                                                            <ColumnDefinition Width="*"/>
+                                                                                            <ColumnDefinition Width="Auto"/>
+                                                                                        </Grid.ColumnDefinitions>
+                                                                                        <StackPanel>
+                                                                                            <TextBlock Text="{Binding DisplayName}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
+                                                                                            <TextBlock Text="{Binding Folder}" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
+                                                                                            <TextBlock Text="{Binding DatesText}" FontSize="11" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" Opacity="0.85"/>
+                                                                                        </StackPanel>
+                                                                                        <TextBlock Grid.Column="1" Text="{Binding SizeText}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}" Margin="12,0,4,0"/>
+                                                                                    </Grid>
                                                                                 </CheckBox>
                                                                             </DataTemplate>
                                                                         </ListBox.ItemTemplate>
@@ -1219,9 +1626,33 @@
                                         </StackPanel>
                                     </ScrollViewer>
  
-                                    <ScrollViewer x:Name="ScrollViewerDirectories" Panel.ZIndex="1" Background="{DynamicResource PanelBackground}" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                    <Border Panel.ZIndex="1" Background="{DynamicResource PanelBackground}" Visibility="{Binding Visibility, ElementName=ScrollViewerDirectories}" IsHitTestVisible="False">
+                                        <Border Background="#0C000000"/>
+                                    </Border>
+                                    <ScrollViewer x:Name="ScrollViewerDirectories" Panel.ZIndex="1" Background="Transparent" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                         <StackPanel x:Name="wrapPanelDirectories" Orientation="Vertical" Margin="10" />
                                     </ScrollViewer>
+
+                                    <Border x:Name="MalwareTopNotice" Panel.ZIndex="5" Visibility="Collapsed" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="16,0,16,14" Padding="14,9" CornerRadius="10" Background="#FFC62F3B">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.4"/>
+                                        </Border.Effect>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="&#xE7BA;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0" MaxWidth="430">
+                                                <TextBlock x:Name="MalwareTopNoticeTitle" Text="{loc:Tr 'Malware scan finished: threats found!'}" FontSize="13" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap"/>
+                                                <TextBlock x:Name="MalwareTopNoticeDetail" Visibility="Collapsed" FontSize="12" Foreground="White" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                            <Button x:Name="MalwareTopNoticeButton" Grid.Column="2" Content="{loc:Tr 'Scroll to top'}" Click="MalwareTopNotice_Top_Click" Style="{StaticResource ModernButtonStyle}" Background="White" Foreground="#FFC62F3B" Padding="12,5" FontSize="12" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="3" Content="✕" Click="MalwareTopNotice_Close_Click" Style="{StaticResource ModernButtonStyle}" Background="Transparent" Foreground="White" Padding="8,5" Margin="6,0,0,0" FontSize="12" VerticalAlignment="Center" ToolTip="{loc:Tr 'Close'}"/>
+                                        </Grid>
+                                    </Border>
                                     
                                     <Grid x:Name="ScrollViewerDetectedFiles" Panel.ZIndex="0" Visibility="Visible" Background="Transparent">
                                         <Grid.RowDefinitions>
@@ -1229,9 +1660,9 @@
                                             <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
 
-                                        <WrapPanel Grid.Row="0" Margin="0,0,0,16">
-                                            <Button x:Name="SlctAll" Content="{loc:Tr 'Select All'}" Click="SelectAll_wpanel_Click" Style="{StaticResource PrimaryButtonStyle}" Background="#FF1E88E5" Foreground="White" Margin="0,0,10,10" Padding="16,10" />
-                                            <Button x:Name="UnScl" Content="{loc:Tr 'Unselect All'}" Click="UnselectAll_wpanel_Click" Style="{StaticResource ModernButtonStyle}" Background="{DynamicResource ButtonBackground}" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource TextPrimary}" Margin="0,0,10,10" Padding="16,10" />
+                                        <DockPanel Grid.Row="0" Margin="0,0,0,16" LastChildFill="True">
+                                            <Button x:Name="SlctAll" Content="{loc:Tr 'Select All'}" Click="SelectAll_wpanel_Click" Style="{DynamicResource UtilityPrimaryButtonStyle}" Height="36" Margin="0,0,10,10" Padding="16,0" />
+                                            <Button x:Name="UnScl" Content="{loc:Tr 'Unselect All'}" Click="UnselectAll_wpanel_Click" Style="{DynamicResource UtilityNeutralButtonStyle}" Height="36" Margin="0,0,10,10" Padding="16,0" />
                                             <ToggleButton x:Name="SelectionsMenuToggle" Content="{loc:Tr 'Selections'}">
                                                 <ToggleButton.Style>
                                                     <Style TargetType="ToggleButton" BasedOn="{StaticResource ToolbarDropDownStyle}">
@@ -1282,7 +1713,7 @@
                                                 </Border>
                                             </Popup>
 
-                                            <Border Height="36" Width="240" Margin="0,0,0,10" CornerRadius="18" VerticalAlignment="Center"
+                                            <Border x:Name="LibrarySearchPanel" Height="36" MinWidth="150" Margin="0,0,0,10" CornerRadius="18" VerticalAlignment="Top"
                                                     Background="{DynamicResource TextBoxBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Opacity="0.85">
                                                 <Grid Margin="12,0,6,0">
                                                     <Grid.ColumnDefinitions>
@@ -1302,7 +1733,7 @@
                                                             Foreground="{DynamicResource TextPrimary}" Click="LibrarySearchClear_Click" ToolTip="{loc:Tr 'Clear'}"/>
                                                 </Grid>
                                             </Border>
-                                        </WrapPanel>
+                                        </DockPanel>
 
                                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="Transparent">
                                             <StackPanel x:Name="wrapPanel1" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Top" />

@@ -1,156 +1,89 @@
-<Window x:Class="MultronWinCleaner.AddStartup" Icon="pack://application:,,,/Assets/mwc_utilities.ico"
+<Window x:Class="MultronWinCleaner.AddStartup" Icon="pack://application:,,,/Assets/Icons/mwc_startup.ico"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:MultronWinCleaner"
-        Title="{loc:Tr 'Add Startup Application'}" Height="280" Width="420"
-        WindowStartupLocation="CenterScreen"
+        Title="{loc:Tr 'Add Startup Application'}" Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize" WindowStyle="None" AllowsTransparency="True"
-        Background="{DynamicResource WindowBackground}"
+        Background="Transparent"
         FontFamily="Segoe UI">
 
     <Window.Resources>
-        <Style x:Key="TitleBarButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+
+        <Style x:Key="FieldTextBoxStyle" TargetType="TextBox">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Background" Value="{DynamicResource TextBoxBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Frame" CornerRadius="8" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#333"/>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource AccentColorBrush}"/>
                             </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#555"/>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Frame" Property="Opacity" Value="0.5"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
-        </Style>
-
-        <Style x:Key="FieldTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="{DynamicResource TextBoxBackground}"/>
-            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
-
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="6"
-                        Padding="{TemplateBinding Padding}">
-
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                  VerticalAlignment="Center"
-                                  HorizontalAlignment="Stretch"/>
-
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
 
-    <Grid>
+    <Border CornerRadius="12" Background="{DynamicResource WindowBackground}" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1" SnapsToDevicePixels="True">
+        <StackPanel>
+            <DockPanel Height="56" Background="Transparent" Margin="18,0,8,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" LastChildFill="False">
+                <Image Source="pack://application:,,,/Assets/Icons/mwc_startup.png" Width="28" Height="28" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" DockPanel.Dock="Left"/>
+                <TextBlock Text="{loc:Tr 'Add Startup Application'}" DockPanel.Dock="Left" VerticalAlignment="Center" FontSize="19" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                <Button Content="&#xE8BB;" DockPanel.Dock="Right" VerticalAlignment="Center" Style="{DynamicResource ChromeCloseButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
+            </DockPanel>
 
-        <Border Background="{DynamicResource PanelBackground}" Height="40" VerticalAlignment="Top">
-            <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="{loc:Tr 'Add Startup Application'}"
-                           FontSize="14" FontWeight="Bold"
-                           Foreground="{DynamicResource TextPrimary}"
-                           VerticalAlignment="Center" Margin="12,0,0,0"
-                           Grid.Column="0"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
-                            Margin="0,0,8,0" Grid.Column="1">
-                    <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}"
-                            Click="CloseButton_Click"/>
+            <TextBlock Margin="18,0,18,12" FontSize="13" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}"
+                       Text="{loc:Tr 'The program will start automatically every time you sign in to Windows.'}"/>
+
+            <Border Margin="14,0,14,14" Padding="14" CornerRadius="10" Background="{DynamicResource PanelBackground}">
+                <StackPanel>
+                    <TextBlock Text="{loc:Tr 'Executable Path'}" Style="{StaticResource FieldLabelStyle}"/>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Width="34" Height="34" Padding="0" Margin="6,0,0,0" Content="&#xE8E5;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontWeight="Normal"
+                                Style="{DynamicResource UtilitySecondaryButtonStyle}" Click="Browse_Click" ToolTip="{loc:Tr 'Browse...'}"/>
+                        <TextBox x:Name="txtPath" Style="{StaticResource FieldTextBoxStyle}"/>
+                    </DockPanel>
+
+                    <TextBlock Text="{loc:Tr 'Application Name'}" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,5"/>
+                    <TextBox x:Name="txtName" Style="{StaticResource FieldTextBoxStyle}"/>
+
+                    <TextBlock Text="{loc:Tr 'Startup Method'}" Style="{StaticResource FieldLabelStyle}" Margin="0,14,0,7"/>
+                    <WrapPanel>
+                        <RadioButton x:Name="rbRegistry" Content="{loc:Tr 'Registry'}" IsChecked="True" Foreground="{DynamicResource TextPrimary}" FontSize="13" Margin="0,0,18,4" VerticalAlignment="Center" Checked="rbRegistry_Checked"/>
+                        <RadioButton x:Name="rbTaskScheduler" Content="{loc:Tr 'Task Scheduler'}" Foreground="{DynamicResource TextPrimary}" FontSize="13" Margin="0,0,18,4" VerticalAlignment="Center" Checked="rbTaskScheduler_Checked"/>
+                        <RadioButton x:Name="rbWinLogon" Content="Userinit WinLogon" Foreground="{DynamicResource TextPrimary}" FontSize="13" Margin="0,0,0,4" VerticalAlignment="Center" Checked="rbWinLogon_Checked"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="MethodHint" Margin="0,6,0,0" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}"
+                               Text="{loc:Tr 'Starts when you sign in to Windows. Recommended for most programs.'}"/>
                 </StackPanel>
-            </Grid>
-        </Border>
+            </Border>
 
-
-        <Grid Margin="14,48,14,14">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                <TextBlock Text="{loc:Tr 'Application Name'}" Style="{StaticResource FieldLabelStyle}"/>
-                <TextBox x:Name="txtName" Style="{StaticResource FieldTextBoxStyle}" Margin="0,0,0,-9"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="14,0,14,14">
+                <Button Content="{loc:Tr 'Cancel'}" Height="36" MinWidth="96" Margin="0,0,8,0" Style="{DynamicResource UtilitySecondaryButtonStyle}" Click="CloseButton_Click" IsCancel="True"/>
+                <Button Content="{loc:Tr 'Add'}" Height="36" MinWidth="104" Style="{DynamicResource UtilityPrimaryButtonStyle}" Click="Add_Click" IsDefault="True"/>
             </StackPanel>
-
-            <StackPanel Grid.Row="1" Margin="0,0,0,10">
-                <TextBlock Text="{loc:Tr 'Executable Path'}" Style="{StaticResource FieldLabelStyle}"/>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox x:Name="txtPath" Style="{StaticResource FieldTextBoxStyle}" Grid.Column="0" Margin="0,0,0,-9"/>
-                    <Button
-                            Grid.Column="1" MinWidth="72" HorizontalAlignment="Center" Height="34"
-                            Margin="6,0,0,0" Cursor="Hand"
-                            Click="Browse_Click"
-                            Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Browse...'}" Margin="10,0"/></Button>
-                </Grid>
-            </StackPanel>
-
-            <StackPanel Grid.Row="2" Margin="0,0,0,14">
-                <TextBlock Text="{loc:Tr 'Startup Method'}" Style="{StaticResource FieldLabelStyle}"/>
-                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                    <RadioButton x:Name="rbRegistry"
-                                 Content="{loc:Tr 'Registry'}"
-                                 IsChecked="True"
-                                 Foreground="{DynamicResource TextPrimary}"
-                                 FontSize="13"
-                                 Margin="0,0,16,0"
-                                 VerticalAlignment="Center" Checked="rbRegistry_Checked"/>
-                    <RadioButton x:Name="rbTaskScheduler"
-                                 Content="{loc:Tr 'Task Scheduler'}"
-                                 Foreground="{DynamicResource TextPrimary}"
-                                 FontSize="13" Margin="0,0,16,0"
-                                 VerticalAlignment="Center" Checked="rbTaskScheduler_Checked"/>
-                    <RadioButton x:Name="rbWinLogon"
-                         Content="Userunit WinLogon"
-                         Foreground="{DynamicResource TextPrimary}"
-                         FontSize="13" VerticalAlignment="Center" Checked="rbWinLogon_Checked"/>
-                </StackPanel>
-            </StackPanel>
-
-            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button MinWidth="80" HorizontalAlignment="Center" Height="34" Margin="0,0,8,0"
-                        Cursor="Hand" Click="CloseButton_Click"
-                        Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Cancel'}" Margin="10,0"/></Button>
-                <Button MinWidth="80" HorizontalAlignment="Center" Height="34"
-                        IsDefault="True" Cursor="Hand"
-                        Click="Add_Click"
-                        Style="{StaticResource RoundedButtonStyle}"><TextBlock Text="{loc:Tr 'Add'}" Margin="10,0"/></Button>
-            </StackPanel>
-        </Grid>
-    </Grid>
+        </StackPanel>
+    </Border>
 </Window>

@@ -1,4 +1,4 @@
-<Window x:Class="MultronWinCleaner.Duplicate_File_Finder" Icon="pack://application:,,,/Assets/mwc_utilities.ico"
+<Window xmlns:mwcp="clr-namespace:MultronWinCleaner.Processes" x:Class="MultronWinCleaner.Duplicate_File_Finder" Icon="pack://application:,,,/Assets/Icons/mwc_duplicates.ico"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:MultronWinCleaner"
@@ -13,49 +13,36 @@
 
     <Window.Resources>
  
-        <Style x:Key="BigCircularButton" TargetType="Button">
+        <Style x:Key="ScanActionButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentColor}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="22"/>
-            <Setter Property="FontWeight" Value="Heavy"/>
-            <Setter Property="Width" Value="140"/>
-            <Setter Property="Height" Value="140"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="MinWidth" Value="140"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Padding" Value="20,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" 
-                                CornerRadius="70" BorderThickness="4" BorderBrush="#22FFFFFF">
-                            <Border.Effect>
-                                <DropShadowEffect Color="Black" Opacity="0.25" BlurRadius="20" Direction="270" ShadowDepth="5"/>
-                            </Border.Effect>
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1565C0"/>
-                                <Setter TargetName="border" Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="1.02" ScaleY="1.02" CenterX="70" CenterY="70"/>
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="border" Property="Opacity" Value="0.88"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.95" ScaleY="0.95" CenterX="70" CenterY="70"/>
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="border" Property="Opacity" Value="0.75"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Background" Value="#555555"/>
-                                <Setter TargetName="border" Property="Opacity" Value="0.6"/>
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-        </Style> 
+        </Style>
         <Style x:Key="ModernTextBox" TargetType="TextBox">
             <Setter Property="Background" Value="{DynamicResource TextBoxBackground}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
@@ -107,7 +94,7 @@
         </Style>
     </Window.Resources>
  
-    <Border Background="{DynamicResource WindowBackground}" CornerRadius="12" BorderBrush="#33000000" BorderThickness="1">
+    <Border mwcp:RoundedClip.Enabled="True" Background="{DynamicResource WindowBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1">
         <Border.Effect>
             <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="25" ShadowDepth="0"/>
         </Border.Effect>
@@ -122,7 +109,8 @@
                 <Grid>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,0,0,0">
                       
-                        <TextBlock Text="{loc:Tr 'Multron Duplicate File Finder'}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Opacity="0.8"/>
+                        <Image Source="pack://application:,,,/Assets/Icons/mwc_duplicates.png" Width="28" Height="28" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <TextBlock Text="{loc:Tr 'Multron Duplicate File Finder'}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0">
@@ -140,7 +128,7 @@
                 </Grid>
             </Border>
  
-            <Grid Grid.Row="1" Margin="25,15,25,25">
+            <Grid Grid.Row="1" Margin="12,12,12,14">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -148,19 +136,38 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
  
-                <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,10,0,15">
-                    <Button x:Name="MainActionButton" Content="{loc:Tr 'SCAN'}" Style="{StaticResource BigCircularButton}" Click="MainActionButton_Click"/>
-
-                    <TextBlock x:Name="StatusText" HorizontalAlignment="Center" Margin="0,15,0,5" FontSize="14" Foreground="{DynamicResource SecondaryText}">
-                        <Run Text="{loc:Tr 'Ready to scan'}"/><LineBreak/><Run/>
-                    </TextBlock>
-
-                    <TextBlock x:Name="TotalSizeText" Text="{loc:Tr 'Recoverable Space: 0 MB'}" HorizontalAlignment="Center" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentColor}" Visibility="Collapsed"/>
-                    <TextBlock x:Name="FilesScannedText" Text="" HorizontalAlignment="Center" FontSize="14" Opacity="0.7" Foreground="{DynamicResource SecondaryText}"/>
-                </StackPanel>
+                <Border Grid.Row="0" Background="{DynamicResource PanelBackground}" CornerRadius="12" Padding="18,14" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="44" Height="44" CornerRadius="12" Background="#261E88E5" Margin="0,0,14,0" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE8C8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="20" Foreground="{DynamicResource AccentText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                            <TextBlock x:Name="StatusText" Text="{loc:Tr 'Ready to scan'}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="TotalSizeText" Text="{loc:Tr 'Recoverable Space: 0 MB'}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AccentColor}" Margin="0,3,0,0" Visibility="Collapsed"/>
+                            <TextBlock x:Name="FilesScannedText" Text="" FontSize="12" Foreground="{DynamicResource SecondaryText}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <Trigger Property="Text" Value="">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                        <Button x:Name="MainActionButton" Grid.Column="2" Content="{loc:Tr 'SCAN'}" Style="{StaticResource ScanActionButton}" VerticalAlignment="Center" Click="MainActionButton_Click"/>
+                    </Grid>
+                </Border>
   
                 <StackPanel Grid.Row="1">
-                    <Border x:Name="AdvancedPanel" Visibility="Collapsed" Background="{DynamicResource PanelBackground}" CornerRadius="10" Padding="20">
+                    <Border x:Name="AdvancedPanel" Visibility="Collapsed" Background="{DynamicResource PanelBackground}" CornerRadius="12" Padding="18,14" Margin="0,0,0,10">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="5*"/>
@@ -170,13 +177,7 @@
  
                             <StackPanel Grid.Column="0" Margin="0,0,15,0">
                                 <TextBlock Text="{loc:Tr 'Target Directories'}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
-                                <ListBox x:Name="FolderListBox" Height="120" Background="{DynamicResource TextBoxBackground}" BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10">
-                                    <ListBox.Resources>
-                                        <Style TargetType="Border">
-                                            <Setter Property="CornerRadius" Value="6"/>
-                                        </Style>
-                                    </ListBox.Resources>
-                                </ListBox>
+                                <ListBox x:Name="FolderListBox" Height="120" Margin="0,0,0,10" Style="{DynamicResource ResultListStyle}" ItemTemplate="{DynamicResource PathRowTemplate}"/>
 
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -253,9 +254,9 @@
 
                              
                             
-                                <GroupBox Header="{loc:Tr 'Quick Extension Select'}" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" Padding="5">
-                                    <GroupBox.Style>
-                                        <Style TargetType="GroupBox">
+                                <StackPanel Margin="0,0,0,10">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding ElementName=CustomPresetItem, Path=IsSelected}" Value="True">
@@ -263,8 +264,9 @@
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
-                                    </GroupBox.Style>
-                                    <UniformGrid x:Name="QuickExtensionGrid" Columns="6">
+                                    </StackPanel.Style>
+                                    <TextBlock Text="{loc:Tr 'Quick Extension Select'}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                                    <WrapPanel x:Name="QuickExtensionGrid">
                                         <CheckBox Content=".png" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".jpeg" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".jpg" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
@@ -321,8 +323,8 @@
                                         <CheckBox Content=".rtf" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".tar" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
                                         <CheckBox Content=".gz" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="2" Checked="ExtensionCheckBox_CheckedChanged" Unchecked="ExtensionCheckBox_CheckedChanged"/>
-                                    </UniformGrid>
-                                </GroupBox>
+                                    </WrapPanel>
+                                </StackPanel>
 
                                 <CheckBox x:Name="CheckQualityCheckBox" Content="{loc:Tr 'Also list similar media (same name, different quality)'}" IsChecked="False" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6" ToolTip="{loc:Tr 'Lists videos and images with the same name but different content, for example a 1080p and a 720p version. They are not identical, so they are marked SIMILAR and never selected for deletion automatically.'}"/>
                                 <CheckBox x:Name="ShowHashCheckBox" Content="{loc:Tr 'Display SHA256 Hash in results tree'}" IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,12" Checked="ShowHashCheckBox_Checked" Unchecked="ShowHashCheckBox_Unchecked"/>
@@ -340,10 +342,11 @@
                                 </Grid>
                             </StackPanel>
                         </Grid>
+                        </ScrollViewer>
                     </Border>
                 </StackPanel>
- 
-                <Grid Grid.Row="2" Margin="0,0,0,15">
+
+                <Grid Grid.Row="2" Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -373,12 +376,12 @@
                     <TextBlock x:Name="SearchCountText" Grid.Column="1" Text="" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryText}" FontWeight="SemiBold" Margin="15,0,0,0"/>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="9,0,0,0">
-                        <RadioButton x:Name="TreeViewRadio" GroupName="DuplicateView" Content="{loc:Tr '🌳 Folders'}" Style="{StaticResource ViewToggleStyle}" Checked="ViewMode_Changed" ToolTip="{loc:Tr 'Show duplicates grouped by folder'}"/>
-                        <RadioButton x:Name="SideBySideRadio" GroupName="DuplicateView" Content="{loc:Tr '⇄ Side by side'}" IsChecked="True" Style="{StaticResource ViewToggleStyle}" Checked="ViewMode_Changed" ToolTip="{loc:Tr 'Show each copy next to the original it was copied from'}"/>
+                        <RadioButton x:Name="TreeViewRadio" GroupName="DuplicateView" Content="{loc:Tr 'Folders'}" Style="{StaticResource ViewToggleStyle}" Checked="ViewMode_Changed" ToolTip="{loc:Tr 'Show duplicates grouped by folder'}"/>
+                        <RadioButton x:Name="SideBySideRadio" GroupName="DuplicateView" Content="{loc:Tr 'Side by side'}" IsChecked="True" Style="{StaticResource ViewToggleStyle}" Checked="ViewMode_Changed" ToolTip="{loc:Tr 'Show each copy next to the original it was copied from'}"/>
                     </StackPanel>
                 </Grid>
  
-                <Border Grid.Row="3" Background="{DynamicResource TextBoxBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="10">
+                <Border Grid.Row="3" CornerRadius="12">
                     <Grid>
                         <TreeView x:Name="DuplicatesTreeView" Visibility="Collapsed" 
                                   VirtualizingStackPanel.IsVirtualizing="True" 
@@ -397,7 +400,7 @@
                                             </ContextMenu>
                                         </StackPanel.ContextMenu>
 
-                                        <TextBlock Text="📁" FontSize="18" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                         <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
 
                                         <Border Background="{DynamicResource AccentColor}" CornerRadius="12" Margin="12,0,0,0" Padding="8,2" VerticalAlignment="Center" Cursor="Hand" Tag="{Binding}" MouseLeftButtonUp="FolderBadge_Click" ToolTip="{loc:Tr 'Click to view every duplicate file inside this folder'}">
@@ -407,7 +410,7 @@
                                 </HierarchicalDataTemplate>
  
                                 <DataTemplate DataType="{x:Type local:FileNodeModel}">
-                                    <Border Margin="0,4" CornerRadius="8" Padding="12,8" Background="{DynamicResource PanelBackground}" BorderBrush="#11000000" BorderThickness="1">
+                                    <Border Margin="0,4" CornerRadius="8" Padding="12,8" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                                         <Border.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem Header="{loc:Tr '📄 Open File'}" Tag="{Binding FilePath}" Click="ContextMenu_OpenFile_Click"/>
@@ -431,7 +434,7 @@
                                                 </CheckBox.LayoutTransform>
                                             </CheckBox>
 
-                                            <TextBlock Grid.Column="1" Text="{Binding FileIcon}" FontSize="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding FileIcon}" FontSize="16" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
 
                                             <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,15,0">
                                                 <TextBlock Text="{Binding FileName}" Foreground="{DynamicResource TextPrimary}" FontSize="13" TextTrimming="CharacterEllipsis"/>
@@ -505,7 +508,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Grid.Column="0" DataContext="{Binding Copy}" CornerRadius="8" Padding="12,8" Background="{DynamicResource PanelBackground}" BorderBrush="#11000000" BorderThickness="1">
+                                        <Border Grid.Column="0" DataContext="{Binding Copy}" CornerRadius="8" Padding="12,8" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                                             <Border.ContextMenu>
                                                 <ContextMenu>
                                                     <MenuItem Header="{loc:Tr '📄 Open File'}" Tag="{Binding FilePath}" Click="ContextMenu_OpenFile_Click"/>
@@ -519,7 +522,7 @@
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
                                                 <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedForDeletion}" VerticalAlignment="Center" Margin="0,0,10,0" Cursor="Hand" ToolTip="{loc:Tr 'Delete this file when you click CLEAN'}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding FileIcon}" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding FileIcon}" FontSize="16" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Border Background="{Binding CopyBadgeColor}" CornerRadius="4" Padding="6,1" Margin="0,0,8,0" VerticalAlignment="Center">
@@ -535,10 +538,10 @@
                                             </Grid>
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0">
-                                            <TextBlock Text="➜" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource AccentColor}" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="&#xE72A;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Foreground="{DynamicResource AccentColor}" HorizontalAlignment="Center"/>
                                             <TextBlock Text="{Binding RelationText}" FontSize="11" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center"/>
                                         </StackPanel>
-                                        <Border Grid.Column="2" DataContext="{Binding Original}" CornerRadius="8" Padding="12,8" Background="{DynamicResource PanelBackground}" BorderBrush="#11000000" BorderThickness="1">
+                                        <Border Grid.Column="2" DataContext="{Binding Original}" CornerRadius="8" Padding="12,8" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
                                             <Border.ContextMenu>
                                                 <ContextMenu>
                                                     <MenuItem Header="{loc:Tr '📄 Open File'}" Tag="{Binding FilePath}" Click="ContextMenu_OpenFile_Click"/>
@@ -552,7 +555,7 @@
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
                                                 <CheckBox Grid.Column="0" IsChecked="{Binding IsSelectedForDeletion}" VerticalAlignment="Center" Margin="0,0,10,0" Cursor="Hand" ToolTip="{loc:Tr 'Delete this file when you click CLEAN'}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding FileIcon}" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding FileIcon}" FontSize="16" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Border Background="#FF28A745" CornerRadius="4" Padding="6,1" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="{loc:Tr 'The oldest file with this content'}">
@@ -573,9 +576,27 @@
                         </ListBox>
 
                       
+                        <TextBlock Text="{loc:Tr 'Results will appear here after a scan.'}" FontSize="13.5" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding ElementName=PairsListBox, Path=Items.Count}" Value="0"/>
+                                                <Condition Binding="{Binding ElementName=DuplicatesTreeView, Path=Items.Count}" Value="0"/>
+                                                <Condition Binding="{Binding ElementName=SearchBox, Path=Text.Length}" Value="0"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
                         <Border x:Name="LoadingOverlay" Background="#CC000000" Visibility="Collapsed" Panel.ZIndex="10" CornerRadius="10">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ProgressBar IsIndeterminate="True" Width="220" Height="6" Margin="0,0,0,20" Foreground="{DynamicResource AccentColor}" BorderThickness="0" Background="#33FFFFFF"/>
+                                <ProgressBar IsIndeterminate="True" Width="220" Height="6" Margin="0,0,0,20" Style="{DynamicResource ModernLinearProgressStyle}"/>
                                 <TextBlock Text="{loc:Tr 'Loading previous scan, please wait...'}" Foreground="White" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Border>

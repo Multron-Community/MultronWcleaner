@@ -20,6 +20,11 @@ namespace MultronWinCleaner
         private static readonly List<string> pendingScanPaths = new List<string>();
         private static System.Windows.Threading.DispatcherTimer? scanBatchTimer;
 
+        static App()
+        {
+            Processes.Motion.Load();
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
 
@@ -33,6 +38,8 @@ namespace MultronWinCleaner
 
             Loc.Init();
             WindowFit.Register();
+            Processes.Motion.RegisterWindows();
+            Processes.WindowIcons.Register();
 
             if (!MalwareScan.IsOfflineMode)
                 _ = MalwareScanEula.RefreshAsync();

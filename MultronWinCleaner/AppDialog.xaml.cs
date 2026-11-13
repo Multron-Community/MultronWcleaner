@@ -108,7 +108,7 @@ namespace MultronWinCleaner
             };
             var iconColor = (Color)ColorConverter.ConvertFromString(color);
             IconText.Text = icon;
-            IconText.Foreground = new SolidColorBrush(iconColor);
+            IconText.Foreground = MultronWinCleaner.Processes.ThemeColors.ReadableBrush(iconColor);
             IconBorder.Background = new SolidColorBrush(Color.FromArgb(0x20, iconColor.R, iconColor.G, iconColor.B));
 
             switch (buttons)

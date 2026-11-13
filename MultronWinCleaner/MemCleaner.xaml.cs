@@ -4,6 +4,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -94,11 +95,217 @@ namespace MultronWinCleaner
             InitializeComponent();
 
             this.window = window;
+            Height = Math.Min(Height, SystemParameters.WorkArea.Height);
+            LoadMemoryOptions();
      
 
 
 
         }
+        private const string MemoryOptionsKey = @"Software\MultronWinCleaner";
+        private bool memoryOptionsLoaded;
+        private DateTime lastHighRamClean = DateTime.MinValue;
+        private System.Windows.Threading.DispatcherTimer? highRamTimer;
+
+        private CheckBox[] MemoryOptionBoxes => new[] { chkCleanOnHighRam, chkClearDns, chkReleaseCache, chkKeepForeground, chkSystemMemory, chkMergePages };
+
+        private bool repeatLoaded;
+
+        private int SelectedRepeats => cbRepeat?.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag as string, out int repeats) ? repeats : 3;
+
+        private void Repeat_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            if (repeatLoaded)
+                SaveMemoryOption("MemRepeat", SelectedRepeats);
+        }
+
+        private void LoadMemoryOptions()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(MemoryOptionsKey, false);
+                foreach (CheckBox box in MemoryOptionBoxes)
+                    box.IsChecked = key?.GetValue((string)box.Tag) is int value ? value == 1 : box == chkSystemMemory;
+                if (key?.GetValue("MemRepeat") is int repeats)
+                    foreach (ComboBoxItem choice in cbRepeat.Items)
+                        if ((string)choice.Tag == repeats.ToString())
+                            cbRepeat.SelectedItem = choice;
+                repeatLoaded = true;
+                if (key?.GetValue("MemExcludedApps") is string[] apps)
+                    foreach (string app in apps)
+                        lstExcludedApps.Items.Add(app);
+                if (key?.GetValue("MemHighRamPercent") is int percent)
+                    SelectRamThreshold(percent);
+                else if (key?.GetValue("MemHighRamIndex") is int index && index >= 0 && index <= 2)
+                    SelectRamThreshold(70 + index * 10);
+                if (key?.GetValue("MemWidgetStyle") is int style && style >= 0 && style < cbWidgetStyle.Items.Count)
+                    cbWidgetStyle.SelectedIndex = style;
+                if (key?.GetValue("MemWidgetSize") is int size && size >= 0 && size < cbWidgetSize.Items.Count)
+                    cbWidgetSize.SelectedIndex = size;
+            }
+            catch { }
+            memoryOptionsLoaded = true;
+            highRamTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+            highRamTimer.Tick += async (s, e) => await CleanIfRamIsHighAsync();
+            highRamTimer.Start();
+        }
+
+        private void cbWidgetStyle_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            SaveMemoryOption("MemWidgetStyle", cbWidgetStyle.SelectedIndex);
+            memorymon?.ApplyStyle(cbWidgetStyle.SelectedIndex != 1);
+        }
+
+        private static readonly double[] WidgetScales = { 0.6, 0.7, 0.8, 0.9, 1.0, 1.15, 1.3 };
+
+        public double WidgetScale => cbWidgetSize == null ? 1 : WidgetScales[Math.Clamp(cbWidgetSize.SelectedIndex, 0, WidgetScales.Length - 1)];
+
+        public void StepWidgetScale(int step) =>
+            cbWidgetSize.SelectedIndex = Math.Clamp(cbWidgetSize.SelectedIndex + step, 0, cbWidgetSize.Items.Count - 1);
+
+        private void cbWidgetSize_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            SaveMemoryOption("MemWidgetSize", cbWidgetSize.SelectedIndex);
+            memorymon?.ApplyScale(WidgetScale);
+        }
+
+        private void SaveMemoryOption(string name, int value)
+        {
+            if (!memoryOptionsLoaded) return;
+            try
+            {
+                using var key = Registry.CurrentUser.CreateSubKey(MemoryOptionsKey, true);
+                key.SetValue(name, value, RegistryValueKind.DWord);
+            }
+            catch { }
+        }
+
+        private static readonly System.Collections.Generic.Dictionary<string, string> SettingHelp = new()
+        {
+            ["chkEnableAutoClean"] = "Runs a cleaning automatically at the interval you choose, as long as Memory Cleaner is running.",
+            ["chkCleanOnHighRam"] = "Checks RAM usage every 30 seconds. When it goes above the chosen percentage, a cleaning runs, at most once every 5 minutes.",
+            ["chkSmartRAM"] = "Shows a small window with live RAM and CPU usage, a clean button and the apps using the most memory.",
+            ["chkTopMostMonitor"] = "Keeps the widget above other windows so it stays visible.",
+            ["chkClearTemp"] = "After cleaning memory, deletes the files in your temporary folder (%TEMP%). Files in use are skipped. This frees disk space, not RAM.",
+            ["chkClearClipboard"] = "Empties the clipboard before cleaning, so anything you copied can no longer be pasted.",
+            ["chkClearDns"] = "Forgets saved website addresses. This can fix connection problems, and the first visit to each site may take a moment longer. It frees very little RAM.",
+            ["chkSystemMemory"] = "Besides programs, also trims the memory Windows itself uses, shrinks the file cache and releases low-priority cached data. This frees more memory, but files may open a little slower at first.",
+            ["chkMergePages"] = "Finds memory pages with exactly the same content and keeps one copy. Programs keep working normally. It uses extra CPU time and helps most when many similar programs are open.",
+            ["chkReleaseCache"] = "Empties the data Windows keeps in memory to open files and programs faster. Free memory rises the most, but data must be read from disk again, so the PC can feel slower for a while.",
+            ["chkKeepForeground"] = "Does not clean the app in the window you are using, so it stays fast. The system-wide memory step is skipped too.",
+            ["chkShowNotification"] = "When a cleaning finishes while this window is closed or minimized, shows a notification with how much memory was freed.",
+            ["chkSkipOnLowBattery"] = "Automatic cleanings are skipped when the battery is below 30% or its level cannot be read. Cleaning by hand still works.",
+            ["chkStartWithWinCleaner"] = "Loads Memory Cleaner in the background when Multron Win Cleaner starts, so automatic cleaning and the widget work without opening this window.",
+        };
+
+        private void SettingHelp_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { TemplatedParent: CheckBox box } && SettingHelp.TryGetValue(box.Name, out string? text))
+                AppDialog.Show(Loc.T(text), box.Content?.ToString() ?? "", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void AddExcludedApp(string name)
+        {
+            string app = name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? name.Substring(0, name.Length - 4) : name;
+            if (app.Length == 0 || lstExcludedApps.Items.Cast<object>().Any(i => string.Equals(i.ToString(), app, StringComparison.OrdinalIgnoreCase)))
+                return;
+            lstExcludedApps.Items.Add(app);
+            SaveExcludedApps();
+        }
+
+        private void SaveExcludedApps()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.CreateSubKey(MemoryOptionsKey, true);
+                key.SetValue("MemExcludedApps", lstExcludedApps.Items.Cast<object>().Select(i => i.ToString() ?? "").ToArray(), RegistryValueKind.MultiString);
+            }
+            catch { }
+        }
+
+        private void AddExcludedFile_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog { Title = Loc.T("Select a program to exclude"), Filter = "*.exe|*.exe", Multiselect = true };
+            if (dialog.ShowDialog(this) == true)
+                foreach (string file in dialog.FileNames)
+                    AddExcludedApp(Path.GetFileName(file));
+        }
+
+        private void AddExcludedRunning_Click(object sender, RoutedEventArgs e)
+        {
+            var names = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (Process process in Process.GetProcesses())
+            {
+                try
+                {
+                    if (process.MainWindowHandle != IntPtr.Zero)
+                        names.Add(process.ProcessName);
+                }
+                catch { }
+                finally
+                {
+                    process.Dispose();
+                }
+            }
+            var menu = new ContextMenu { PlacementTarget = sender as UIElement, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+            foreach (string name in names)
+            {
+                var item = new MenuItem { Header = name };
+                item.Click += (s, args) => AddExcludedApp(name);
+                menu.Items.Add(item);
+            }
+            menu.IsOpen = true;
+        }
+
+        private void RemoveExcluded_Click(object sender, RoutedEventArgs e)
+        {
+            if (lstExcludedApps.SelectedItem == null) return;
+            lstExcludedApps.Items.Remove(lstExcludedApps.SelectedItem);
+            SaveExcludedApps();
+        }
+
+        private async void MemOption_Changed(object sender, RoutedEventArgs e)
+        {
+            if (sender is not CheckBox box)
+                return;
+            SaveMemoryOption((string)box.Tag, box.IsChecked == true ? 1 : 0);
+            if (box == chkCleanOnHighRam && box.IsChecked == true && memoryOptionsLoaded)
+                await CleanIfRamIsHighAsync();
+        }
+
+        private int RamThresholdPercent =>
+            cbRamThreshold.SelectedItem is ComboBoxItem { Tag: string tag } && int.TryParse(tag, out int percent) ? percent : 80;
+
+        private void SelectRamThreshold(int percent)
+        {
+            foreach (ComboBoxItem item in cbRamThreshold.Items)
+                if (item.Tag is string tag && tag == percent.ToString())
+                    cbRamThreshold.SelectedItem = item;
+        }
+
+        private async void cbRamThreshold_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!memoryOptionsLoaded)
+                return;
+            SaveMemoryOption("MemHighRamPercent", RamThresholdPercent);
+            await CleanIfRamIsHighAsync();
+        }
+
+        private async Task CleanIfRamIsHighAsync()
+        {
+            if (chkCleanOnHighRam.IsChecked != true || !CleanButton.IsEnabled || DateTime.UtcNow - lastHighRamClean < TimeSpan.FromMinutes(5))
+                return;
+            if (chkSkipOnLowBattery.IsChecked == true && autocleanmem != null)
+            {
+                int battery = autocleanmem.GetBatteryPercent();
+                if (battery < 30) return;
+            }
+            if (Processes.MemoryOptimizer.UsedPercent() < RamThresholdPercent)
+                return;
+            lastHighRamClean = DateTime.UtcNow;
+            await cleanmemory();
+        }
+
         private void btnResetWidgetLocation_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -130,6 +337,16 @@ namespace MultronWinCleaner
         }
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            StartRamGlow();
+            EnterPanels();
+            IsVisibleChanged += (s, a) =>
+            {
+                if (IsVisible)
+                {
+                    StartRamGlow();
+                    EnterPanels();
+                }
+            };
             memorymon = new MemoryMon(this);
             if(this.chkSmartRAM.IsChecked == true)
             {
@@ -192,7 +409,6 @@ namespace MultronWinCleaner
                 ulong usedMemory = totalMemory - availableMemory;
 
                 double usedPercent = (double)usedMemory * 100 / totalMemory;
-                RamUsagePercentText.Text = $"{usedPercent:F0}%";
 
                 double totalGb = totalMemory / (1024.0 * 1024.0 * 1024.0);
                 double usedGb = usedMemory / (1024.0 * 1024.0 * 1024.0);
@@ -201,14 +417,138 @@ namespace MultronWinCleaner
                 if (cpuCounter != null)
                 {
                     int currentCpuUsage = (int)cpuCounter.NextValue();
-                    CpuUsageText.Text = Loc.F("CPU Load: %{0}", currentCpuUsage);
+                    CpuUsageText.Text = Loc.F("CPU Load: {0}%", currentCpuUsage);
                 }
 
-                UpdateArcGraphic(usedPercent);
+                AnimateRam(usedPercent);
             }
             catch
             {
                 
+            }
+        }
+
+        private static readonly DependencyProperty ShownRamProperty = DependencyProperty.Register(
+            "ShownRam", typeof(double), typeof(MemCleaner), new PropertyMetadata(-1.0, (d, e) => ((MemCleaner)d).DrawRam((double)e.NewValue)));
+
+        private bool ramShown;
+        private int glowTier = -1;
+
+        private void DrawRam(double percent)
+        {
+            if (percent < 0)
+                return;
+            RamUsagePercentText.Text = $"{percent:F0}%";
+            UpdateArcGraphic(percent);
+        }
+
+        private void AnimateRam(double percent)
+        {
+            SetRamGlow(percent);
+            if (!ramShown || !Processes.Motion.Enabled || !IsVisible)
+            {
+                ramShown = true;
+                BeginAnimation(ShownRamProperty, null);
+                SetValue(ShownRamProperty, percent);
+                return;
+            }
+            double from = (double)GetValue(ShownRamProperty);
+            if (Math.Abs(from - percent) < 0.05)
+                return;
+            BeginAnimation(ShownRamProperty, new System.Windows.Media.Animation.DoubleAnimation(from, percent, TimeSpan.FromMilliseconds(650))
+            {
+                EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut },
+                SpeedRatio = 1
+            });
+        }
+
+        private void SetRamGlow(double percent)
+        {
+            int tier = percent >= 90 ? 2 : percent >= 75 ? 1 : 0;
+            if (tier == glowTier)
+                return;
+            glowTier = tier;
+            var color = tier == 2 ? Color.FromRgb(0xE5, 0x48, 0x4D) : tier == 1 ? Color.FromRgb(0xFB, 0x8C, 0x00) : Color.FromRgb(0x1E, 0x88, 0xE5);
+            var glow = new RadialGradientBrush();
+            glow.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, color.R, color.G, color.B), 0.55));
+            glow.GradientStops.Add(new GradientStop(Color.FromArgb(0x55, color.R, color.G, color.B), 0.74));
+            glow.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, color.R, color.G, color.B), 1.0));
+            glow.Freeze();
+            RamGlow.Fill = glow;
+        }
+
+        private void StartRamGlow()
+        {
+            if (!Processes.Motion.Enabled)
+            {
+                RamGlow.BeginAnimation(OpacityProperty, null);
+                RamGlowScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                RamGlowScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                RamGlow.Opacity = 0.6;
+                return;
+            }
+            var ease = new System.Windows.Media.Animation.SineEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut };
+            RamGlow.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0.45, 1, TimeSpan.FromMilliseconds(1800)) { AutoReverse = true, RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever, SpeedRatio = 1, EasingFunction = ease });
+            var grow = new System.Windows.Media.Animation.DoubleAnimation(0.96, 1.05, TimeSpan.FromMilliseconds(1800)) { AutoReverse = true, RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever, SpeedRatio = 1, EasingFunction = ease };
+            RamGlowScale.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+            RamGlowScale.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+        }
+
+        private void SetRamSweep(bool on)
+        {
+            if (on)
+            {
+                RamSweep.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(1, TimeSpan.FromMilliseconds(250)));
+                RamSweepRotate.BeginAnimation(RotateTransform.AngleProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 360, TimeSpan.FromMilliseconds(1100)) { RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever, SpeedRatio = 1 });
+                return;
+            }
+            var fade = new System.Windows.Media.Animation.DoubleAnimation(0, TimeSpan.FromMilliseconds(350));
+            fade.Completed += (s, e) => RamSweepRotate.BeginAnimation(RotateTransform.AngleProperty, null);
+            RamSweep.BeginAnimation(OpacityProperty, fade);
+        }
+
+        private void PopResult()
+        {
+            if (!Processes.Motion.Enabled)
+                return;
+            var pop = new ScaleTransform(0.7, 0.7);
+            CleanedMemoryLabel.RenderTransform = pop;
+            var bounce = new System.Windows.Media.Animation.DoubleAnimation(0.7, 1, TimeSpan.FromMilliseconds(420))
+            {
+                EasingFunction = new System.Windows.Media.Animation.BackEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut, Amplitude = 0.5 }
+            };
+            pop.BeginAnimation(ScaleTransform.ScaleXProperty, bounce);
+            pop.BeginAnimation(ScaleTransform.ScaleYProperty, bounce);
+            CleanedMemoryLabel.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300)) { FillBehavior = System.Windows.Media.Animation.FillBehavior.Stop });
+        }
+
+        private void EnterPanels()
+        {
+            if (!Processes.Motion.Enabled)
+                return;
+            int delay = 0;
+            foreach (FrameworkElement panel in new FrameworkElement[] { RamCard, MemOptionsPanel })
+            {
+                var shift = new TranslateTransform(0, 16);
+                panel.RenderTransform = shift;
+                var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+                var move = new System.Windows.Media.Animation.DoubleAnimation(16, 0, TimeSpan.FromMilliseconds(420)) { EasingFunction = ease, BeginTime = TimeSpan.FromMilliseconds(delay) };
+                var target = panel;
+                move.Completed += (s, e) =>
+                {
+                    if (ReferenceEquals(target.RenderTransform, shift))
+                        target.ClearValue(RenderTransformProperty);
+                };
+                shift.BeginAnimation(TranslateTransform.YProperty, move);
+                panel.Opacity = 0;
+                var fade = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(380)) { EasingFunction = ease, BeginTime = TimeSpan.FromMilliseconds(delay) };
+                fade.Completed += (s, e) =>
+                {
+                    target.BeginAnimation(OpacityProperty, null);
+                    target.Opacity = 1;
+                };
+                panel.BeginAnimation(OpacityProperty, fade);
+                delay += 90;
             }
         }
 
@@ -260,13 +600,16 @@ namespace MultronWinCleaner
             CleanButton.IsEnabled = false;
             CleanButton.Content = Loc.T("Cleaning...");
             CleanedMemoryLabel.Text = "";
+            SetRamSweep(true);
+            memorymon?.SetCleaning(true);
 
-            bool isDeepClean = rbDeepClean.IsChecked == true;
-            bool isAggressiveClean = rbDeepCleanAggresive.IsChecked == true;
             bool clearTempFiles = chkClearTemp.IsChecked == true;
             bool clearClipboardData = chkClearClipboard.IsChecked == true;
+            bool clearDns = chkClearDns.IsChecked == true;
+            var excludedApps = new System.Collections.Generic.HashSet<string>(lstExcludedApps.Items.Cast<object>().Select(i => i.ToString() ?? ""), StringComparer.OrdinalIgnoreCase);
 
-            long beforeFree = (long)GetAvailablePhysicalMemory();
+            var cleanOptions = new Processes.MemoryOptimizer.Options(SelectedRepeats, chkKeepForeground.IsChecked == true, chkSystemMemory.IsChecked == true, chkReleaseCache.IsChecked == true, chkMergePages.IsChecked == true, excludedApps);
+            var memoryBefore = await Task.Run(Processes.MemoryOptimizer.Read);
 
             if (clearClipboardData)
             {
@@ -275,85 +618,16 @@ namespace MultronWinCleaner
 
             await Task.Run(() =>
             {
-                if (isAggressiveClean)
+                Processes.MemoryOptimizer.Clean(cleanOptions);
+                if (clearDns)
+                    Processes.MemoryOptimizer.FlushDnsCache();
+
+                try
                 {
-                    for (int i = 0; i < 32; i++)
-                    {
-                        foreach (Process proc in Process.GetProcesses())
-                        {
-                            try
-                            {
-                                if (!proc.HasExited && proc.ProcessName != "System" && proc.ProcessName != "Idle")
-                                {
-                                    IntPtr handle = OpenProcess(PROCESS_SET_QUOTA | PROCESS_QUERY_INFORMATION, false, proc.Id);
-
-                                    if (handle != IntPtr.Zero)
-                                    {
-                                        try
-                                        {
-                                            EmptyWorkingSet(handle);
-                                            SetProcessWorkingSetSize(handle, (IntPtr)(-1), (IntPtr)(-1));
-                                        }
-                                        finally
-                                        {
-                                            CloseHandle(handle);
-                                        }
-                                    }
-                                }
-                            }
-                            catch
-                            {
-
-                            }
-                            finally
-                            {
-                                proc.Dispose();
-                            }
-                        }
-                    }
+                    using Process currentProc = Process.GetCurrentProcess();
+                    EmptyWorkingSet(currentProc.Handle);
                 }
-                else if(isDeepClean)
-                {
-                    foreach (Process proc in Process.GetProcesses())
-                    {
-                        try
-                        {
-                            if (!proc.HasExited && proc.ProcessName != "System" && proc.ProcessName != "Idle")
-                            {
-                                IntPtr handle = OpenProcess(PROCESS_SET_QUOTA | PROCESS_QUERY_INFORMATION, false, proc.Id);
-
-                                if (handle != IntPtr.Zero)
-                                {
-                                    try
-                                    {
-                                        EmptyWorkingSet(handle);
-                                        SetProcessWorkingSetSize(handle, (IntPtr)(-1), (IntPtr)(-1));
-                                    }
-                                    finally
-                                    {
-                                        CloseHandle(handle);
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-
-                        }
-                        finally
-                        {
-                            proc.Dispose();
-                        }
-                    }
-                }
-                {
-                    try
-                    {
-                        using Process currentProc = Process.GetCurrentProcess();
-                        EmptyWorkingSet(currentProc.Handle);
-                    }
-                    catch { }
-                }
+                catch { }
 
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
@@ -365,25 +639,27 @@ namespace MultronWinCleaner
                 }
             });
 
-            long afterFree = (long)GetAvailablePhysicalMemory();
-            long freed = Math.Max(0, afterFree - beforeFree);
+            var memoryAfter = await Task.Run(Processes.MemoryOptimizer.Read);
+            long freed = Processes.MemoryOptimizer.Freed(memoryBefore, memoryAfter);
             double mbFreed = freed / (1024.0 * 1024.0);
 
             string freedMessage = Loc.F("Freed {0:F2} MB {1:T}", mbFreed, DateTime.Now);
+            SetRamSweep(false);
             CleanedMemoryLabel.Text = freedMessage;
+            PopResult();
 
             if (memorymon != null)
-                memorymon.FreedLabel.Text = freedMessage;
+                memorymon.ShowCleanResult(freedMessage, mbFreed);
 
             CleanButton.Content = Loc.T("Clean Memory Now");
             CleanButton.IsEnabled = true;
              
             UpdateSystemStats();
 
-            if (this.WindowState == WindowState.Minimized || this.Visibility == Visibility.Hidden)
+            if (chkShowNotification.IsChecked == true && (this.WindowState == WindowState.Minimized || !this.IsVisible))
             {
                 Notify notify = new Notify(Loc.T("Memory Cleaned"), Loc.T("Your system memory has been optimized successfully.") + "\r\n", Loc.F("Freed {0:F2} MB", mbFreed));
-                notify.Show();
+                notify.Styled(Notify.Kind.Success, "\uE9D9").Show();
             }
         }
 
@@ -444,10 +720,6 @@ namespace MultronWinCleaner
         private void chkClearTemp_Unchecked(object sender, RoutedEventArgs e)  { if (window != null) window.utilities.savesettings("cleartemp:0"); }
         private void chkClearClipboard_Checked(object sender, RoutedEventArgs e)  { if (window != null) window.utilities.savesettings("clearclip:1");   }
         private void chkClearClipboard_Unchecked(object sender, RoutedEventArgs e) { if (window != null) window.utilities.savesettings("clearclip:0"); }
-        private void rbDeepClean_Checked(object sender, RoutedEventArgs e)   { if (window != null) window.utilities.savesettings("deepclean:1"); }
-        private void rbDeepClean_UnChecked(object sender, RoutedEventArgs e) { if (window != null) window.utilities.savesettings("deepclean:0"); }
-        private void rbDeepCleanAgressive_Checked(object sender, RoutedEventArgs e) { if (window != null) window.utilities.savesettings("aggdeepclean:1"); }
-        private void rbDeepCleanAgressive_UnChecked(object sender, RoutedEventArgs e) { if (window != null) window.utilities.savesettings("aggdeepclean:0"); }
  
         private void chkStartWithWinCleaner_Checked(object sender, RoutedEventArgs e) { if (window != null) window.utilities.savesettings("startwithwincleaner:1"); }
         private void chkStartWithWinCleaner_UnChecked(object sender, RoutedEventArgs e) { if (window != null) window.utilities.savesettings("startwithwincleaner:0"); }

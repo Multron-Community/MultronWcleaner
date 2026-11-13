@@ -17,12 +17,17 @@ namespace MultronWinCleaner
     public partial class NewStartupItemDetected : Window
     {
         StartupManager startupManager;
+        private readonly string appName;
+        private readonly string appPath;
+
         public NewStartupItemDetected(string app, string path, StartupManager startupManager)
         {
             InitializeComponent();
             this.ItemNameText.Text = app;
             this.ItemPathText.Text = path;
             this.startupManager = startupManager;
+            appName = app;
+            appPath = path;
             this.Topmost = true;
             Loaded += NewStartupItemDetected_Loaded;
         }
@@ -34,10 +39,9 @@ namespace MultronWinCleaner
             this.Top = workingArea.Bottom - this.ActualHeight - 10; 
         }
 
-        private async void AllowButton_Click(object sender, RoutedEventArgs e)
+        private void AllowButton_Click(object sender, RoutedEventArgs e)
         {
-            startupManager.Show();
-            await Task.Delay(2064); 
+            startupManager.RevealItem(appName, appPath);
             this.Close();
         }
 

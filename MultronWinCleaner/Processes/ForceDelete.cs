@@ -830,6 +830,20 @@ namespace MultronWinCleaner.Processes
         private static string NativePath(string path) =>
             path.StartsWith(@"\??\", StringComparison.Ordinal) ? path : @"\??\" + path;
 
+        private static string PendingEntryPath(string entry)
+        {
+            int index = 0;
+            if (entry.StartsWith("*", StringComparison.Ordinal))
+            {
+                index = 1;
+                while (index < entry.Length && char.IsDigit(entry[index]))
+                    index++;
+            }
+            if (index < entry.Length && entry[index] == '!')
+                index++;
+            return entry.Substring(index);
+        }
+
         private static bool IsScheduledForReboot(string path)
         {
             try
@@ -841,9 +855,12 @@ namespace MultronWinCleaner.Processes
                     if (key?.GetValue(valueName) is not string[] entries)
                         continue;
                     foreach (string entry in entries)
-                        if (string.Equals(entry, native, StringComparison.OrdinalIgnoreCase) ||
-                            string.Equals(entry, path, StringComparison.OrdinalIgnoreCase))
+                    {
+                        string source = PendingEntryPath(entry);
+                        if (string.Equals(source, native, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(source, path, StringComparison.OrdinalIgnoreCase))
                             return true;
+                    }
                 }
             }
             catch { }
@@ -866,6 +883,54 @@ namespace MultronWinCleaner.Processes
                 list.Add(NativePath(path));
                 list.Add(string.IsNullOrEmpty(destination) ? "" : NativePath(destination));
                 key.SetValue(PendingRenameValue, list.ToArray(), RegistryValueKind.MultiString);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static bool IsScheduled(string path) => IsScheduledForReboot(path);
+
+        public static bool ScheduleFileOperation(string path, string? destination)
+        {
+            lastScheduleError = 0;
+            if (MoveFileEx(path, destination, MOVEFILE_DELAY_UNTIL_REBOOT) && IsScheduledForReboot(path))
+                return true;
+            lastScheduleError = Marshal.GetLastWin32Error();
+            return TryAppendPendingRename(path, destination) && IsScheduledForReboot(path);
+        }
+
+        public static bool CancelScheduledOperations(IEnumerable<string> paths)
+        {
+            lock (PendingRenameLock)
+            try
+            {
+                using var key = Registry.LocalMachine.OpenSubKey(SessionManagerKey, writable: true);
+                if (key == null)
+                    return false;
+                var targets = new HashSet<string>(paths.Select(NativePath), StringComparer.OrdinalIgnoreCase);
+                foreach (string valueName in new[] { PendingRenameValue, PendingRenameValue + "2" })
+                {
+                    if (key.GetValue(valueName) is not string[] entries)
+                        continue;
+                    for (int i = 0; i < entries.Length; i += 2)
+                        if (!PendingEntryPath(entries[i]).StartsWith(@"\??\", StringComparison.Ordinal))
+                            return false;
+                    var kept = new List<string>(entries.Length);
+                    for (int i = 0; i < entries.Length; i += 2)
+                    {
+                        if (targets.Contains(PendingEntryPath(entries[i])))
+                            continue;
+                        kept.Add(entries[i]);
+                        kept.Add(i + 1 < entries.Length ? entries[i + 1] : "");
+                    }
+                    if (kept.Count == 0)
+                        key.DeleteValue(valueName, false);
+                    else if (kept.Count != entries.Length + entries.Length % 2)
+                        key.SetValue(valueName, kept.ToArray(), RegistryValueKind.MultiString);
+                }
                 return true;
             }
             catch

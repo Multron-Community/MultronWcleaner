@@ -10,7 +10,7 @@
     ResizeMode="CanResizeWithGrip"
     AllowsTransparency="True"
     WindowStartupLocation="CenterOwner"
-    Icon="pack://application:,,,/Assets/mwc_utilities.ico"
+    Icon="pack://application:,,,/Assets/Icons/mwc_quarantine.ico"
     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
     Background="{DynamicResource WindowBackground}">
 
@@ -34,7 +34,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="&#xE72E;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="#FFFF9800" VerticalAlignment="Center"/>
+                <Image Source="pack://application:,,,/Assets/Icons/mwc_quarantine.png" Width="28" Height="28" Margin="0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
                 <TextBlock Text="{loc:Tr 'Quarantined Files'}" FontSize="19" FontWeight="Bold" Margin="10,0,0,0" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                 <TextBlock x:Name="CountText" Text="" FontSize="13" Margin="10,2,0,0" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
             </StackPanel>
@@ -77,9 +77,13 @@
                         <DataGridTextColumn Header="{loc:Tr 'File Name'}" Binding="{Binding OriginalFileName}" Width="170"/>
                         <DataGridTextColumn Header="{loc:Tr 'Threat'}" Binding="{Binding ThreatName}" Width="170"/>
                         <DataGridTextColumn Header="{loc:Tr 'Size'}" Binding="{Binding FormattedSize}" Width="90"/>
-                        <DataGridTextColumn Header="{loc:Tr 'Stored Size'}" Binding="{Binding FormattedStoredSize}" Width="105"/>
+                        <DataGridTextColumn Header="{loc:Tr 'Stored Size'}" Binding="{Binding FormattedStoredSize}" Width="150"/>
                         <DataGridTextColumn Header="{loc:Tr 'Date'}" Binding="{Binding FormattedDate}" Width="130"/>
-                        <DataGridTextColumn Header="{loc:Tr 'Original Path'}" Binding="{Binding OriginalPath}" Width="*"/>
+                        <DataGridTextColumn Binding="{Binding OriginalPath}" Width="*">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{loc:Tr 'Original Path'}" TextTrimming="CharacterEllipsis"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
 

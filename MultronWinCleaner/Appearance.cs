@@ -53,18 +53,41 @@ namespace MultronWinCleaner
                 return;
             var level = Levels[LevelIndex];
             Color tint = Colors[ColorIndex].Color;
-            if (theme["WindowBackground"] is SolidColorBrush window)
-                resources["WindowBackground"] = Tinted(window.Color, tint, level.Tint, level.WindowAlpha);
-            if (theme["PanelBackground"] is SolidColorBrush panel)
-                resources["PanelBackground"] = Tinted(panel.Color, tint, level.Tint, level.PanelAlpha);
+            if (Tinted(theme["WindowBackground"] as Brush, tint, level.Tint, level.WindowAlpha) is Brush window)
+                resources["WindowBackground"] = window;
+            if (Tinted(theme["PanelBackground"] as Brush, tint, level.Tint, level.PanelAlpha) is Brush panel)
+                resources["PanelBackground"] = panel;
         }
 
-        private static SolidColorBrush Tinted(Color baseColor, Color tint, double amount, byte alpha)
+        private static Brush? Tinted(Brush? source, Color tint, double amount, byte alpha)
         {
-            byte Mix(byte a, byte b) => (byte)Math.Round(a + (b - a) * amount);
-            var brush = new SolidColorBrush(Color.FromArgb(alpha, Mix(baseColor.R, tint.R), Mix(baseColor.G, tint.G), Mix(baseColor.B, tint.B)));
-            brush.Freeze();
-            return brush;
+            double Luma(double r, double g, double b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            double tintLuma = Luma(tint.R, tint.G, tint.B);
+            Color Blend(Color c)
+            {
+                double baseLuma = Luma(c.R, c.G, c.B);
+                if (baseLuma >= 128)
+                    return Color.FromArgb(Math.Max(alpha, (byte)0xF7), (byte)Math.Round(c.R + (tint.R - c.R) * amount), (byte)Math.Round(c.G + (tint.G - c.G) * amount), (byte)Math.Round(c.B + (tint.B - c.B) * amount));
+                double scale = Math.Min(1, Math.Min(baseLuma / Math.Max(1, tintLuma), (255 - baseLuma) / Math.Max(1, 255 - tintLuma)));
+                byte Mix(byte a, byte t)
+                {
+                    double target = baseLuma + (t - tintLuma) * scale;
+                    return (byte)Math.Clamp(Math.Round(a + (target - a) * amount * 1.5), 0, 255);
+                }
+                return Color.FromArgb(alpha, Mix(c.R, tint.R), Mix(c.G, tint.G), Mix(c.B, tint.B));
+            }
+            Brush? result = null;
+            if (source is SolidColorBrush solid)
+                result = new SolidColorBrush(Blend(solid.Color));
+            else if (source is LinearGradientBrush gradient)
+            {
+                var copy = new LinearGradientBrush { StartPoint = gradient.StartPoint, EndPoint = gradient.EndPoint };
+                foreach (GradientStop stop in gradient.GradientStops)
+                    copy.GradientStops.Add(new GradientStop(Blend(stop.Color), stop.Offset));
+                result = copy;
+            }
+            result?.Freeze();
+            return result;
         }
 
         private static int Clamp(string? value, int count) =>

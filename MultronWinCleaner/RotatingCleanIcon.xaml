@@ -5,12 +5,12 @@
 
     <UserControl.Resources>
       
-        <Storyboard x:Key="SpinStoryboard" RepeatBehavior="Forever">
+        <Storyboard x:Key="SpinStoryboard" RepeatBehavior="Forever" SpeedRatio="1">
             <DoubleAnimation
                 Storyboard.TargetName="IconRotate"
                 Storyboard.TargetProperty="Angle"
                 From="0" To="360"
-                Duration="0:0:1" />
+                Duration="0:0:1" SpeedRatio="1" />
         </Storyboard>
     </UserControl.Resources>
 

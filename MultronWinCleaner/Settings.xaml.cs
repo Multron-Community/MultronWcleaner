@@ -54,6 +54,44 @@ namespace MultronWinCleaner
 
             LoadLanguageOptions();
             _ = getusers();
+            IsVisibleChanged += (s, e) => SyncUtilitiesTray();
+            chkShowLastLog.Checked += (s, e) => RefreshLogPreview();
+            chkShowLastLog.Unchecked += (s, e) => RefreshLogPreview();
+        }
+
+        private bool syncingUtilitiesTray;
+
+        private void SyncUtilitiesTray()
+        {
+            var toggle = Utilities?.chkTrayIconUtil ?? mainWindow?.utilities?.chkTrayIconUtil;
+            if (toggle == null)
+                return;
+            syncingUtilitiesTray = true;
+            chkUtilitiesTray.IsChecked = toggle.IsChecked == true;
+            syncingUtilitiesTray = false;
+        }
+
+        private void chkUtilitiesTray_Changed(object sender, RoutedEventArgs e)
+        {
+            if (syncingUtilitiesTray)
+                return;
+            var toggle = Utilities?.chkTrayIconUtil ?? mainWindow?.utilities?.chkTrayIconUtil;
+            if (toggle != null && toggle.IsChecked != chkUtilitiesTray.IsChecked)
+                toggle.IsChecked = chkUtilitiesTray.IsChecked == true;
+        }
+
+        public void RefreshLogPreview()
+        {
+            List<string> last = new List<string>();
+            try
+            {
+                string path = string.IsNullOrWhiteSpace(logfilepath) ? txtLogPath.Text : logfilepath;
+                if (!string.IsNullOrWhiteSpace(path) && System.IO.File.Exists(path))
+                    last = System.IO.File.ReadLines(path).Where(l => !string.IsNullOrWhiteSpace(l)).TakeLast(5).ToList();
+            }
+            catch { }
+            LogPreviewText.Text = last.Count == 0 ? Loc.T("No log entries yet.") : string.Join("\n", last.AsEnumerable().Reverse());
+            mainWindow?.ShowLastLogLine(last.LastOrDefault());
         }
 
         private readonly Dictionary<ComboBox, int> defaultComboIndexes = new Dictionary<ComboBox, int>();
@@ -65,10 +103,11 @@ namespace MultronWinCleaner
             MainWindow.AdvancedInterfaceSettingKey, MainWindow.MrtScanSettingKey, MainWindow.MrtModeSettingKey, MainWindow.MrtRemoveSettingKey,
             MultronWinCleaner.MalwareScan.WithMainScanSettingKey, MultronWinCleaner.MalwareScan.ModeSettingKey,
             MultronWinCleaner.Processes.SecurityCheck.IgnoredSettingKey,
-            "oldscan", "access_scan", "onlylowcpu", "runifactive", "pluggedin", "batterylow", "enablelog", "showlastlog",
+            "oldscan", "access_scan", "onlylowcpu", "runifactive", "pluggedin", "batterylow", "enablelog", "showlastlog", "lognotifications",
             "cleanallusers", "cleanselectedusers", "startupscan", "startupclean", "startupnotifyscan", "startupnotifyclean",
             MainWindow.NotifySecuritySettingKey, MainWindow.NotifyFirewallSettingKey, MainWindow.NotifyDuplicatesSettingKey,
             MainWindow.NotifyMalwareSettingKey, Notify.PositionSettingKey, Notify.LayoutSettingKey,
+            MainWindow.ShowDiskInfoSettingKey, MainWindow.ShowItemPathsSettingKey, MultronWinCleaner.Processes.Motion.SettingKey, MainWindow.ReminderSettingKey, MainWindow.ReminderDaysSettingKey, MainWindow.ReminderRepeatSettingKey, MainWindow.ReminderBackgroundSettingKey,
             "accessscanindex", "oldscanindex", "scheduletype", "postaction", "shredmode",
             MultronWinCleaner.Processes.DeepLogOptions.ExtensionsKey, MultronWinCleaner.Processes.DeepLogOptions.MinAgeKey, MultronWinCleaner.Processes.DeepLogOptions.MinSizeKey,
             "day1", "day2", "day3", "day4", "day5", "day6", "day7", "limitweeks", "week1", "week2", "week3", "week4", "week5",
@@ -289,6 +328,7 @@ namespace MultronWinCleaner
         }
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            BuildSettingsNav();
             LoadServiceSettings();
             _ = StatusUpdateLoop();
 
@@ -377,6 +417,7 @@ namespace MultronWinCleaner
             chkNotifyFirewall.IsChecked = GetString(MainWindow.NotifyFirewallSettingKey, "1") != "0";
             chkNotifyDuplicates.IsChecked = GetString(MainWindow.NotifyDuplicatesSettingKey, "1") != "0";
             chkNotifyMalware.IsChecked = GetString(MainWindow.NotifyMalwareSettingKey, "1") != "0";
+            LoadCleanReminder();
             cmbNotifyPosition.SelectedIndex = (int)Notify.ReadPosition();
             cmbNotifyLayout.SelectedIndex = (int)Notify.ReadLayout();
             LoadContextMenuSettings();
@@ -393,8 +434,9 @@ namespace MultronWinCleaner
 
             AccessScan.IsChecked = GetBool("access_scan");
             OnlyBattery.IsChecked = GetBool("pluggedin");
-            chkEnableLog.IsChecked = GetBool("enablelog");
-            chkShowLastLog.IsChecked = GetBool("showlastlog");
+            chkEnableLog.IsChecked = GetString("enablelog") != "0";
+            chkLogNotifications.IsChecked = GetString("lognotifications") != "0";
+            chkShowLastLog.IsChecked = GetString("showlastlog") != "0";
             OldScan.IsChecked = GetBool("oldscan");
              if(memcleaner != null)
             {
@@ -408,20 +450,6 @@ namespace MultronWinCleaner
                 memcleaner.chkClearClipboard.IsChecked = GetBool("clearclip");
                 memcleaner.chkStartWithWinCleaner.IsChecked = GetBool("startwithwincleaner");
 
-                memcleaner.rbDeepClean.IsChecked = GetBool("deepclean");
-                memcleaner.rbDeepCleanAggresive.IsChecked = GetBool("aggdeepclean");
-                if (memcleaner.rbDeepClean.IsChecked == true)
-                {
-                    memcleaner.rbDeepCleanAggresive.IsChecked = false;
-                }
-                else if (memcleaner.rbDeepCleanAggresive.IsChecked == true)
-                {
-                    memcleaner.rbDeepClean.IsChecked = false;
-                }
-                else if (memcleaner.rbDeepClean.IsChecked == false && memcleaner.rbDeepCleanAggresive.IsChecked == false)
-                {
-                    memcleaner.rbQuickClean.IsChecked = true;
-                }
             }
           
 
@@ -447,6 +475,7 @@ namespace MultronWinCleaner
             {
                 defaultloglocation();
             }
+            RefreshLogPreview();
             if (rbCleanAllUsers.IsChecked == true)
             {
                 comboBoxUserSelection.IsEnabled = false;
@@ -767,6 +796,7 @@ namespace MultronWinCleaner
                 Upsert("batterylow", SkipBattery.IsChecked == true ? "1" : "0");
                 Upsert("enablelog", chkEnableLog.IsChecked == true ? "1" : "0");
                 Upsert("showlastlog", chkShowLastLog.IsChecked == true ? "1" : "0");
+                Upsert("lognotifications", chkLogNotifications.IsChecked == true ? "1" : "0");
                 Upsert("logpath", logfilepath);
                 Upsert("cleanallusers", rbCleanAllUsers.IsChecked == true ? "1" : "0");
                 Upsert("cleanselectedusers", rbCleanSelectedUsers.IsChecked == true ? "1" : "0");
@@ -817,6 +847,293 @@ namespace MultronWinCleaner
             {
                 Debug.WriteLine("Could not save the settings: " + ex.Message);
             }
+        }
+
+        private bool cleanReminderLoaded;
+        private readonly System.Collections.Generic.Dictionary<GroupBox, Button> sectionButtons = new();
+
+        private void LoadCleanReminder()
+        {
+            cleanReminderLoaded = false;
+            chkCleanReminder.IsChecked = MainWindow.ReadSettingValue(MainWindow.ReminderSettingKey) != "0";
+            txtReminderDays.Text = MainWindow.ReadSettingValue(MainWindow.ReminderDaysSettingKey) ?? "30";
+            txtReminderRepeat.Text = MainWindow.ReadSettingValue(MainWindow.ReminderRepeatSettingKey) ?? "7";
+            chkReminderBackground.IsChecked = MainWindow.ReadSettingValue(MainWindow.ReminderBackgroundSettingKey) != "0";
+            cleanReminderLoaded = true;
+            diskInfoLoaded = false;
+            chkShowDiskInfo.IsChecked = MainWindow.ReadSettingValue(MainWindow.ShowDiskInfoSettingKey) != "0";
+            chkShowItemPaths.IsChecked = MainWindow.ReadSettingValue(MainWindow.ShowItemPathsSettingKey) != "0";
+            chkAnimations.IsChecked = MultronWinCleaner.Processes.Motion.Enabled;
+            diskInfoLoaded = true;
+            LoadCloseOptions();
+        }
+
+        private bool closeOptionsLoaded;
+
+        public void LoadCloseOptions()
+        {
+            closeOptionsLoaded = false;
+            string action = MainWindow.CloseAction;
+            cmbCloseAction.SelectedItem = cmbCloseAction.Items.OfType<System.Windows.Controls.ComboBoxItem>().FirstOrDefault(i => Equals(i.Tag, action));
+            chkMinimizeToTray.IsChecked = MainWindow.ReadSettingValue(MainWindow.MinimizeToTraySettingKey) == "1";
+            chkConfirmExit.IsChecked = MainWindow.ReadSettingValue(MainWindow.ConfirmExitSettingKey) != "0";
+            closeOptionsLoaded = true;
+        }
+
+        private void CloseOptions_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!closeOptionsLoaded)
+                return;
+            if (ReferenceEquals(sender, cmbCloseAction) && cmbCloseAction.SelectedItem is System.Windows.Controls.ComboBoxItem item)
+                Utilities?.savesettings($"{MainWindow.CloseActionSettingKey}:{item.Tag}");
+            if (ReferenceEquals(sender, chkMinimizeToTray))
+                Utilities?.savesettings($"{MainWindow.MinimizeToTraySettingKey}:{(chkMinimizeToTray.IsChecked == true ? "1" : "0")}");
+            if (ReferenceEquals(sender, chkConfirmExit))
+                Utilities?.savesettings($"{MainWindow.ConfirmExitSettingKey}:{(chkConfirmExit.IsChecked == true ? "1" : "0")}");
+        }
+
+        private bool diskInfoLoaded;
+
+        private void ShowDiskInfo_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!diskInfoLoaded)
+                return;
+            bool show = chkShowDiskInfo.IsChecked == true;
+            Utilities?.savesettings($"{MainWindow.ShowDiskInfoSettingKey}:{(show ? "1" : "0")}");
+            mainWindow?.SetDiskInfoVisible(show);
+        }
+
+        private void Animations_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!diskInfoLoaded)
+                return;
+            bool on = chkAnimations.IsChecked == true;
+            Utilities?.savesettings($"{MultronWinCleaner.Processes.Motion.SettingKey}:{(on ? "1" : "0")}");
+            MultronWinCleaner.Processes.Motion.Set(on);
+            MultronWinCleaner.Processes.OrbHover.RetintAll();
+        }
+
+        private void ShowItemPaths_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!diskInfoLoaded)
+                return;
+            bool show = chkShowItemPaths.IsChecked == true;
+            Utilities?.savesettings($"{MainWindow.ShowItemPathsSettingKey}:{(show ? "1" : "0")}");
+            mainWindow?.SetItemPathsVisible(show);
+        }
+
+        private void CleanReminder_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!cleanReminderLoaded)
+                return;
+            Save(MainWindow.ReminderSettingKey, chkCleanReminder.IsChecked == true ? "1" : "0");
+            Save(MainWindow.ReminderBackgroundSettingKey, chkReminderBackground.IsChecked == true ? "1" : "0");
+            if (int.TryParse(txtReminderDays.Text.Trim(), out int days) && days is >= 1 and <= 365)
+                Save(MainWindow.ReminderDaysSettingKey, days.ToString());
+            if (int.TryParse(txtReminderRepeat.Text.Trim(), out int repeat) && repeat is >= 1 and <= 365)
+                Save(MainWindow.ReminderRepeatSettingKey, repeat.ToString());
+
+            void Save(string key, string value) => Utilities?.savesettings($"{key}:{value}");
+        }
+
+        private void BuildSettingsNav()
+        {
+            if (SettingsNav.Children.Count > 0)
+                return;
+            foreach (GroupBox group in SettingsSections.Children.OfType<GroupBox>())
+            {
+                var row = new StackPanel { Orientation = Orientation.Horizontal };
+                row.Children.Add(new TextBlock { Text = group.Tag as string ?? "", FontFamily = new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 14, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) });
+                row.Children.Add(new TextBlock { Text = group.Header as string ?? "", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 196 });
+                var button = new Button { Content = row, HorizontalContentAlignment = HorizontalAlignment.Left, Cursor = Cursors.Hand, ToolTip = group.Header, Template = NavButtonTemplate() };
+                button.SetBinding(VisibilityProperty, new System.Windows.Data.Binding(nameof(Visibility)) { Source = group });
+                button.Click += (s, e) => GoToSection(group);
+                sectionButtons[group] = button;
+                var holder = new Border { Child = button };
+                sectionHolders[group] = holder;
+                SettingsNav.Children.Add(holder);
+            }
+            MarkCurrentSection();
+        }
+
+        private GroupBox? pinnedSection;
+        private double pinnedOffset;
+        private readonly System.Collections.Generic.Dictionary<GroupBox, Border> sectionHolders = new();
+        private readonly System.Collections.Generic.Dictionary<GroupBox, System.Collections.Generic.List<(FrameworkElement Element, string Text)>> sectionTexts = new();
+
+        private System.Collections.Generic.List<(FrameworkElement Element, string Text)> SectionTexts(GroupBox group)
+        {
+            if (sectionTexts.TryGetValue(group, out var cached))
+                return cached;
+            var list = new System.Collections.Generic.List<(FrameworkElement Element, string Text)>();
+            if (group.Header is string header && header.Length > 0)
+                list.Add((group, header));
+            void Walk(object node)
+            {
+                if (node is not DependencyObject current)
+                    return;
+                if (current is FrameworkElement element)
+                {
+                    string? text = element switch
+                    {
+                        TextBlock block => block.Text,
+                        ContentControl control when control.Content is string content => content,
+                        HeaderedContentControl headered when headered.Header is string title => title,
+                        _ => null
+                    };
+                    if (!string.IsNullOrWhiteSpace(text) && !ReferenceEquals(element, group))
+                        list.Add((element, text));
+                    if (element.ToolTip is string tip && tip.Length > 0)
+                        list.Add((element, tip));
+                }
+                foreach (object child in LogicalTreeHelper.GetChildren(current))
+                    Walk(child);
+            }
+            if (group.Content != null)
+                Walk(group.Content);
+            sectionTexts[group] = list;
+            return list;
+        }
+
+        private static bool SearchMatches(string text, string query) =>
+            Loc.Culture.CompareInfo.IndexOf(text, query, System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace) >= 0;
+
+        private FrameworkElement? FirstSearchMatch(GroupBox group, string query)
+        {
+            foreach (var (element, text) in SectionTexts(group))
+            {
+                if (SearchMatches(text, query))
+                    return element;
+            }
+            return null;
+        }
+
+        private void SettingsSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string query = SettingsSearchBox.Text.Trim();
+            int shown = 0;
+            foreach (var pair in sectionHolders)
+            {
+                bool match = query.Length == 0 || FirstSearchMatch(pair.Key, query) != null;
+                pair.Value.Visibility = match ? Visibility.Visible : Visibility.Collapsed;
+                if (match && pair.Key.Visibility == Visibility.Visible)
+                    shown++;
+            }
+            SettingsSearchEmpty.Visibility = shown == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void SettingsSearchBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter)
+                return;
+            foreach (var pair in sectionHolders)
+            {
+                if (pair.Value.Visibility == Visibility.Visible && pair.Key.Visibility == Visibility.Visible)
+                {
+                    GoToSection(pair.Key);
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+
+        private void GoToSection(GroupBox group)
+        {
+            double target = Math.Clamp(SettingsScroll.VerticalOffset + group.TranslatePoint(new Point(0, 0), SettingsScroll).Y, 0, SettingsScroll.ScrollableHeight);
+            string query = SettingsSearchBox?.Text.Trim() ?? "";
+            if (query.Length > 0 && FirstSearchMatch(group, query) is FrameworkElement found && !ReferenceEquals(found, group) && found.IsVisible)
+            {
+                double y = SettingsScroll.VerticalOffset + found.TranslatePoint(new Point(0, 0), SettingsScroll).Y;
+                if (y > target + SettingsScroll.ViewportHeight - 120)
+                    target = Math.Clamp(y - 120, 0, SettingsScroll.ScrollableHeight);
+            }
+            pinnedSection = group;
+            pinnedOffset = target;
+            MarkCurrentSection();
+            SmoothScrollTo(target);
+            MultronWinCleaner.Processes.SectionGlow.Flash(group);
+        }
+
+        private EventHandler? scrollAnimation;
+
+        private void StopScrollAnimation()
+        {
+            if (scrollAnimation == null)
+                return;
+            System.Windows.Media.CompositionTarget.Rendering -= scrollAnimation;
+            scrollAnimation = null;
+        }
+
+        private void StopScrollOnWheel(object sender, System.Windows.Input.MouseWheelEventArgs e) => StopScrollAnimation();
+
+        private void SmoothScrollTo(double target)
+        {
+            StopScrollAnimation();
+            SettingsScroll.PreviewMouseWheel -= StopScrollOnWheel;
+            SettingsScroll.PreviewMouseWheel += StopScrollOnWheel;
+            double start = SettingsScroll.VerticalOffset;
+            double distance = target - start;
+            if (Math.Abs(distance) < 1 || !IsLoaded || !MultronWinCleaner.Processes.Motion.Enabled)
+            {
+                SettingsScroll.ScrollToVerticalOffset(target);
+                return;
+            }
+            double duration = Math.Clamp(Math.Abs(distance) / 5, 240, 460);
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            EventHandler? step = null;
+            step = (s, e) =>
+            {
+                double t = Math.Min(1, clock.Elapsed.TotalMilliseconds / duration);
+                double eased = 1 - Math.Pow(1 - t, 3);
+                SettingsScroll.ScrollToVerticalOffset(start + distance * eased);
+                if (t >= 1 && ReferenceEquals(scrollAnimation, step))
+                    StopScrollAnimation();
+            };
+            scrollAnimation = step;
+            System.Windows.Media.CompositionTarget.Rendering += step;
+        }
+
+        private static ControlTemplate NavButtonTemplate()
+        {
+            var template = new ControlTemplate(typeof(Button));
+            var border = new FrameworkElementFactory(typeof(Border));
+            border.SetBinding(Border.BackgroundProperty, new System.Windows.Data.Binding(nameof(Background)) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+            border.SetValue(Border.PaddingProperty, new Thickness(12, 8, 12, 8));
+            border.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 2));
+            border.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
+            template.VisualTree = border;
+            return template;
+        }
+
+        private void MarkCurrentSection()
+        {
+            GroupBox? current = null;
+            bool atBottom = SettingsScroll.ScrollableHeight > 0 && SettingsScroll.VerticalOffset >= SettingsScroll.ScrollableHeight - 1;
+            foreach (GroupBox group in sectionButtons.Keys)
+            {
+                if (group.Visibility != Visibility.Visible)
+                    continue;
+                if (current == null || atBottom || group.TranslatePoint(new Point(0, 0), SettingsScroll).Y <= 12)
+                    current = group;
+            }
+            if (pinnedSection?.Visibility == Visibility.Visible)
+                current = pinnedSection;
+            foreach (var pair in sectionButtons)
+            {
+                if (pair.Key == current)
+                    pair.Value.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0x1E, 0x88, 0xE5));
+                else
+                    pair.Value.Background = System.Windows.Media.Brushes.Transparent;
+            }
+        }
+
+        private void SettingsScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (pinnedSection != null && scrollAnimation == null && e.VerticalChange != 0 && Math.Abs(SettingsScroll.VerticalOffset - pinnedOffset) > 1)
+                pinnedSection = null;
+            if (sectionButtons.Count > 0)
+                MarkCurrentSection();
         }
 
         private void chkCleanAllUsers_Checked(object sender, RoutedEventArgs e)
@@ -1380,6 +1697,7 @@ namespace MultronWinCleaner
             try
             {
                 await System.IO.File.WriteAllTextAsync(logfilepath, "");
+                RefreshLogPreview();
                 AppDialog.Show(Loc.F("Log file {0}: all logs cleaned!", logfilepath), Loc.T("Success"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -1421,6 +1739,7 @@ namespace MultronWinCleaner
                     logfilepath = txtLogPath.Text;
                 }
 
+                RefreshLogPreview();
                 AppDialog.Show(Loc.T("Log path applied successfully!"), Loc.T("Multron Win Cleaner"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)

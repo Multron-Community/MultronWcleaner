@@ -77,7 +77,7 @@ namespace MultronWinCleaner
             string name = txtName.Text.Trim();
             string path = txtPath.Text.Trim();
 
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(name) && rbWinLogon.IsChecked != true)
             {
                 AppDialog.Show(Loc.T("Please enter a name."), Loc.T("Input Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
@@ -167,17 +167,22 @@ namespace MultronWinCleaner
         private void rbWinLogon_Checked(object sender, RoutedEventArgs e)
         {
             txtName.IsEnabled = false;
-
+            if (MethodHint != null)
+                MethodHint.Text = Loc.T("Advanced: starts together with the Windows sign-in process. No name is needed.");
         }
 
         private void rbTaskScheduler_Checked(object sender, RoutedEventArgs e)
         {
             txtName.IsEnabled = true;
+            if (MethodHint != null)
+                MethodHint.Text = Loc.T("Starts through Task Scheduler when you sign in, with administrator rights.");
         }
 
         private void rbRegistry_Checked(object sender, RoutedEventArgs e)
         {
             txtName.IsEnabled = true;
+            if (MethodHint != null)
+                MethodHint.Text = Loc.T("Starts when you sign in to Windows. Recommended for most programs.");
         }
     }
 }

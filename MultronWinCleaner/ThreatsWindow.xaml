@@ -1,4 +1,4 @@
-<Window
+<Window Icon="pack://application:,,,/Assets/Icons/mwc_malware.ico"
     x:Class="MultronWinCleaner.ThreatsWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -64,10 +64,10 @@
                                     <TextBlock Text="{Binding VerdictText}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#FFDC3545"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource DangerText}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Verdict}" Value="suspicious">
-                                                        <Setter Property="Foreground" Value="#FFFF9800"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource VerdictSuspiciousText}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -78,7 +78,7 @@
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="{loc:Tr 'File Name'}" Binding="{Binding FileName}" Width="170"/>
                         <DataGridTextColumn Header="{loc:Tr 'Threat / Detail'}" Binding="{Binding Threat}" Width="230"/>
-                        <DataGridTextColumn Header="{loc:Tr 'Size'}" Binding="{Binding FormattedSize}" Width="80" SortMemberPath="Size"/>
+                        <DataGridTextColumn Header="{loc:Tr 'Size'}" Binding="{Binding FormattedSize}" Width="96" SortMemberPath="Size"/>
                         <DataGridTextColumn Header="{loc:Tr 'Path'}" Binding="{Binding FilePath}" Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>

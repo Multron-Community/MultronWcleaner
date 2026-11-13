@@ -1,4 +1,4 @@
-<Window x:Class="MultronWinCleaner.ToolSettingsWindow" Icon="pack://application:,,,/Assets/mwc_utilities.ico"
+<Window xmlns:mwcp="clr-namespace:MultronWinCleaner.Processes" x:Class="MultronWinCleaner.ToolSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:MultronWinCleaner"
@@ -11,7 +11,7 @@
         WindowStartupLocation="CenterOwner"
         Background="Transparent">
 
-    <Border Background="{DynamicResource WindowBackground}" CornerRadius="12" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="12">
+    <Border mwcp:RoundedClip.Enabled="True" Background="{DynamicResource WindowBackground}" CornerRadius="12" BorderBrush="{DynamicResource BevelBorder}" BorderThickness="1" Margin="12">
         <Border.Effect>
             <DropShadowEffect Color="Black" Opacity="0.35" BlurRadius="20" ShadowDepth="0"/>
         </Border.Effect>
@@ -20,22 +20,27 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="50"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" Background="{DynamicResource PanelBackground}" CornerRadius="12,12,0,0" MouseDown="TopBar_MouseDown">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
-                        <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="#FF1E88E5" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TitleText" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                        <Image Source="{Binding Icon, RelativeSource={RelativeSource AncestorType=Window}}" Width="24" Height="24" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <TextBlock x:Name="TitleText" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" HorizontalAlignment="Right" Margin="0,0,10,0"
-                            Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <Button x:Name="MinimizeWindowButton" Visibility="Collapsed" Content="&#xE921;" Style="{DynamicResource ChromeButtonStyle}" Click="MinimizeButton_Click" ToolTip="{loc:Tr 'Minimize'}" Margin="0,0,4,0"/>
+                        <Button x:Name="MaximizeWindowButton" Visibility="Collapsed" Content="&#xE922;" Style="{DynamicResource ChromeButtonStyle}" Click="MaximizeButton_Click" ToolTip="{loc:Tr 'Maximize/Restore'}" Margin="0,0,4,0"/>
+                        <Button Content="&#xE8BB;" Style="{DynamicResource ChromeCloseButtonStyle}" Click="CloseButton_Click" ToolTip="{loc:Tr 'Close'}"/>
+                    </StackPanel>
                 </Grid>
             </Border>
 
             <ScrollViewer x:Name="ContentScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="20,18,20,20">
                 <ContentPresenter x:Name="ContentHost"/>
             </ScrollViewer>
+            <ContentPresenter x:Name="FooterHost" Grid.Row="2"/>
         </Grid>
     </Border>
 </Window>

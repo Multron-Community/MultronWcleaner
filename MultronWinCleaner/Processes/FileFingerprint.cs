@@ -136,7 +136,7 @@ namespace MultronWinCleaner.Processes
             return TryGet(info.FullName, size, ticks, measureEntropy, useCache, readGate);
         }
 
-        public static Print? TryGet(string path, long size, long ticks, bool measureEntropy, bool useCache, SemaphoreSlim? readGate)
+        public static Print? TryGet(string path, long size, long ticks, bool measureEntropy, bool useCache, SemaphoreSlim? readGate, CancellationToken cancel = default)
         {
             bool wantEntropy = measureEntropy && size >= 2048;
             if (useCache && Cache.TryGetValue(path, out var hit) && hit.Size == size && hit.Ticks == ticks
@@ -153,9 +153,14 @@ namespace MultronWinCleaner.Processes
 
             byte[] buffer = ArrayPool<byte>.Shared.Rent((int)Math.Clamp(size, 4096, BufferSize));
             int[]? counts = wantEntropy ? ArrayPool<int>.Shared.Rent(1024) : null;
-            readGate?.Wait();
+            bool gated = false;
             try
             {
+                if (readGate != null)
+                {
+                    readGate.Wait(cancel);
+                    gated = true;
+                }
                 if (counts != null)
                     Array.Clear(counts, 0, 1024);
                 using var stream = ForceDelete.OpenRead(path, 0, useAsync: false);
@@ -165,6 +170,7 @@ namespace MultronWinCleaner.Processes
                 int read;
                 while ((read = stream.Read(buffer, 0, chunk)) > 0)
                 {
+                    cancel.ThrowIfCancellationRequested();
                     sha.AppendData(buffer, 0, read);
                     total += read;
                     if (counts != null && sampled < EntropySample)
@@ -200,13 +206,18 @@ namespace MultronWinCleaner.Processes
                 }
                 return new Print(Convert.ToHexString(hash), total, entropy, false);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch
             {
                 return null;
             }
             finally
             {
-                readGate?.Release();
+                if (gated)
+                    readGate!.Release();
                 ArrayPool<byte>.Shared.Return(buffer);
                 if (counts != null)
                     ArrayPool<int>.Shared.Return(counts);
@@ -225,6 +236,17 @@ namespace MultronWinCleaner.Processes
             }
             for (; i < data.Length; i++)
                 counts[data[i]]++;
+        }
+
+        public static void Release()
+        {
+            lock (LoadLock)
+            {
+                if (dirty)
+                    return;
+                cache = null;
+                entryCount = 0;
+            }
         }
 
         public static void Save()

@@ -33,7 +33,7 @@ namespace MultronWinCleaner.Processes
 
             public bool CanFix => Apply != null;
             public string SeverityText => Loc.T(Severity switch { Level.High => "HIGH", Level.Medium => "MEDIUM", _ => "LOW" });
-            public string SeverityColor => Severity switch { Level.High => "#DC3545", Level.Medium => "#FF9800", _ => "#1E88E5" };
+            public string SeverityColor => Severity switch { Level.High => "#DC3545", Level.Medium => "#C2570A", _ => "#1E88E5" };
             public string DetailsText => Details.Length == 0 ? Category : Category + " · " + Details;
             public string ActionText => Loc.T(CanFix ? "Fix: " : "How to fix: ") + FixText + (NeedsRestart ? Loc.T(" (restart needed)") : "");
             public bool HasDetails => Details.Length > 0;

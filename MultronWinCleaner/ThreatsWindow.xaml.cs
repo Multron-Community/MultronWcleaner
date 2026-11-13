@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -30,7 +31,11 @@ namespace MultronWinCleaner
         private void UpdateCount()
         {
             int count = view.Count;
-            SubtitleText.Text = Loc.F("{0} threat(s) found. Choose what to do with them in the scan results after the scan finishes.", count);
+            int suspicious = view.Cast<CloudScanResult>().Count(r => r.Verdict == "suspicious");
+            int malicious = count - suspicious;
+            SubtitleText.Text = suspicious == 0 ? Loc.F("{0} threat(s) found. Choose what to do with them in the scan results after the scan finishes.", count)
+                : malicious == 0 ? Loc.F("{0} suspicious file(s) found. Choose what to do with them in the scan results after the scan finishes.", suspicious)
+                : Loc.F("{0} threat(s) and {1} suspicious file(s) found. Choose what to do with them in the scan results after the scan finishes.", malicious, suspicious);
             EmptyText.Visibility = count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 

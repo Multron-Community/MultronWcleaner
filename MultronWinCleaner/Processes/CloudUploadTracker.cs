@@ -16,7 +16,7 @@ namespace MultronWinCleaner.Processes
     public enum UploadCompression { Automatic, Lzma, Brotli }
 
     [Flags]
-    public enum ActivityFilter { None = 0, Uploads = 1, Threats = 2, Skipped = 4, Errors = 8, All = Uploads | Threats | Skipped | Errors }
+    public enum ActivityFilter { None = 0, Uploads = 1, Threats = 2, Skipped = 4, Errors = 8, Suspicious = 16, All = Uploads | Threats | Skipped | Errors | Suspicious }
 
     public sealed class CloudUploadItem : INotifyPropertyChanged
     {
@@ -41,7 +41,8 @@ namespace MultronWinCleaner.Processes
 
         public bool Matches(ActivityFilter filter) =>
             (IsUpload && filter.HasFlag(ActivityFilter.Uploads))
-            || (Verdict is "malicious" or "suspicious" && filter.HasFlag(ActivityFilter.Threats))
+            || (Verdict == "malicious" && filter.HasFlag(ActivityFilter.Threats))
+            || (Verdict == "suspicious" && filter.HasFlag(ActivityFilter.Suspicious))
             || (Verdict == "skipped" && filter.HasFlag(ActivityFilter.Skipped))
             || (Verdict == "error" && filter.HasFlag(ActivityFilter.Errors));
 
@@ -166,8 +167,10 @@ namespace MultronWinCleaner.Processes
         private int refreshScheduled;
         private DispatcherTimer? elapsedTimer;
         private string phase = "";
+        private volatile bool stopping;
         private string currentFile = "";
         private int done, total, threats, queued, skipped, errors, started;
+        private int suspicious;
         private int found, folders, fingerprinted, answered, awaiting, connections;
         private bool collecting, collectionDone;
         private ActivityFilter filter = ActivityFilter.All;
@@ -189,6 +192,7 @@ namespace MultronWinCleaner.Processes
                 Notify(nameof(Filter));
                 Notify(nameof(ShowUploads));
                 Notify(nameof(ShowThreats));
+                Notify(nameof(ShowSuspicious));
                 Notify(nameof(ShowSkipped));
                 Notify(nameof(ShowErrors));
                 ScheduleRefresh();
@@ -219,6 +223,7 @@ namespace MultronWinCleaner.Processes
 
         public bool ShowUploads { get => filter.HasFlag(ActivityFilter.Uploads); set => SetFlag(ActivityFilter.Uploads, value); }
         public bool ShowThreats { get => filter.HasFlag(ActivityFilter.Threats); set => SetFlag(ActivityFilter.Threats, value); }
+        public bool ShowSuspicious { get => filter.HasFlag(ActivityFilter.Suspicious); set => SetFlag(ActivityFilter.Suspicious, value); }
         public bool ShowSkipped { get => filter.HasFlag(ActivityFilter.Skipped); set => SetFlag(ActivityFilter.Skipped, value); }
         public bool ShowErrors { get => filter.HasFlag(ActivityFilter.Errors); set => SetFlag(ActivityFilter.Errors, value); }
 
@@ -226,6 +231,7 @@ namespace MultronWinCleaner.Processes
 
         public string UploadsChip { get; private set; } = "";
         public string ThreatsChip { get; private set; } = "";
+        public string SuspiciousChip { get; private set; } = "";
         public string SkippedChip { get; private set; } = "";
         public string ErrorsChip { get; private set; } = "";
         public string EmptyText { get; private set; } = "";
@@ -240,6 +246,8 @@ namespace MultronWinCleaner.Processes
         public string ScannedText { get; private set; } = "0";
         public string ThreatsText { get; private set; } = "0";
         public bool HasThreats { get; private set; }
+        public string SuspiciousText { get; private set; } = "0";
+        public bool HasSuspicious { get; private set; }
         public string UploadedText { get; private set; } = "0";
         public bool HasUploads { get; private set; }
         public string MoreText { get; private set; } = "";
@@ -258,10 +266,12 @@ namespace MultronWinCleaner.Processes
                 history.Clear();
             }
             phase = Loc.T("Preparing scan...");
+            stopping = false;
             currentFile = "";
             done = 0;
             total = 0;
             threats = 0;
+            suspicious = 0;
             queued = 0;
             found = folders = fingerprinted = answered = awaiting = connections = 0;
             collecting = true;
@@ -280,13 +290,19 @@ namespace MultronWinCleaner.Processes
             ScheduleRefresh();
         }
 
+        public void SetStopping()
+        {
+            stopping = true;
+            ScheduleRefresh();
+        }
+
         public void SetPhase(string text)
         {
             phase = text;
             ScheduleRefresh();
         }
 
-        public void SetProgress(int doneFiles, int totalFiles, int threatCount = 0, int skippedCount = 0, int errorCount = 0)
+        public void SetProgress(int doneFiles, int totalFiles, int threatCount = 0, int skippedCount = 0, int errorCount = 0, int suspiciousCount = 0)
         {
             skipped = skippedCount;
             errors = errorCount;
@@ -295,6 +311,7 @@ namespace MultronWinCleaner.Processes
             done = doneFiles;
             total = totalFiles;
             threats = threatCount;
+            suspicious = suspiciousCount;
             ScheduleRefresh();
         }
 
@@ -460,7 +477,7 @@ namespace MultronWinCleaner.Processes
             bool gathering = IsScanning && collecting;
             Indeterminate = gathering || t <= 0;
             Percent = !gathering && t > 0 ? Math.Min(100, d * 100.0 / t) : 0;
-            Title = gathering
+            Title = stopping ? Loc.T("Stopping...") : gathering
                 ? Loc.F("Collecting files: {0:N0} found in {1:N0} folders", Volatile.Read(ref found), Volatile.Read(ref folders))
                 : t > 0 ? string.Format("{0} ({1}%)...", phase.TrimEnd('.', ' ', '…'), (int)Percent) : phase;
             CurrentFile = currentFile;
@@ -475,8 +492,11 @@ namespace MultronWinCleaner.Processes
             Elapsed = e.TotalHours >= 1 ? e.ToString(@"h\:mm\:ss") : e.TotalMinutes >= 1 ? e.ToString(@"m\:ss") : $"{(int)e.TotalSeconds}s";
             Remaining = RemainingTime(d, t);
             ScannedText = t > 0 ? $"{d:N0} / {t:N0}" : $"{d:N0}";
-            ThreatsText = th.ToString("N0");
-            HasThreats = th > 0;
+            int su = suspicious, malicious = Math.Max(0, th - su);
+            ThreatsText = malicious.ToString("N0");
+            HasThreats = malicious > 0;
+            SuspiciousText = su.ToString("N0");
+            HasSuspicious = su > 0;
             long up = UploadedFiles, upBytes = UploadedBytes;
             UploadedText = up > 0 ? $"{up:N0} ({CloudUploadItem.FormatBytes(upBytes)})" : "0";
             foreach (var item in Shown)
@@ -486,7 +506,8 @@ namespace MultronWinCleaner.Processes
             MoreText = waiting > 0 ? Loc.F("{0:N0} file(s) waiting to upload", waiting) : "";
             HasUploads = IsScanning;
             UploadsChip = Loc.F("Uploads ({0:N0})", Volatile.Read(ref started));
-            ThreatsChip = Loc.F("Threats ({0:N0})", th);
+            ThreatsChip = Loc.F("Threats ({0:N0})", malicious);
+            SuspiciousChip = Loc.F("Suspicious ({0:N0})", su);
             SkippedChip = Loc.F("Skipped ({0:N0})", skipped);
             ErrorsChip = Loc.F("Errors ({0:N0})", errors);
             EmptyText = Shown.Count > 0 ? ""
@@ -503,11 +524,14 @@ namespace MultronWinCleaner.Processes
             Notify(nameof(ScannedText));
             Notify(nameof(ThreatsText));
             Notify(nameof(HasThreats));
+            Notify(nameof(SuspiciousText));
+            Notify(nameof(HasSuspicious));
             Notify(nameof(UploadedText));
             Notify(nameof(HasUploads));
             Notify(nameof(MoreText));
             Notify(nameof(UploadsChip));
             Notify(nameof(ThreatsChip));
+            Notify(nameof(SuspiciousChip));
             Notify(nameof(SkippedChip));
             Notify(nameof(ErrorsChip));
             Notify(nameof(EmptyText));
