@@ -348,33 +348,77 @@ namespace MultronWinCleaner
                 return null;
 
             int self = Environment.ProcessId;
-            int ended = 0, failed = 0;
+            int ended = 0;
+            var problems = new List<string>();
             await Task.Run(() =>
             {
                 foreach (var (name, ids) in chosen)
                 {
                     if (ProtectedProcesses.Contains(name))
                     {
-                        failed++;
+                        problems.Add(Loc.F("{0}: Windows needs this process, so it is protected.", name));
                         continue;
                     }
-                    bool any = false;
+                    if (ids.Contains(self) || string.Equals(name, Process.GetCurrentProcess().ProcessName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        problems.Add(Loc.F("{0}: this is Multron Win Cleaner itself. Close it from its tray icon instead.", name));
+                        continue;
+                    }
+                    bool denied = false;
+                    var killed = new List<Process>();
                     foreach (int id in ids)
                     {
-                        if (id == self)
-                            continue;
                         try
                         {
-                            using var process = Process.GetProcessById(id);
-                            process.Kill();
-                            any = true;
+                            var process = Process.GetProcessById(id);
+                            process.Kill(true);
+                            killed.Add(process);
                         }
-                        catch { }
+                        catch (ArgumentException)
+                        {
+                        }
+                        catch (InvalidOperationException)
+                        {
+                        }
+                        catch (System.ComponentModel.Win32Exception)
+                        {
+                            denied = true;
+                        }
+                        catch (NotSupportedException)
+                        {
+                            denied = true;
+                        }
                     }
-                    if (any) ended++; else failed++;
+                    foreach (var process in killed)
+                    {
+                        try { process.WaitForExit(3000); } catch { }
+                        process.Dispose();
+                    }
+                    System.Threading.Thread.Sleep(600);
+                    bool stillRunning = false;
+                    try
+                    {
+                        foreach (var p in Process.GetProcessesByName(name))
+                        {
+                            stillRunning = true;
+                            p.Dispose();
+                        }
+                    }
+                    catch { }
+                    if (!stillRunning)
+                        ended++;
+                    else if (denied)
+                        problems.Add(Loc.F("{0}: access was denied. It may run as administrator, belong to another user or be protected by security software.", name));
+                    else if (killed.Count > 0)
+                        problems.Add(Loc.F("{0}: it was closed but started again by itself, or another part of it is still running.", name));
+                    else
+                        problems.Add(Loc.F("{0}: it could not be closed.", name));
                 }
             });
-            return failed == 0 ? Loc.F("Ended {0} app(s).", ended) : Loc.F("Ended {0} app(s).", ended) + " " + Loc.F("{0} could not be ended.", failed);
+            string summary = problems.Count == 0 ? Loc.F("Ended {0} app(s).", ended) : Loc.F("Ended {0} app(s).", ended) + " " + Loc.F("{0} could not be ended.", problems.Count);
+            if (problems.Count > 0)
+                AppDialog.Show(this, Loc.T("Some apps could not be ended:") + "\n\n" + string.Join("\n\n", problems), Loc.T("End Task"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return summary;
         }
 
         private void OpenMemoryCleaner_Click(object sender, RoutedEventArgs e)

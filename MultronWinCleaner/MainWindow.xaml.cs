@@ -7158,7 +7158,8 @@ namespace Multron_Win_Cleaner
             wrapPanel1.Children.Clear();
             CategoryPanel.Children.Clear();
             wrapPanelDirectories.Children.Clear();
-            ScrollViewerDirectories.Content = null;
+            if (!ReferenceEquals(ScrollViewerDirectories.Content, wrapPanelDirectories))
+                ScrollViewerDirectories.Content = wrapPanelDirectories;
             checkboxes2.Clear();
             cleaningEntryBoxes.Clear();
             listboxes.Clear();

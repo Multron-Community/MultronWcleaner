@@ -1145,7 +1145,7 @@ namespace MultronWinCleaner.Processes
         public string RemovalDetail { get; set; } = "";
         public DateTime? RemovedAt { get; set; }
         public List<string> RemovalSteps { get; set; } = new();
-        public bool IsRemoved => Verdict is "deleted" or "quarantined" or "reboot";
+        public bool IsRemoved => Verdict is "deleted" or "quarantined" or "reboot" or "gone";
 
         public CloudScanResult MarkDisinfected(string detail)
         {
@@ -1187,6 +1187,7 @@ namespace MultronWinCleaner.Processes
             "deleted" => "Deleted by user",
             "quarantined" => "Quarantined by user",
             "reboot" => "Deleted at restart",
+            "gone" => "No longer on this PC",
             _ => "Unknown"
         }, "verdict");
 

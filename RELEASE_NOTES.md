@@ -1,3 +1,19 @@
+## Multron Win Cleaner 1.29.2 Update
+
+### Fixes
+- **The cleaning log stays visible.** After the cleaning database was reloaded (for example after a database update was loaded in the background, or with **Reload Database**), the cleaning log on the right stayed empty during and after every cleaning until the app was restarted. The log now shows every line again.
+- **Malware Scan says when a file is already gone.** When a detected file had already been removed by another program or a cleanup, **Apply Actions** said *Choose an action next to at least one file first* even though an action was chosen, and Delete, Quarantine, Remove at the root, Rescan and Disinfect did nothing. The app now tells you the file is no longer on this PC and marks it as *No longer on this PC* instead of leaving it as a threat. A file that is already gone when threats are removed during a cleaning is reported the same way instead of as *Deleted*. After threats are removed, the heading in Malware Scan shows what is still left (or *All threats were removed* with a green shield) instead of the old scan result.
+- **End Task tells you what happened.** In the Memory Cleaner widget and Performance Monitor, **End Task** said *Ended 1 app(s)* even when the app was still running. It now closes the whole app with all of its processes, checks that it really closed, and explains the apps it could not end: protected by Windows, access denied, started again by itself, or Multron Win Cleaner itself.
+
+### New
+- **Pick exceptions in File Explorer.** Settings > Exceptions has **Add Files...** and **Add Folders...** buttons that open File Explorer, so you can add one or many files or folders at once instead of typing their paths.
+
+### Updating
+- **From 1.29.1 or earlier:** the app updates itself to 1.29.2 as usual (Settings > App Updates).
+- **New installs:** download `mwc_setup.exe` (installer) or `mwc.zip` (portable) below.
+
+---
+
 ## Multron Win Cleaner 1.29.1 Update
 
 ### Cleanup log

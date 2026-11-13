@@ -1452,6 +1452,22 @@ Cursor="Hand"/>
                                             Click="RemoveExceptionAll_Click"
                                             FontWeight="SemiBold" Cursor="Hand"/>
                                 </Grid>
+                                <WrapPanel Margin="0,-4,0,12">
+                                    <Button Click="AddExceptionFiles_Click" Style="{DynamicResource UtilitySecondaryButtonStyle}" Height="34" Padding="14,0" Margin="0,0,8,0"
+                                            ToolTip="{loc:Tr 'Pick one or more files in File Explorer. Hold Ctrl or Shift to select several.'}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8A5;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{loc:Tr 'Add Files...'}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Click="AddExceptionFolders_Click" Style="{DynamicResource UtilitySecondaryButtonStyle}" Height="34" Padding="14,0"
+                                            ToolTip="{loc:Tr 'Pick one or more folders in File Explorer. Hold Ctrl or Shift to select several.'}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8B7;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{loc:Tr 'Add Folders...'}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </WrapPanel>
                                 <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10"
                                         Background="{DynamicResource TextBoxBackground}" Padding="8">
                                     <ListBox x:Name="lstExceptions" Height="145" Background="Transparent" BorderThickness="0" Style="{DynamicResource ResultListStyle}" ItemTemplate="{DynamicResource PathRowTemplate}"/>

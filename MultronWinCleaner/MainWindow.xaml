@@ -913,7 +913,7 @@
                                 </Image>
                                 <TextBlock Text="MULTRON WIN CLEANER" FontSize="15" FontFamily="Bahnschrift, Century Gothic, Segoe UI" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Margin="0,5,0,0"/>
                                 <Border x:Name="TopBarVersion" Background="#201E88E5" CornerRadius="4" Padding="6,2" Margin="12,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="v1.29.1 beta" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentText}" />
+                                    <TextBlock Text="v1.29.2 beta" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentText}" />
                                 </Border>
                             </StackPanel>
                             <StackPanel x:Name="TopBarRight" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

@@ -1272,6 +1272,32 @@ namespace MultronWinCleaner
             }
         }
 
+        private void AddExceptionFiles_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = Loc.T("Add Files..."),
+                Multiselect = true,
+                CheckFileExists = true,
+                Filter = Loc.T("All files") + " (*.*)|*.*"
+            };
+            if (dialog.ShowDialog(this) == true)
+                foreach (string file in dialog.FileNames)
+                    addexception(file);
+        }
+
+        private void AddExceptionFolders_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = Loc.T("Add Folders..."),
+                Multiselect = true
+            };
+            if (dialog.ShowDialog(this) == true)
+                foreach (string folder in dialog.FolderNames)
+                    addexception(folder);
+        }
+
         private void RemoveException_Click(object sender, RoutedEventArgs e)
         {
             if (lstExceptions.SelectedItem != null)
