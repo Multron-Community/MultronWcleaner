@@ -29,7 +29,7 @@ namespace MultronWinCleaner.Processes
             ["Shortcuts"] = "shortcuts",
             ["Security"] = "security",
             ["Windows Disk Cleanup"] = "diskcleanup",
-            ["Windows Repair (DISM)"] = "dism",
+            ["Windows Component Store (DISM)"] = "dism",
             ["System File Check (SFC)"] = "sfc",
             ["Deep Log Files Scan"] = "deeplog"
         };

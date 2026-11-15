@@ -2030,7 +2030,6 @@
   "Multron Malware Scan Cloud (Testing)": "Multron Malware Scan Cloud (Test)",
   "Multron Cloud": "Multron Bulut",
   "Windows Disk Cleanup": "Windows Disk Temizleme",
-  "Windows Repair (DISM)": "Windows Onarımı (DISM)",
   "System File Check (SFC)": "Sistem Dosyası Denetimi (SFC)",
   "The new interface mode is used after the current scan or clean has finished and the list is reloaded.": "Yeni arayüz modu, mevcut tarama veya temizlik bittikten ve liste yeniden yüklendikten sonra kullanılır.",
   "Disk Cleanup for drive C:": "C: sürücüsü için Disk Temizleme",
@@ -2312,7 +2311,6 @@
   "System files that only experienced users should remove.": "Yalnızca deneyimli kullanıcıların silmesi gereken sistem dosyaları.",
   "Data used when a company manages the PC. Do not clean it on a work PC.": "Bilgisayar bir şirket tarafından yönetildiğinde kullanılan veriler. İş bilgisayarında temizlemeyin.",
   "Runs the Windows Disk Cleanup tool with the selected categories.": "Seçili kategorilerle Windows Disk Temizleme aracını çalıştırır.",
-  "Checks and repairs the store Windows installs its components from. Takes several minutes.": "Windows'un bileşenlerini kurduğu depoyu denetler ve onarır. Birkaç dakika sürer.",
   "Checks the Windows system files and repairs damaged ones. Takes several minutes.": "Windows sistem dosyalarını denetler ve bozuk olanları onarır. Birkaç dakika sürer.",
   "Searches the whole drive for log files. Takes longer than a normal scan.": "Tüm sürücüde günlük dosyalarını arar. Normal taramadan daha uzun sürer.",
   "Checks the files on your PC for malware during the scan.": "Tarama sırasında bilgisayarınızdaki dosyaları kötü amaçlı yazılım için denetler.",
@@ -2757,5 +2755,8 @@
   "{0} threat(s) still need your decision": "{0} tehdit hâlâ kararınızı bekliyor",
   "{0} suspicious file(s) still need your decision": "{0} şüpheli dosya hâlâ kararınızı bekliyor",
   "All threats were removed": "Tüm tehditler kaldırıldı",
-  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "Bir sorun oluştu, ancak Multron Win Cleaner çalışmaya devam ediyor:\n\n{0}\n\nAyrıntılar program klasöründeki crash.log dosyasına kaydedildi."
+  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "Bir sorun oluştu, ancak Multron Win Cleaner çalışmaya devam ediyor:\n\n{0}\n\nAyrıntılar program klasöründeki crash.log dosyasına kaydedildi.",
+  "No insecure Windows settings are left.": "Güvensiz Windows ayarı kalmadı.",
+  "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "Duplicate File Finder zaten taradığı için atlandı. Sonuçları Duplicate File Finder penceresinde gösteriliyor.",
+  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "Eski Windows güncelleme dosyalarını temizler, Windows'un bileşenlerini kurduğu depoyu denetler ve onarır. Birkaç dakika sürer."
 }

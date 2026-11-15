@@ -359,6 +359,13 @@ namespace MultronWinCleaner
             autocleanmem = new AutoCleanMem(this);
             InitializeSystemInfo();
             UpdateSystemStats();
+            statsTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            statsTimer.Tick += (s, e) =>
+            {
+                if (IsVisible && WindowState != WindowState.Minimized && CleanButton.IsEnabled)
+                    UpdateSystemStats();
+            };
+            statsTimer.Start();
             await CreateCpuCounterAsync();
 
             if (System.ComponentModel.DesignerProperties.GetIsInDesignMode(this))
@@ -399,16 +406,13 @@ namespace MultronWinCleaner
         }
 
     
+        private System.Windows.Threading.DispatcherTimer? statsTimer;
+
         public void UpdateSystemStats()
         {
             try
             {
-                var computerInfo = new Microsoft.VisualBasic.Devices.ComputerInfo();
-                ulong totalMemory = computerInfo.TotalPhysicalMemory;
-                ulong availableMemory = computerInfo.AvailablePhysicalMemory;
-                ulong usedMemory = totalMemory - availableMemory;
-
-                double usedPercent = (double)usedMemory * 100 / totalMemory;
+                var (totalMemory, usedMemory, usedPercent) = Processes.RamUsage.Read();
 
                 double totalGb = totalMemory / (1024.0 * 1024.0 * 1024.0);
                 double usedGb = usedMemory / (1024.0 * 1024.0 * 1024.0);

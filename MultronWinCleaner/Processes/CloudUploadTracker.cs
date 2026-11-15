@@ -176,6 +176,7 @@ namespace MultronWinCleaner.Processes
         private ActivityFilter filter = ActivityFilter.All;
         private string search = "";
         private readonly Stopwatch rateClock = new();
+        private readonly Queue<(double Seconds, int Done)> rateSamples = new();
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public event Action? ThreatsRequested;
@@ -280,6 +281,8 @@ namespace MultronWinCleaner.Processes
             errors = 0;
             started = 0;
             rateClock.Reset();
+            lock (rateSamples)
+                rateSamples.Clear();
             OnUi(() =>
             {
                 IsScanning = true;
@@ -547,7 +550,21 @@ namespace MultronWinCleaner.Processes
             double seconds = rateClock.Elapsed.TotalSeconds;
             if (d < 3 || seconds < 2)
                 return "—";
-            var eta = TimeSpan.FromSeconds(seconds / d * (t - d));
+            double perFile = seconds / d;
+            lock (rateSamples)
+            {
+                rateSamples.Enqueue((seconds, d));
+                while (rateSamples.Count > 2 && seconds - rateSamples.Peek().Seconds > 60)
+                    rateSamples.Dequeue();
+                var (s0, d0) = rateSamples.Peek();
+                if (seconds - s0 >= 15)
+                {
+                    if (d <= d0)
+                        return "—";
+                    perFile = Math.Max(perFile, (seconds - s0) / (d - d0));
+                }
+            }
+            var eta = TimeSpan.FromSeconds(perFile * (t - d));
             if (eta.TotalHours >= 1)
                 return Loc.F("~{0:0.#}h", eta.TotalHours);
             if (eta.TotalMinutes >= 1)

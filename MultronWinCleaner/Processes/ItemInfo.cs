@@ -35,7 +35,7 @@ namespace MultronWinCleaner.Processes
             ["Windows System Files (Advanced)"] = ("System files that only experienced users should remove.", Badge.Advanced),
             ["Windows Enterprise Management"] = ("Data used when a company manages the PC. Do not clean it on a work PC.", Badge.Advanced),
             ["Windows Disk Cleanup"] = ("Runs the Windows Disk Cleanup tool with the selected categories.", Badge.None),
-            ["Windows Repair (DISM)"] = ("Checks and repairs the store Windows installs its components from. Takes several minutes.", Badge.Slow),
+            ["Windows Component Store (DISM)"] = ("Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.", Badge.Slow),
             ["System File Check (SFC)"] = ("Checks the Windows system files and repairs damaged ones. Takes several minutes.", Badge.Slow),
             ["Deep Log Files Scan"] = ("Searches the whole drive for log files. Takes longer than a normal scan.", Badge.Slow),
             ["Malware Scan"] = ("Checks the files on your PC for malware during the scan.", Badge.Testing),
@@ -56,7 +56,7 @@ namespace MultronWinCleaner.Processes
         private static readonly Dictionary<string, string> AdvancedTitles = new(StringComparer.OrdinalIgnoreCase)
         {
             ["cleanmgr.exe Commands"] = "Windows Disk Cleanup",
-            ["Dism.exe Commands"] = "Windows Repair (DISM)",
+            ["Dism.exe Commands"] = "Windows Component Store (DISM)",
             ["SFC Commands"] = "System File Check (SFC)",
         };
 
@@ -65,7 +65,7 @@ namespace MultronWinCleaner.Processes
         private static readonly Dictionary<string, string> Glyphs = new(StringComparer.OrdinalIgnoreCase)
         {
             ["Windows Disk Cleanup"] = "\uE74D",
-            ["Windows Repair (DISM)"] = "\uEC7A",
+            ["Windows Component Store (DISM)"] = "\uEC7A",
             ["System File Check (SFC)"] = "\uE8A5",
             ["Deep Log Files Scan"] = "\uE721",
             ["Malware Scan"] = "\uEA18",

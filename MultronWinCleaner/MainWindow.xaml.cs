@@ -850,7 +850,7 @@ namespace Multron_Win_Cleaner
         {
             if (LoadingOverlay.IsVisible)
             {
-                LoadingVersionText.Text = "v" + MultronWinCleaner.Processes.Updater.CurrentAppVersion.ToString(2) + " beta";
+                LoadingVersionText.Text = "v" + MultronWinCleaner.Processes.Updater.CurrentAppVersion.ToString(MultronWinCleaner.Processes.Updater.CurrentAppVersion.Build > 0 ? 3 : 2) + " beta";
                 LoadingOverlay.BeginAnimation(OpacityProperty, null);
                 LoadingOverlay.Opacity = 1;
                 LoadingOverlay.IsHitTestVisible = true;
@@ -1923,7 +1923,7 @@ namespace Multron_Win_Cleaner
 
         private void SetSystemCheck(string id, string color, string text, bool showRun, bool runChecked)
         {
-            SetStepBusy(id == "sfc" ? "System File Check (SFC)" : "Windows Repair (DISM)", false);
+            SetStepBusy(id == "sfc" ? "System File Check (SFC)" : "Windows Component Store (DISM)", false);
             var c = SystemCheckControls(id);
             c.Panel.Visibility = Visibility.Visible;
             SetResultPanelColor(c.Panel, c.Icon, color);
@@ -1951,7 +1951,7 @@ namespace Multron_Win_Cleaner
                 _ => Loc.T("Checking Windows system files (sfc /verifyonly)...")
             };
             SetSystemCheck(id, InfoColor, text, false, false);
-            SetStepBusy(id == "sfc" ? "System File Check (SFC)" : "Windows Repair (DISM)", true);
+            SetStepBusy(id == "sfc" ? "System File Check (SFC)" : "Windows Component Store (DISM)", true);
         }
 
         public void ShowComponentStoreResult(SystemChecks.ComponentStoreInfo info)
@@ -2185,6 +2185,19 @@ namespace Multron_Win_Cleaner
             AddOptionExpander(expander);
         }
 
+        public static string SecurityStatus(List<MultronWinCleaner.Processes.SecurityCheck.Issue> issues, string fixSummary, out string color)
+        {
+            if (fixSummary.Length == 0)
+                return DescribeSecurityIssues(issues, out color);
+            if (issues.Count == 0)
+            {
+                DescribeSecurityIssues(issues, out color);
+                int ignored = MultronWinCleaner.Processes.SecurityCheck.IgnoredCount;
+                return fixSummary + " " + Loc.T("No insecure Windows settings are left.") + (ignored > 0 ? " " + Loc.F(ignored == 1 ? "{0} warning is ignored." : "{0} warnings are ignored.", ignored) : "");
+            }
+            return DescribeSecurityIssues(issues, out color) + " " + fixSummary;
+        }
+
         public static string DescribeSecurityIssues(List<MultronWinCleaner.Processes.SecurityCheck.Issue> issues, out string color)
         {
             int high = issues.Count(i => i.Severity == MultronWinCleaner.Processes.SecurityCheck.Level.High);
@@ -2236,8 +2249,7 @@ namespace Multron_Win_Cleaner
         {
             foundSecurityIssues = issues;
             SecurityResultsList.ItemsSource = issues;
-            string status = DescribeSecurityIssues(issues, out string color);
-            SecurityResultsStatus.Text = suffix.Length > 0 ? status + " " + suffix : status;
+            SecurityResultsStatus.Text = SecurityStatus(issues, suffix, out string color);
             SetResultPanelColor(SecurityResultsPanel, SecurityResultsIcon, color);
             bool any = issues.Count > 0;
             SecurityResultsToggle.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
@@ -2672,8 +2684,17 @@ namespace Multron_Win_Cleaner
             bool automatic = autoclean == 1 || startupscan == 1;
 
             Duplicate_File_Finder? finder = utilities?.GetDuplicateFinder();
-            if (finder == null || finder.IsBusy)
+            if (finder == null)
                 return;
+            if (finder.IsBusy)
+            {
+                DuplicateResultsPanel.Visibility = Visibility.Visible;
+                DuplicateResultsButton.Visibility = Visibility.Collapsed;
+                DuplicateCancelButton.Visibility = Visibility.Collapsed;
+                DuplicateResultsStatus.Text = Loc.T("Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.");
+                SetResultPanelColor(DuplicateResultsPanel, DuplicateResultsIcon, InfoColor);
+                return;
+            }
 
             duplicateReportRunning = true;
             SetStepBusy("Duplicate Files", true);
@@ -2985,7 +3006,7 @@ namespace Multron_Win_Cleaner
         public async Task loadothers()
         {
             string cleanmgr = OptionGroupTitle(Loc.T("cleanmgr.exe Commands"), Loc.T("Windows Disk Cleanup"));
-            string dism = OptionGroupTitle(Loc.T("Dism.exe Commands"), Loc.T("Windows Repair (DISM)"));
+            string dism = OptionGroupTitle(Loc.T("Dism.exe Commands"), Loc.T("Windows Component Store (DISM)"));
             string sfc = OptionGroupTitle(Loc.T("SFC Commands"), Loc.T("System File Check (SFC)"));
             string logscan = OptionGroupTitle(Loc.T("Deep Log Files Scan"), Loc.T("Deep Log Files Scan"));
 
@@ -5551,11 +5572,19 @@ namespace Multron_Win_Cleaner
         public void FinishToolStatus(string tool, string text, bool problem)
         {
             if (activeTool != tool)
+            {
+                if (IsScanOrCleanBusy && !string.IsNullOrWhiteSpace(text))
+                    ShowChangeCard(tool, text, problem);
                 return;
+            }
             activeTool = null;
             UpdateTaskbarProgress();
             if (IsScanOrCleanBusy)
+            {
+                if (!string.IsNullOrWhiteSpace(text))
+                    ShowChangeCard(tool, text, problem);
                 return;
+            }
             progressBar1.Value = toolSavedProgress;
             if (!string.IsNullOrWhiteSpace(text))
                 ShowChangeCard(tool, text, problem);

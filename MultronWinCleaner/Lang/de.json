@@ -2022,7 +2022,6 @@
   "Multron Malware Scan Cloud (Testing)": "Multron Malware Scan Cloud (Test)",
   "Multron Cloud": "Multron Cloud",
   "Windows Disk Cleanup": "Windows-Datenträgerbereinigung",
-  "Windows Repair (DISM)": "Windows-Reparatur (DISM)",
   "System File Check (SFC)": "Systemdateiprüfung (SFC)",
   "The new interface mode is used after the current scan or clean has finished and the list is reloaded.": "Der neue Oberflächenmodus wird verwendet, sobald der aktuelle Scan oder die Bereinigung beendet ist und die Liste neu geladen wurde.",
   "Disk Cleanup for drive C:": "Datenträgerbereinigung für Laufwerk C:",
@@ -2304,7 +2303,6 @@
   "System files that only experienced users should remove.": "Systemdateien, die nur erfahrene Benutzer entfernen sollten.",
   "Data used when a company manages the PC. Do not clean it on a work PC.": "Daten, die verwendet werden, wenn ein Unternehmen den PC verwaltet. Auf einem Arbeits-PC nicht bereinigen.",
   "Runs the Windows Disk Cleanup tool with the selected categories.": "Führt die Windows-Datenträgerbereinigung mit den ausgewählten Kategorien aus.",
-  "Checks and repairs the store Windows installs its components from. Takes several minutes.": "Prüft und repariert den Speicher, aus dem Windows seine Komponenten installiert. Dauert einige Minuten.",
   "Checks the Windows system files and repairs damaged ones. Takes several minutes.": "Prüft die Windows-Systemdateien und repariert beschädigte. Dauert einige Minuten.",
   "Searches the whole drive for log files. Takes longer than a normal scan.": "Durchsucht das ganze Laufwerk nach Protokolldateien. Dauert länger als ein normaler Scan.",
   "Checks the files on your PC for malware during the scan.": "Prüft die Dateien auf Ihrem PC während des Scans auf Schadsoftware.",
@@ -2755,5 +2753,8 @@
   "{0} threat(s) still need your decision": "{0} Bedrohung(en) warten noch auf Ihre Entscheidung",
   "{0} suspicious file(s) still need your decision": "{0} verdächtige Datei(en) warten noch auf Ihre Entscheidung",
   "All threats were removed": "Alle Bedrohungen wurden entfernt",
-  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "Ein Fehler ist aufgetreten, aber Multron Win Cleaner läuft weiter:\n\n{0}\n\nDie Details wurden in crash.log im Programmordner gespeichert."
+  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "Ein Fehler ist aufgetreten, aber Multron Win Cleaner läuft weiter:\n\n{0}\n\nDie Details wurden in crash.log im Programmordner gespeichert.",
+  "No insecure Windows settings are left.": "Es sind keine unsicheren Windows-Einstellungen mehr vorhanden.",
+  "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "Übersprungen, weil Duplicate File Finder bereits sucht. Die Ergebnisse werden in Duplicate File Finder angezeigt.",
+  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "Entfernt alte Windows-Updatedateien und prüft und repariert den Speicher, aus dem Windows seine Komponenten installiert. Dauert einige Minuten."
 }

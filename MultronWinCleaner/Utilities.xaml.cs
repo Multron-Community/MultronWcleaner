@@ -656,8 +656,7 @@ namespace MultronWinCleaner
             securityIssues = issues;
             SecurityList.ItemsSource = securityIssues;
             SecurityListScroll.Visibility = securityIssues.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-            string status = MainWindow.DescribeSecurityIssues(securityIssues, out string color);
-            SecurityResultLabel.Content = suffix.Length > 0 ? status + " " + suffix : status;
+            SecurityResultLabel.Content = MainWindow.SecurityStatus(securityIssues, suffix, out string color);
             SecurityResultLabel.Foreground = MultronWinCleaner.Processes.ThemeColors.ReadableBrush(color);
             SecurityResultLabel.Visibility = Visibility.Visible;
             SecurityFix.Visibility = securityIssues.Any(i => i.CanFix) ? Visibility.Visible : Visibility.Collapsed;

@@ -816,10 +816,8 @@ namespace MultronWinCleaner
                             continue;
                         }
 
-                        ulong totalMemory = computerInfo.TotalPhysicalMemory;
-                        ulong availableMemory = computerInfo.AvailablePhysicalMemory;
-                        ulong usedMemory = totalMemory - availableMemory;
-                        double ramPercent = Math.Round((usedMemory * 100.0) / totalMemory, 1);
+                        var (totalMemory, usedMemory, rawPercent) = Processes.RamUsage.Read();
+                        double ramPercent = Math.Round(rawPercent, 1);
 
                         int cpuValue = CalculateCpuUsage();
                         int diskValue = ReadDiskPercent();

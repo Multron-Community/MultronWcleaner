@@ -2016,7 +2016,6 @@
   "Testing": "测试",
   "Multron Cloud": "Multron 云",
   "Windows Disk Cleanup": "Windows 磁盘清理",
-  "Windows Repair (DISM)": "Windows 修复 (DISM)",
   "System File Check (SFC)": "系统文件检查 (SFC)",
   "The new interface mode is used after the current scan or clean has finished and the list is reloaded.": "新的界面模式将在当前扫描或清理完成并重新加载列表后使用。",
   "Disk Cleanup for drive C:": "驱动器 C: 的磁盘清理",
@@ -2298,7 +2297,6 @@
   "System files that only experienced users should remove.": "只有有经验的用户才应删除的系统文件。",
   "Data used when a company manages the PC. Do not clean it on a work PC.": "公司管理电脑时使用的数据。请勿在工作电脑上清理。",
   "Runs the Windows Disk Cleanup tool with the selected categories.": "使用所选类别运行 Windows 磁盘清理。",
-  "Checks and repairs the store Windows installs its components from. Takes several minutes.": "检查并修复 Windows 安装组件所用的存储。需要几分钟。",
   "Checks the Windows system files and repairs damaged ones. Takes several minutes.": "检查 Windows 系统文件并修复损坏的文件。需要几分钟。",
   "Searches the whole drive for log files. Takes longer than a normal scan.": "在整个驱动器中搜索日志文件。比普通扫描耗时更长。",
   "Checks the files on your PC for malware during the scan.": "扫描时检查电脑上的文件是否有恶意软件。",
@@ -2755,5 +2753,8 @@
   "{0} threat(s) still need your decision": "{0} 个威胁仍待你决定",
   "{0} suspicious file(s) still need your decision": "{0} 个可疑文件仍待你决定",
   "All threats were removed": "所有威胁均已移除",
-  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "出现了问题，但 Multron Win Cleaner 仍在运行：\n\n{0}\n\n详细信息已保存到程序文件夹中的 crash.log。"
+  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "出现了问题，但 Multron Win Cleaner 仍在运行：\n\n{0}\n\n详细信息已保存到程序文件夹中的 crash.log。",
+  "No insecure Windows settings are left.": "已没有不安全的 Windows 设置。",
+  "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "由于 Duplicate File Finder 正在扫描，已跳过。结果显示在 Duplicate File Finder 中。",
+  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "清理旧的 Windows 更新文件，并检查和修复 Windows 安装组件所用的存储。需要几分钟。"
 }

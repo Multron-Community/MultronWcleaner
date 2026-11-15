@@ -2018,7 +2018,6 @@
   "Testing": "テスト",
   "Multron Cloud": "Multron Cloud",
   "Windows Disk Cleanup": "Windows ディスク クリーンアップ",
-  "Windows Repair (DISM)": "Windows の修復 (DISM)",
   "System File Check (SFC)": "システム ファイル チェック (SFC)",
   "The new interface mode is used after the current scan or clean has finished and the list is reloaded.": "新しいインターフェイス モードは、現在のスキャンまたはクリーンアップが終了し、一覧が再読み込みされた後に使用されます。",
   "Disk Cleanup for drive C:": "ドライブ C: のディスク クリーンアップ",
@@ -2300,7 +2299,6 @@
   "System files that only experienced users should remove.": "経験のあるユーザーだけが削除すべきシステムファイルです。",
   "Data used when a company manages the PC. Do not clean it on a work PC.": "会社が PC を管理するときに使われるデータです。仕事用 PC ではクリーンしないでください。",
   "Runs the Windows Disk Cleanup tool with the selected categories.": "選択したカテゴリで Windows のディスク クリーンアップを実行します。",
-  "Checks and repairs the store Windows installs its components from. Takes several minutes.": "Windows がコンポーネントをインストールする元のストアを確認して修復します。数分かかります。",
   "Checks the Windows system files and repairs damaged ones. Takes several minutes.": "Windows のシステムファイルを確認し、破損したものを修復します。数分かかります。",
   "Searches the whole drive for log files. Takes longer than a normal scan.": "ドライブ全体からログファイルを探します。通常のスキャンより時間がかかります。",
   "Checks the files on your PC for malware during the scan.": "スキャン中に PC のファイルにマルウェアがないか確認します。",
@@ -2753,5 +2751,8 @@
   "{0} threat(s) still need your decision": "{0} 件の脅威がまだ判断を待っています",
   "{0} suspicious file(s) still need your decision": "{0} 件の不審なファイルがまだ判断を待っています",
   "All threats were removed": "すべての脅威を削除しました",
-  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "問題が発生しましたが、Multron Win Cleaner は動作を続けています:\n\n{0}\n\n詳細はプログラム フォルダーの crash.log に保存されました。"
+  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "問題が発生しましたが、Multron Win Cleaner は動作を続けています:\n\n{0}\n\n詳細はプログラム フォルダーの crash.log に保存されました。",
+  "No insecure Windows settings are left.": "安全でない Windows 設定は残っていません。",
+  "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "Duplicate File Finder がすでにスキャン中のため、スキップしました。結果は Duplicate File Finder に表示されます。",
+  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "古い Windows Update ファイルを削除し、Windows がコンポーネントをインストールするストアを確認して修復します。数分かかります。"
 }

@@ -2021,7 +2021,6 @@
   "Testing": "테스트",
   "Multron Cloud": "Multron 클라우드",
   "Windows Disk Cleanup": "Windows 디스크 정리",
-  "Windows Repair (DISM)": "Windows 복구(DISM)",
   "System File Check (SFC)": "시스템 파일 검사(SFC)",
   "The new interface mode is used after the current scan or clean has finished and the list is reloaded.": "새 인터페이스 모드는 현재 검사 또는 정리가 끝나고 목록을 다시 불러온 후에 사용됩니다.",
   "Disk Cleanup for drive C:": "C: 드라이브 디스크 정리",
@@ -2303,7 +2302,6 @@
   "System files that only experienced users should remove.": "숙련된 사용자만 제거해야 하는 시스템 파일입니다.",
   "Data used when a company manages the PC. Do not clean it on a work PC.": "회사가 PC를 관리할 때 사용하는 데이터입니다. 업무용 PC에서는 정리하지 마세요.",
   "Runs the Windows Disk Cleanup tool with the selected categories.": "선택한 범주로 Windows 디스크 정리를 실행합니다.",
-  "Checks and repairs the store Windows installs its components from. Takes several minutes.": "Windows가 구성 요소를 설치하는 저장소를 확인하고 복구합니다. 몇 분 정도 걸립니다.",
   "Checks the Windows system files and repairs damaged ones. Takes several minutes.": "Windows 시스템 파일을 확인하고 손상된 파일을 복구합니다. 몇 분 정도 걸립니다.",
   "Searches the whole drive for log files. Takes longer than a normal scan.": "드라이브 전체에서 로그 파일을 찾습니다. 일반 검사보다 오래 걸립니다.",
   "Checks the files on your PC for malware during the scan.": "검사하는 동안 PC의 파일에 악성 코드가 있는지 확인합니다.",
@@ -2755,5 +2753,8 @@
   "{0} threat(s) still need your decision": "위협 {0}개가 아직 결정을 기다립니다",
   "{0} suspicious file(s) still need your decision": "의심 파일 {0}개가 아직 결정을 기다립니다",
   "All threats were removed": "모든 위협이 제거되었습니다",
-  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "문제가 발생했지만 Multron Win Cleaner는 계속 실행됩니다:\n\n{0}\n\n자세한 내용은 프로그램 폴더의 crash.log에 저장되었습니다."
+  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "문제가 발생했지만 Multron Win Cleaner는 계속 실행됩니다:\n\n{0}\n\n자세한 내용은 프로그램 폴더의 crash.log에 저장되었습니다.",
+  "No insecure Windows settings are left.": "안전하지 않은 Windows 설정이 남아 있지 않습니다.",
+  "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "Duplicate File Finder가 이미 검사 중이므로 건너뛰었습니다. 결과는 Duplicate File Finder에 표시됩니다.",
+  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "오래된 Windows 업데이트 파일을 정리하고 Windows가 구성 요소를 설치하는 저장소를 검사하고 복구합니다. 몇 분 정도 걸립니다."
 }

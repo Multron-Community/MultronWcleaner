@@ -2016,7 +2016,6 @@
   "Testing": "測試",
   "Multron Cloud": "Multron 雲端",
   "Windows Disk Cleanup": "Windows 磁碟清理",
-  "Windows Repair (DISM)": "Windows 修復 (DISM)",
   "System File Check (SFC)": "系統檔案檢查 (SFC)",
   "The new interface mode is used after the current scan or clean has finished and the list is reloaded.": "新的介面模式會在目前的掃描或清理完成並重新載入清單後使用。",
   "Disk Cleanup for drive C:": "磁碟機 C: 的磁碟清理",
@@ -2298,7 +2297,6 @@
   "System files that only experienced users should remove.": "只有有經驗的使用者才應刪除的系統檔案。",
   "Data used when a company manages the PC. Do not clean it on a work PC.": "公司管理電腦時使用的資料。請勿在工作電腦上清理。",
   "Runs the Windows Disk Cleanup tool with the selected categories.": "使用所選類別執行 Windows 磁碟清理。",
-  "Checks and repairs the store Windows installs its components from. Takes several minutes.": "檢查並修復 Windows 安裝元件所用的存放區。需要幾分鐘。",
   "Checks the Windows system files and repairs damaged ones. Takes several minutes.": "檢查 Windows 系統檔案並修復損毀的檔案。需要幾分鐘。",
   "Searches the whole drive for log files. Takes longer than a normal scan.": "在整個磁碟機中搜尋記錄檔。比一般掃描耗時更長。",
   "Checks the files on your PC for malware during the scan.": "掃描時檢查電腦上的檔案是否有惡意軟體。",
@@ -2755,5 +2753,8 @@
   "{0} threat(s) still need your decision": "{0} 個威脅仍待你決定",
   "{0} suspicious file(s) still need your decision": "{0} 個可疑檔案仍待你決定",
   "All threats were removed": "所有威脅均已移除",
-  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "發生問題，但 Multron Win Cleaner 仍在執行：\n\n{0}\n\n詳細資訊已儲存到程式資料夾中的 crash.log。"
+  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "發生問題，但 Multron Win Cleaner 仍在執行：\n\n{0}\n\n詳細資訊已儲存到程式資料夾中的 crash.log。",
+  "No insecure Windows settings are left.": "已沒有不安全的 Windows 設定。",
+  "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "由於 Duplicate File Finder 正在掃描，已略過。結果會顯示在 Duplicate File Finder 中。",
+  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "清理舊的 Windows 更新檔案，並檢查和修復 Windows 安裝元件所用的存放區。需要幾分鐘。"
 }
