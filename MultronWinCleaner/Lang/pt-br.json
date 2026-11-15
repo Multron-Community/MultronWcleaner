@@ -2756,5 +2756,7 @@
   "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "Algo deu errado, mas o Multron Win Cleaner continua funcionando:\n\n{0}\n\nOs detalhes foram salvos em crash.log na pasta do programa.",
   "No insecure Windows settings are left.": "Não resta nenhuma configuração insegura do Windows.",
   "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "Ignorado porque o Duplicate File Finder já está verificando. Os resultados são mostrados no Duplicate File Finder.",
-  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "Limpa arquivos antigos de atualização do Windows e verifica e repara o repositório de onde o Windows instala seus componentes. Leva vários minutos."
+  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "Limpa arquivos antigos de atualização do Windows e verifica e repara o repositório de onde o Windows instala seus componentes. Leva vários minutos.",
+  "Fixed: {0}": "Corrigido: {0}",
+  "Could not fix: {0}": "Não foi possível corrigir: {0}"
 }

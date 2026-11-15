@@ -485,6 +485,7 @@ namespace MultronWinCleaner
             {
                 if (OptimizationProfile.SelectedIndex < 0)
                     OptimizationProfile.SelectedIndex = 0;
+                RefreshSecurityLog();
                 RefreshOptimizationCard();
                 isSettingsLoaded = true;
             }
@@ -649,8 +650,17 @@ namespace MultronWinCleaner
             ShortcutScan.Content = Loc.T("ReScan");
         }
 
+        private void RefreshSecurityLog()
+        {
+            if (SecurityLog == null) return;
+            var lines = MultronWinCleaner.Processes.SecurityCheck.ReadLog();
+            SecurityLog.ItemsSource = lines;
+            SecurityLogPanel.Visibility = lines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         public void ShowSecurityIssues(List<MultronWinCleaner.Processes.SecurityCheck.Issue> issues, string suffix)
         {
+            RefreshSecurityLog();
             if (securityRunning)
                 return;
             securityIssues = issues;
@@ -891,8 +901,6 @@ namespace MultronWinCleaner
             });
             if (done)
             {
-                MultronWinCleaner.Processes.Optimizer.AppendLog(selected.Select(i => Loc.F("Security fix: {0}", i.Title)));
-                RefreshOptimizationCard();
                 await RunSecurityScanAsync(message);
                 window?.ApplySecurityIssues(securityIssues, message);
             }
@@ -910,6 +918,7 @@ namespace MultronWinCleaner
             try
             {
                 var log = await Task.Run(MultronWinCleaner.Processes.SecurityCheck.Undo);
+                RefreshSecurityLog();
                 if (log.Count > 1)
                     AppDialog.Show(string.Join("\n", log), Loc.T("Security Check"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 await RunSecurityScanAsync(log.FirstOrDefault() ?? "");

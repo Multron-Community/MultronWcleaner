@@ -178,6 +178,8 @@ namespace MultronWinCleaner
         public Duplicate_File_Finder()
         {
             InitializeComponent();
+            System.ComponentModel.DependencyPropertyDescriptor.FromProperty(ContentControl.ContentProperty, typeof(Button)).AddValueChanged(MainActionButton, (s, e) => UpdateRescanButton());
+            MainActionButton.IsEnabledChanged += (s, e) => UpdateRescanButton();
             BuildExtensionChoices();
             ExtensionCheckBox_CheckedChanged(this, new RoutedEventArgs());
 
@@ -376,6 +378,19 @@ namespace MultronWinCleaner
         }
 
         private bool _isDeleting;
+
+        private void UpdateRescanButton()
+        {
+            RescanButton.Visibility = _isScanned && !_isScanning && !_isDeleting && MainActionButton.IsEnabled ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void RescanButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isScanning || _isDeleting)
+                return;
+            ResetToScanState();
+            MainActionButton_Click(MainActionButton, e);
+        }
         private bool _keepScanButton;
 
         private object? _mainCancelContent;
@@ -384,7 +399,8 @@ namespace MultronWinCleaner
         {
             if (_isScanning || _isDeleting)
                 return;
-            bool busy = (Application.Current?.MainWindow as Multron_Win_Cleaner.MainWindow)?.IsScanOrCleanBusy == true;
+            var main = Application.Current?.MainWindow as Multron_Win_Cleaner.MainWindow;
+            bool busy = main?.IsScanOrCleanBusy == true && main?.IsMalwareStepRunning != true;
             if (!busy)
                 _keepScanButton = false;
             if (busy && !_isScanned && !_keepScanButton)

@@ -2756,5 +2756,7 @@
   "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "문제가 발생했지만 Multron Win Cleaner는 계속 실행됩니다:\n\n{0}\n\n자세한 내용은 프로그램 폴더의 crash.log에 저장되었습니다.",
   "No insecure Windows settings are left.": "안전하지 않은 Windows 설정이 남아 있지 않습니다.",
   "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "Duplicate File Finder가 이미 검사 중이므로 건너뛰었습니다. 결과는 Duplicate File Finder에 표시됩니다.",
-  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "오래된 Windows 업데이트 파일을 정리하고 Windows가 구성 요소를 설치하는 저장소를 검사하고 복구합니다. 몇 분 정도 걸립니다."
+  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "오래된 Windows 업데이트 파일을 정리하고 Windows가 구성 요소를 설치하는 저장소를 검사하고 복구합니다. 몇 분 정도 걸립니다.",
+  "Fixed: {0}": "수정됨: {0}",
+  "Could not fix: {0}": "수정하지 못함: {0}"
 }

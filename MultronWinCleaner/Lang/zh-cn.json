@@ -2756,5 +2756,7 @@
   "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "出现了问题，但 Multron Win Cleaner 仍在运行：\n\n{0}\n\n详细信息已保存到程序文件夹中的 crash.log。",
   "No insecure Windows settings are left.": "已没有不安全的 Windows 设置。",
   "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "由于 Duplicate File Finder 正在扫描，已跳过。结果显示在 Duplicate File Finder 中。",
-  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "清理旧的 Windows 更新文件，并检查和修复 Windows 安装组件所用的存储。需要几分钟。"
+  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "清理旧的 Windows 更新文件，并检查和修复 Windows 安装组件所用的存储。需要几分钟。",
+  "Fixed: {0}": "已修复：{0}",
+  "Could not fix: {0}": "无法修复：{0}"
 }

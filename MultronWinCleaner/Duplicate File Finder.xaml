@@ -43,6 +43,12 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="RescanActionButton" TargetType="Button" BasedOn="{StaticResource ScanActionButton}">
+            <Setter Property="Background" Value="{DynamicResource SecondaryPanelBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+        </Style>
         <Style x:Key="ModernTextBox" TargetType="TextBox">
             <Setter Property="Background" Value="{DynamicResource TextBoxBackground}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
@@ -161,7 +167,10 @@
                                 </TextBlock.Style>
                             </TextBlock>
                         </StackPanel>
-                        <Button x:Name="MainActionButton" Grid.Column="2" Content="{loc:Tr 'SCAN'}" Style="{StaticResource ScanActionButton}" VerticalAlignment="Center" Click="MainActionButton_Click"/>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="RescanButton" Content="{loc:Tr 'ReScan'}" Style="{StaticResource RescanActionButton}" Visibility="Collapsed" Click="RescanButton_Click"/>
+                            <Button x:Name="MainActionButton" Content="{loc:Tr 'SCAN'}" Style="{StaticResource ScanActionButton}" Click="MainActionButton_Click"/>
+                        </StackPanel>
                     </Grid>
                 </Border>
   

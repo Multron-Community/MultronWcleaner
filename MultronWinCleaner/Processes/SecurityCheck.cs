@@ -92,6 +92,61 @@ namespace MultronWinCleaner.Processes
         private const string WindowsUpdatePolicy = @"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate";
 
         private static string BackupPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "security_backup.json");
+        private static string LogPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "security_log.txt");
+        private static readonly object LogLock = new object();
+
+        public static void AppendLog(IEnumerable<string> lines)
+        {
+            string stamp = DateTime.Now.ToString("g");
+            AppendRaw(lines.Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => stamp + "  " + l));
+        }
+
+        private static void AppendRaw(IEnumerable<string> lines, bool first = false)
+        {
+            lock (LogLock)
+            {
+                try
+                {
+                    var all = File.Exists(LogPath) ? File.ReadAllLines(LogPath).ToList() : new List<string>();
+                    if (first)
+                        all.InsertRange(0, lines);
+                    else
+                        all.AddRange(lines);
+                    File.WriteAllLines(LogPath, all.Skip(Math.Max(0, all.Count - 200)));
+                }
+                catch (Exception) { }
+            }
+        }
+
+        public static List<string> ReadLog()
+        {
+            MoveOldLogLines();
+            lock (LogLock)
+            {
+                try
+                {
+                    if (File.Exists(LogPath))
+                        return File.ReadAllLines(LogPath).Reverse().ToList();
+                }
+                catch (Exception) { }
+                return new List<string>();
+            }
+        }
+
+        private static bool oldLinesMoved;
+
+        private static void MoveOldLogLines()
+        {
+            if (oldLinesMoved)
+                return;
+            oldLinesMoved = true;
+            string english = "  Security fix: ";
+            string local = "  " + Loc.F("Security fix: {0}", "");
+            string fixedPrefix = "  " + Loc.F("Fixed: {0}", "");
+            var old = Optimizer.TakeLines(l => l.Contains(english) || l.Contains(local));
+            if (old.Count > 0)
+                AppendRaw(old.Select(l => l.Replace(local, fixedPrefix).Replace(english, fixedPrefix)), true);
+        }
 
         public static bool HasBackup => File.Exists(BackupPath);
 
@@ -1337,7 +1392,7 @@ namespace MultronWinCleaner.Processes
                 {
                     issue.Apply!(backup);
                     result.Fixed++;
-                    result.Log.Add(Loc.F("Security fix: {0}", issue.Title));
+                    result.Log.Add(Loc.F("Fixed: {0}", issue.Title));
                     if (issue.NeedsRestart)
                         result.NeedsRestart = true;
                 }
@@ -1350,6 +1405,7 @@ namespace MultronWinCleaner.Processes
                     try { SaveBackup(backup); } catch (Exception) { }
                 }
             }
+            AppendLog(result.Log.Concat(result.Failed.Select(f => Loc.F("Could not fix: {0}", f))));
             return result;
         }
 
@@ -1453,6 +1509,7 @@ namespace MultronWinCleaner.Processes
             }
 
             log.Insert(0, Loc.T(complete ? "Security fixes were undone." : "Security fixes were undone, with errors:"));
+            AppendLog(new[] { log[0] });
             try { File.Delete(BackupPath); } catch (Exception) { }
             return log;
         }

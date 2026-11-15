@@ -2754,5 +2754,7 @@
   "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "問題が発生しましたが、Multron Win Cleaner は動作を続けています:\n\n{0}\n\n詳細はプログラム フォルダーの crash.log に保存されました。",
   "No insecure Windows settings are left.": "安全でない Windows 設定は残っていません。",
   "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "Duplicate File Finder がすでにスキャン中のため、スキップしました。結果は Duplicate File Finder に表示されます。",
-  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "古い Windows Update ファイルを削除し、Windows がコンポーネントをインストールするストアを確認して修復します。数分かかります。"
+  "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "古い Windows Update ファイルを削除し、Windows がコンポーネントをインストールするストアを確認して修復します。数分かかります。",
+  "Fixed: {0}": "修正済み: {0}",
+  "Could not fix: {0}": "修正できませんでした: {0}"
 }

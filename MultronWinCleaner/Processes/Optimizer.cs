@@ -47,6 +47,27 @@ namespace MultronWinCleaner.Processes
             }
         }
 
+        public static List<string> TakeLines(Func<string, bool> match)
+        {
+            lock (LogLock)
+            {
+                try
+                {
+                    if (!File.Exists(LogPath))
+                        return new List<string>();
+                    var all = File.ReadAllLines(LogPath).ToList();
+                    var taken = all.Where(match).ToList();
+                    if (taken.Count > 0)
+                        File.WriteAllLines(LogPath, all.Where(l => !match(l)));
+                    return taken;
+                }
+                catch (Exception)
+                {
+                    return new List<string>();
+                }
+            }
+        }
+
         public static void ClearLog()
         {
             lock (LogLock)

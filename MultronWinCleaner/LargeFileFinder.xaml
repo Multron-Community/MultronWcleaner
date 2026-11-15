@@ -92,6 +92,12 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="RescanActionButton" TargetType="Button" BasedOn="{StaticResource ScanActionButton}">
+            <Setter Property="Background" Value="{DynamicResource SecondaryPanelBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+        </Style>
         <Style x:Key="SectionTitle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -160,7 +166,10 @@
                             <TextBlock Text="{loc:Tr 'Scans a selected folder for the largest files consuming disk space.'}" FontSize="12.5" Foreground="{DynamicResource TextSecondary}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
                         </StackPanel>
 
-                        <Button Grid.Column="2" Name="StartScan" Click="StartScan_Click" Content="{loc:Tr 'SCAN'}" Style="{StaticResource ScanActionButton}" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="RescanButton" Click="RescanButton_Click" Content="{loc:Tr 'ReScan'}" Style="{StaticResource RescanActionButton}" Visibility="Collapsed"/>
+                            <Button Name="StartScan" Click="StartScan_Click" Content="{loc:Tr 'SCAN'}" Style="{StaticResource ScanActionButton}"/>
+                        </StackPanel>
 
                         <ProgressBar x:Name="ScanProgressBar" Style="{DynamicResource ModernLinearProgressStyle}" Grid.Row="1" Grid.ColumnSpan="3" Height="6" Margin="0,12,0,0"
                                      Foreground="{DynamicResource AccentBrush}" Visibility="Collapsed"/>

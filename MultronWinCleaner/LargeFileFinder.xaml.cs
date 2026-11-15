@@ -332,6 +332,7 @@ namespace MultronWinCleaner
             isScanning = true;
             cancel = 0;
             UpdateScanButtonUI(true);
+            RescanButton.Visibility = Visibility.Collapsed;
 
             ScanResultLabel.Text = Loc.T("Calculating...");
             ScanProgressBar.Visibility = Visibility.Visible;
@@ -498,7 +499,15 @@ namespace MultronWinCleaner
                 isScanning = false;
                 UpdateScanButtonUI(false);
                 ScanProgressBar.Visibility = Visibility.Collapsed;
+                RescanButton.Visibility = Visibility.Visible;
             }
+        }
+
+        private void RescanButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (isScanning)
+                return;
+            StartScan_Click(StartScan, e);
         }
 
         private void UpdateScanButtonUI(bool scanning)
@@ -776,6 +785,8 @@ namespace MultronWinCleaner
 
         private void ClearListButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!isScanning)
+                RescanButton.Visibility = Visibility.Collapsed;
             LargeFilesDataGrid.ItemsSource = null;
             SearchBox.Clear();
             ScanResultLabel.Text = Loc.T("List Cleared!");

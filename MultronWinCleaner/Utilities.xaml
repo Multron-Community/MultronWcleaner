@@ -321,6 +321,16 @@
                                     Visibility="Collapsed" HorizontalAlignment="Left"
                                     ToolTip="{loc:Tr 'Shows the ignored warnings again and checks the settings once more.'}"
                                     Style="{DynamicResource UtilitySecondaryButtonStyle}"/>
+                            <StackPanel x:Name="SecurityLogPanel" Margin="0,16,0,0" Visibility="Collapsed">
+                                <TextBlock Text="{loc:Tr 'Activity'}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
+                                <ListBox x:Name="SecurityLog" Style="{DynamicResource ResultListStyle}" Height="110">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 
