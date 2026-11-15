@@ -13,7 +13,7 @@
     </a>
     <!-- downloads-badge:start -->
     <a href="#downloads">
-      <img src="https://img.shields.io/badge/Downloads-15k-c2410c?style=for-the-badge&logo=github&logoColor=white" alt="Downloads: 14,985" />
+      <img src="https://img.shields.io/badge/Downloads-15.1k-c2410c?style=for-the-badge&logo=github&logoColor=white" alt="Downloads: 15,060" />
     </a>
 <!-- downloads-badge:end -->
     <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Platform" />
@@ -232,7 +232,7 @@ The application is fully localized into **12 languages**: English, Turkish, Germ
 ## Downloads
 
 <!-- downloads:start -->
-**14,985** downloads across **83** releases · latest [v1.29.2](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.2): **119** · updated 2026-11-14
+**15,060** downloads across **83** releases · latest [v1.29.2](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.2): **192** · updated 2026-11-15
 
 Counts the installer and portable archive downloads of every release. Update checks made by the app are not counted.
 
@@ -241,8 +241,8 @@ Counts the installer and portable archive downloads of every release. Update che
 
 | Release | Date | Downloads |
 |---|---|---:|
-| [v1.29.2](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.2) | 2026-11-13 | 119 |
-| [v1.29.1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.1) | 2026-11-13 | 92 |
+| [v1.29.2](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.2) | 2026-11-13 | 192 |
+| [v1.29.1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.1) | 2026-11-13 | 93 |
 | [v1.29.0](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.0) | 2026-11-13 | 18 |
 | [v1.28.0](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.28.0) | 2026-11-02 | 405 |
 | [v1.27.3](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.27.3) | 2026-11-01 | 185 |
@@ -258,7 +258,7 @@ Counts the installer and portable archive downloads of every release. Update che
 | [v1.26](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26) | 2026-10-10 | 262 |
 | [mwcb_125](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_125) | 2026-10-03 | 234 |
 | [mwcb_1248](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1248) | 2026-10-03 | 91 |
-| [mwcb_1247](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1247) | 2026-10-02 | 393 |
+| [mwcb_1247](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1247) | 2026-10-02 | 394 |
 | [mwcb_1246](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1246) | 2026-10-01 | 128 |
 | [mwcb_1245](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1245) | 2026-09-30 | 223 |
 | [mwcb_1244](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1244) | 2026-09-25 | 408 |
