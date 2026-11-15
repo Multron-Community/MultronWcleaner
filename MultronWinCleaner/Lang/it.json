@@ -2754,5 +2754,6 @@
   "{0} threat(s) and {1} suspicious file(s) still need your decision": "{0} minacce e {1} file sospetti attendono ancora la tua decisione",
   "{0} threat(s) still need your decision": "{0} minacce attendono ancora la tua decisione",
   "{0} suspicious file(s) still need your decision": "{0} file sospetti attendono ancora la tua decisione",
-  "All threats were removed": "Tutte le minacce sono state rimosse"
+  "All threats were removed": "Tutte le minacce sono state rimosse",
+  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "Si è verificato un errore, ma Multron Win Cleaner continua a funzionare:\n\n{0}\n\nI dettagli sono stati salvati in crash.log nella cartella del programma."
 }

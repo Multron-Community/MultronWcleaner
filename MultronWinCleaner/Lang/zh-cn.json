@@ -2754,5 +2754,6 @@
   "{0} threat(s) and {1} suspicious file(s) still need your decision": "{0} 个威胁和 {1} 个可疑文件仍待你决定",
   "{0} threat(s) still need your decision": "{0} 个威胁仍待你决定",
   "{0} suspicious file(s) still need your decision": "{0} 个可疑文件仍待你决定",
-  "All threats were removed": "所有威胁均已移除"
+  "All threats were removed": "所有威胁均已移除",
+  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "出现了问题，但 Multron Win Cleaner 仍在运行：\n\n{0}\n\n详细信息已保存到程序文件夹中的 crash.log。"
 }

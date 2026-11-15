@@ -178,7 +178,7 @@ namespace MultronWinCleaner
 
         private void UpdateToolAvailability()
         {
-            bool busy = window?.IsScanOrCleanBusy == true;
+            bool busy = window?.IsScanOrCleanBusy == true && window?.IsMalwareStepRunning != true;
             if (!firewallRunning)
                 SetMainCancelMode(FirewallScan, ref firewallSavedContent, busy);
             if (!shortcutRunning)
@@ -1037,10 +1037,6 @@ namespace MultronWinCleaner
             if (largefilefinder == null)
             {
                 largefilefinder = new LargeFileFinder();
-                window.settings.Close();
-                window.settings = new Settings(memcleaner, window.utilities, window, startupmanager);
-                window.settings.Show();
-                window.settings.Hide();
           
             }
                 
@@ -1128,11 +1124,6 @@ namespace MultronWinCleaner
             if(Duplicate_File_Finder == null)
             {
                 Duplicate_File_Finder = new Duplicate_File_Finder();
-                window.settings.Close();
-                window.settings = new Settings(memcleaner, window.utilities, window, startupmanager);
-                window.settings.Show();
-                window.settings.Hide();
-        
             }
         
             

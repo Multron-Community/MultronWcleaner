@@ -2754,5 +2754,6 @@
   "{0} threat(s) and {1} suspicious file(s) still need your decision": "위협 {0}개와 의심 파일 {1}개가 아직 결정을 기다립니다",
   "{0} threat(s) still need your decision": "위협 {0}개가 아직 결정을 기다립니다",
   "{0} suspicious file(s) still need your decision": "의심 파일 {0}개가 아직 결정을 기다립니다",
-  "All threats were removed": "모든 위협이 제거되었습니다"
+  "All threats were removed": "모든 위협이 제거되었습니다",
+  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "문제가 발생했지만 Multron Win Cleaner는 계속 실행됩니다:\n\n{0}\n\n자세한 내용은 프로그램 폴더의 crash.log에 저장되었습니다."
 }

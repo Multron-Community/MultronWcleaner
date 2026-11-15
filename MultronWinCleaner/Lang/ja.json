@@ -2752,5 +2752,6 @@
   "{0} threat(s) and {1} suspicious file(s) still need your decision": "{0} 件の脅威と {1} 件の不審なファイルがまだ判断を待っています",
   "{0} threat(s) still need your decision": "{0} 件の脅威がまだ判断を待っています",
   "{0} suspicious file(s) still need your decision": "{0} 件の不審なファイルがまだ判断を待っています",
-  "All threats were removed": "すべての脅威を削除しました"
+  "All threats were removed": "すべての脅威を削除しました",
+  "Something went wrong, but Multron Win Cleaner keeps running:\n\n{0}\n\nThe details were saved to crash.log in the program folder.": "問題が発生しましたが、Multron Win Cleaner は動作を続けています:\n\n{0}\n\n詳細はプログラム フォルダーの crash.log に保存されました。"
 }

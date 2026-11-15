@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -11,7 +11,7 @@
     <ApplicationIcon>Assets\mwc_icon.ico</ApplicationIcon>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>false</SelfContained>
+    <SelfContained>true</SelfContained>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
 
@@ -76,10 +76,9 @@
     <PackageReference Include="Octokit" Version="14.0.0" />
     <PackageReference Include="SharpCompress" Version="0.50.4" />
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
-    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="9.0.6" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.6" />
-    <PackageReference Include="System.Management" Version="9.0.6" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.6" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="10.0.0" />
+    <PackageReference Include="System.Management" Version="10.0.0" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
     <PackageReference Include="TaskScheduler" Version="2.12.1" />
   </ItemGroup>
 

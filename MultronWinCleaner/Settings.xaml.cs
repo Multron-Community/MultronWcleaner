@@ -238,8 +238,10 @@ namespace MultronWinCleaner
            
             List<string> foundUsers = new List<string>();
              
-            await Task.Run(() =>
+            try
             {
+                await Task.Run(() =>
+                {
                 using (PrincipalContext ctx = new PrincipalContext(ContextType.Machine))
                 {
                     UserPrincipal userPrincipal = new UserPrincipal(ctx);
@@ -254,7 +256,14 @@ namespace MultronWinCleaner
                         }
                     }
                 }
-            });
+                });
+            }
+            catch (Exception ex)
+            {
+                Processes.CrashLog.Write(ex, "user list");
+                foundUsers.Clear();
+                foundUsers.Add(currentUserShort);
+            }
              
             comboBoxUserSelection.Items.Clear();
             foreach (var username in foundUsers)

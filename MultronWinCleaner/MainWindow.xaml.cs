@@ -1187,6 +1187,10 @@ namespace Multron_Win_Cleaner
             StartCleanReminder();
 
             bool offlineMode = IsOfflineModeEnabled();
+            bool checkApp = MultronWinCleaner.Processes.Updater.IsAppAutoUpdateEnabled();
+            bool checkDatabase = MultronWinCleaner.Processes.Updater.IsAutoUpdateEnabled() || !System.IO.File.Exists(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "database.txt"));
+            if (!checkApp && !checkDatabase)
+                LoadingStepUpdate.Visibility = Visibility.Collapsed;
             SetLoadingStep(false, LoadingStepState.Running);
             SetLoadingStep(true, LoadingStepState.Waiting);
             SetLoadingProgress(null);
@@ -1218,10 +1222,16 @@ namespace Multron_Win_Cleaner
 
             LoadingOverlay.Visibility = Visibility.Visible;
 
-            if (isOnline)
+            if (isOnline && (checkApp || checkDatabase))
             {
                 MultronWinCleaner.Processes.Updater updater = new MultronWinCleaner.Processes.Updater(this);
-                await Task.Run(() => updater.run());
+                await Task.Run(async () =>
+                {
+                    if (checkApp)
+                        await updater.checkforapplicationupdates();
+                    if (checkDatabase)
+                        await updater.downloadlatestdatabase();
+                });
                 SetLoadingStep(false, LoadingStepState.Done);
             }
             else
@@ -5444,7 +5454,33 @@ namespace Multron_Win_Cleaner
             label1_Copy.Foreground = MultronWinCleaner.Processes.ThemeColors.ReadableBrush(InfoColor);
         }
 
-        public bool IsScanOrCleanBusy => Equals(buttonStartScan.Content, Loc.T("Cancel")) && !Equals(malwareCancelRestore, "Scan");
+        public bool IsMalwareStepRunning => Equals(malwareCancelRestore, "Clean");
+
+        public bool IsScanOrCleanBusy => Equals(buttonStartScan.Content, Loc.T("Cancel")) && !Equals(malwareCancelRestore, "Scan") && toolCancel == null;
+
+        private Action? toolCancel;
+        private object? toolCancelRestore;
+
+        private void SetToolCancel(Action? cancel)
+        {
+            if (cancel != null)
+            {
+                if (toolCancel == null && (Equals(buttonStartScan.Content, Loc.T("Cancel")) || malwareCancelRestore != null || scanStepStop != null || duplicateCancelMode))
+                    return;
+                if (toolCancel == null)
+                    toolCancelRestore = buttonStartScan.Content;
+                toolCancel = cancel;
+                buttonStartScan.Content = Loc.T("Cancel");
+                buttonStartScan.IsEnabled = true;
+                return;
+            }
+            if (toolCancel == null)
+                return;
+            toolCancel = null;
+            buttonStartScan.Content = toolCancelRestore ?? Loc.T("Scan");
+            toolCancelRestore = null;
+            buttonStartScan.IsEnabled = true;
+        }
 
         public void CancelScanOrClean()
         {
@@ -5532,9 +5568,10 @@ namespace Multron_Win_Cleaner
                 ShowChangeCard(tool, text, problem);
         }
 
-        public void MirrorToolStatus(string tool, TextBlock source, System.Windows.Controls.ProgressBar? bar = null)
+        public void MirrorToolStatus(string tool, TextBlock source, System.Windows.Controls.ProgressBar? bar = null, Action? cancel = null)
         {
             StopMirroring();
+            SetToolCancel(cancel);
             mirrorTool = tool;
             mirrorSource = source;
             mirrorBar = bar;
@@ -5550,6 +5587,7 @@ namespace Multron_Win_Cleaner
                 return;
             string tool = mirrorTool;
             StopMirroring();
+            SetToolCancel(null);
             FinishToolStatus(tool, source.Text, problem);
         }
 
@@ -5646,6 +5684,14 @@ namespace Multron_Win_Cleaner
         private async void ButtonStartScan_Click(object sender, RoutedEventArgs e)
         {
             MarkMainActivity();
+            if (toolCancel != null)
+            {
+                buttonStartScan.IsEnabled = false;
+                label1_Copy.Text = Loc.F("{0}: {1}", mirrorTool ?? activeTool ?? "", Loc.T("Stopping..."));
+                label1_Copy.Foreground = MultronWinCleaner.Processes.ThemeColors.ReadableBrush(WarningColor);
+                toolCancel();
+                return;
+            }
             if (scanStepStop != null)
             {
                 buttonStartScan.IsEnabled = false;

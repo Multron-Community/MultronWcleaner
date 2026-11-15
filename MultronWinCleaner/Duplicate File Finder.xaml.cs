@@ -329,7 +329,11 @@ namespace MultronWinCleaner
                 TotalSizeText.Visibility = Visibility.Collapsed;
                 if (SearchCountText != null) SearchCountText.Text = "";
 
-                MainStatus?.MirrorToolStatus(Loc.T("Duplicate File Finder"), StatusText);
+                MainStatus?.MirrorToolStatus(Loc.T("Duplicate File Finder"), StatusText, null, () =>
+                {
+                    if (_isScanning)
+                        MainActionButton_Click(MainActionButton, new RoutedEventArgs());
+                });
                 await RunScanAsync();
 
                 _isScanning = false;

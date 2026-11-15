@@ -332,7 +332,7 @@ Her sürümün kurulum dosyası ve taşınabilir arşiv indirmelerini sayar. Uyg
 
 * **İşletim sistemi:** Windows 10 / Windows 11 (64 bit)
 * **Yetkiler:** Yönetici izinleri (DISM işlemleri, açılışta yapılan işlemler ve kayıt defteri erişimi için gereklidir). Bu nedenle uygulamayı başlatmak, sağ tık menüsünden başlatmak dahil, bir UAC istemi gösterir; Windows ile birlikte başlaması ise göstermez.
-* **Çalışma zamanı:** [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+* **Çalışma zamanı:** Ayrıca bir şey kurmanız gerekmez. Uygulama .NET 10 ile derlenir ve ihtiyaç duyduğu her şeyi içinde taşır.
 
 ---
 

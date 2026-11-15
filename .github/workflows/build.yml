@@ -21,7 +21,7 @@ jobs:
       - name: .NET SDK Kurulumu
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       - name: MSBuild Kurulumu
         uses: microsoft/setup-msbuild@v2

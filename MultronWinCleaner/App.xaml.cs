@@ -28,6 +28,7 @@ namespace MultronWinCleaner
         protected override void OnStartup(StartupEventArgs e)
         {
 
+            Processes.CrashLog.Register(this);
             LaunchedFromStartup = e.Args.Any(arg => arg.Equals("-startup", StringComparison.OrdinalIgnoreCase));
 
             string appDirectory = AppContext.BaseDirectory;

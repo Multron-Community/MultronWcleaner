@@ -384,7 +384,15 @@ namespace MultronWinCleaner
                         {
                             denied = true;
                         }
+                        catch (AggregateException)
+                        {
+                            denied = true;
+                        }
                         catch (NotSupportedException)
+                        {
+                            denied = true;
+                        }
+                        catch (Exception)
                         {
                             denied = true;
                         }

@@ -330,7 +330,7 @@ Counts the installer and portable archive downloads of every release. Update che
 
 * **OS:** Windows 10 / Windows 11 (64-bit)
 * **Privileges:** Administrator permissions (required for DISM operations, boot-time actions, and Registry access). Because of this, starting the app, including from the right-click menu, shows a UAC prompt; starting with Windows does not.
-* **Runtime:** [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+* **Runtime:** None to install. The app is built on .NET 10 and includes everything it needs.
 
 ---
 
