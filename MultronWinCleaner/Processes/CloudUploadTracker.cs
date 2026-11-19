@@ -425,7 +425,11 @@ namespace MultronWinCleaner.Processes
             item.Close(result);
             lock (sync)
             {
-                active.Remove(item);
+                if (!active.Remove(item))
+                {
+                    ScheduleRefresh();
+                    return;
+                }
                 if (sent || result?.Verdict is "malicious" or "suspicious")
                 {
                     history.Insert(0, item);
@@ -458,7 +462,7 @@ namespace MultronWinCleaner.Processes
                 string q = search;
                 wanted = busy.Where(i => i.Stage == UploadStage.Uploading && i.Matches(f, q))
                     .Concat(busy.Where(i => i.Stage != UploadStage.Uploading && i.Matches(f, q)))
-                    .Concat(history.Where(i => i.Matches(f, q))).ToList();
+                    .Concat(history.Where(i => i.Matches(f, q))).Distinct().ToList();
             }
 
             var keep = new HashSet<CloudUploadItem>(wanted);
