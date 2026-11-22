@@ -25,6 +25,7 @@ namespace MultronWinCleaner
             ("fr", "Français"),
             ("es", "Español"),
             ("it", "Italiano"),
+            ("pl", "Polski"),
             ("pt-br", "Português (Brasil)"),
             ("ru", "Русский"),
             ("ja", "日本語"),
