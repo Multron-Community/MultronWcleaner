@@ -13,7 +13,7 @@
     </a>
     <!-- downloads-badge:start -->
     <a href="#downloads">
-      <img src="https://img.shields.io/badge/Downloads-15.9k-c2410c?style=for-the-badge&logo=github&logoColor=white" alt="Downloads: 15,947" />
+      <img src="https://img.shields.io/badge/Downloads-16k-c2410c?style=for-the-badge&logo=github&logoColor=white" alt="Downloads: 16,019" />
     </a>
 <!-- downloads-badge:end -->
     <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Platform" />
@@ -232,7 +232,7 @@ The application is fully localized into **12 languages**: English, Turkish, Germ
 ## Downloads
 
 <!-- downloads:start -->
-**15,947** downloads across **87** releases · latest [v1.29.6](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.6): **345** · updated 2026-11-21
+**16,019** downloads across **87** releases · latest [v1.29.6](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.6): **416** · updated 2026-11-22
 
 Counts the installer and portable archive downloads of every release. Update checks made by the app are not counted.
 
@@ -241,8 +241,8 @@ Counts the installer and portable archive downloads of every release. Update che
 
 | Release | Date | Downloads |
 |---|---|---:|
-| [v1.29.6](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.6) | 2026-11-19 | 345 |
-| [v1.29.5](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.5) | 2026-11-15 | 378 |
+| [v1.29.6](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.6) | 2026-11-19 | 416 |
+| [v1.29.5](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.5) | 2026-11-15 | 379 |
 | [v1.29.4](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.4) | 2026-11-15 | 11 |
 | [v1.29.3](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.3) | 2026-11-15 | 13 |
 | [v1.29.2](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.2) | 2026-11-13 | 213 |
