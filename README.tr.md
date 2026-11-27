@@ -13,7 +13,7 @@
     </a>
     <!-- downloads-badge:start -->
     <a href="#downloads">
-      <img src="https://img.shields.io/badge/%C4%B0ndirme-16.2k-c2410c?style=for-the-badge&logo=github&logoColor=white" alt="İndirme: 16.228" />
+      <img src="https://img.shields.io/badge/%C4%B0ndirme-16.3k-c2410c?style=for-the-badge&logo=github&logoColor=white" alt="İndirme: 16.306" />
     </a>
 <!-- downloads-badge:end -->
     <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Platform" />
@@ -234,7 +234,7 @@ Uygulama **24 dile** tamamen çevrilmiştir: İngilizce, Türkçe, Almanca, İsp
 ## İndirmeler
 
 <!-- downloads:start -->
-**87** sürümde toplam **16.228** indirme · son sürüm [v1.29.6](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.6): **617** · güncelleme 2026-11-26
+**88** sürümde toplam **16.306** indirme · son sürüm [v1.29.7](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.7): **42** · güncelleme 2026-11-27
 
 Her sürümün kurulum dosyası ve taşınabilir arşiv indirmelerini sayar. Uygulamanın yaptığı güncelleme denetimleri sayılmaz.
 
@@ -243,11 +243,12 @@ Her sürümün kurulum dosyası ve taşınabilir arşiv indirmelerini sayar. Uyg
 
 | Sürüm | Tarih | İndirme |
 |---|---|---:|
-| [v1.29.6](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.6) | 2026-11-19 | 617 |
+| [v1.29.7](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.7) | 2026-11-27 | 42 |
+| [v1.29.6](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.6) | 2026-11-19 | 639 |
 | [v1.29.5](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.5) | 2026-11-15 | 379 |
 | [v1.29.4](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.4) | 2026-11-15 | 11 |
 | [v1.29.3](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.3) | 2026-11-15 | 13 |
-| [v1.29.2](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.2) | 2026-11-13 | 213 |
+| [v1.29.2](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.2) | 2026-11-13 | 214 |
 | [v1.29.1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.1) | 2026-11-13 | 93 |
 | [v1.29.0](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.29.0) | 2026-11-13 | 18 |
 | [v1.28.0](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.28.0) | 2026-11-02 | 406 |
@@ -264,10 +265,10 @@ Her sürümün kurulum dosyası ve taşınabilir arşiv indirmelerini sayar. Uyg
 | [v1.26](https://github.com/Multron-Community/MultronWcleaner/releases/tag/v1.26) | 2026-10-10 | 262 |
 | [mwcb_125](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_125) | 2026-10-03 | 234 |
 | [mwcb_1248](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1248) | 2026-10-03 | 91 |
-| [mwcb_1247](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1247) | 2026-10-02 | 455 |
+| [mwcb_1247](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1247) | 2026-10-02 | 457 |
 | [mwcb_1246](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1246) | 2026-10-01 | 128 |
 | [mwcb_1245](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1245) | 2026-09-30 | 223 |
-| [mwcb_1244](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1244) | 2026-09-25 | 429 |
+| [mwcb_1244](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1244) | 2026-09-25 | 430 |
 | [mwcb_1243](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1243) | 2026-09-24 | 93 |
 | [mwcb_1242](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1242) | 2026-09-23 | 255 |
 | [mwcb_1241](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_1241) | 2026-09-23 | 76 |
@@ -320,16 +321,16 @@ Her sürümün kurulum dosyası ve taşınabilir arşiv indirmelerini sayar. Uyg
 | [mwcb_111](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_111) | 2025-06-09 | 32 |
 | [mwcb_110](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwcb_110) | 2025-06-09 | 27 |
 | [mwc_v1.9b](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_v1.9b) | 2025-04-05 | 28 |
-| [mwc_1.8.1b](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.8.1b) | 2025-01-14 | 32 |
-| [mwc_1.8beta](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.8beta) | 2025-01-05 | 32 |
-| [mwc_1.7beta](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.7beta) | 2025-01-04 | 32 |
-| [mwc_1.6b](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.6b) | 2025-01-03 | 30 |
-| [mwc_1.5beta](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.5beta) | 2024-12-31 | 35 |
-| [mwc_1.4beta](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.4beta) | 2024-12-31 | 32 |
-| [mwc_1.3beta](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.3beta) | 2024-12-30 | 32 |
-| [mwc_1_2_b1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1_2_b1) | 2024-12-29 | 30 |
-| [mwc_1.1.b1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.1.b1) | 2024-11-27 | 39 |
-| [mwc_1.0_b1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.0_b1) | 2024-11-26 | 34 |
+| [mwc_1.8.1b](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.8.1b) | 2025-01-14 | 33 |
+| [mwc_1.8beta](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.8beta) | 2025-01-05 | 33 |
+| [mwc_1.7beta](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.7beta) | 2025-01-04 | 33 |
+| [mwc_1.6b](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.6b) | 2025-01-03 | 31 |
+| [mwc_1.5beta](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.5beta) | 2024-12-31 | 36 |
+| [mwc_1.4beta](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.4beta) | 2024-12-31 | 33 |
+| [mwc_1.3beta](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.3beta) | 2024-12-30 | 33 |
+| [mwc_1_2_b1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1_2_b1) | 2024-12-29 | 31 |
+| [mwc_1.1.b1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.1.b1) | 2024-11-27 | 40 |
+| [mwc_1.0_b1](https://github.com/Multron-Community/MultronWcleaner/releases/tag/mwc_1.0_b1) | 2024-11-26 | 35 |
 
 </details>
 <!-- downloads:end -->
