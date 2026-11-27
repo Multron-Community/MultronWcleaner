@@ -1262,15 +1262,15 @@
   "Reset Findings": "Restablecer hallazgos",
   "Permanently deletes the saved duplicates cache file.": "Elimina permanentemente el archivo de caché de duplicados guardado.",
   "Search files or folders...": "Buscar archivos o carpetas...",
-  "\uD83C\uDF33 Folders": "\uD83C\uDF33 Carpetas",
+  "🌳 Folders": "🌳 Carpetas",
   "Show duplicates grouped by folder": "Mostrar duplicados agrupados por carpeta",
   "⇄ Side by side": "⇄ En paralelo",
   "Show each copy next to the original it was copied from": "Mostrar cada copia junto al original del que se copió",
-  "\uD83D\uDCC1 Open Folder": "\uD83D\uDCC1 Abrir carpeta",
+  "📁 Open Folder": "📁 Abrir carpeta",
   "Click to view every duplicate file inside this folder": "Haga clic para ver todos los archivos duplicados de esta carpeta",
-  "\uD83D\uDCC4 Open File": "\uD83D\uDCC4 Abrir archivo",
-  "\uD83D\uDCC2 Open File Location": "\uD83D\uDCC2 Abrir ubicación del archivo",
-  "\uD83D\uDD0D Show Matching Files": "\uD83D\uDD0D Mostrar archivos coincidentes",
+  "📄 Open File": "📄 Abrir archivo",
+  "📂 Open File Location": "📂 Abrir ubicación del archivo",
+  "🔍 Show Matching Files": "🔍 Mostrar archivos coincidentes",
   "Delete this file when you click CLEAN": "Eliminar este archivo al hacer clic en LIMPIAR",
   "The oldest file with this content": "El archivo más antiguo con este contenido",
   "ORIGINAL": "ORIGINAL",
@@ -2757,5 +2757,6 @@
   "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "Omitido porque Duplicate File Finder ya está analizando. Sus resultados se muestran en Duplicate File Finder.",
   "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "Limpia los archivos antiguos de actualización de Windows y comprueba y repara el almacén desde el que Windows instala sus componentes. Tarda varios minutos.",
   "Fixed: {0}": "Corregido: {0}",
-  "Could not fix: {0}": "No se pudo corregir: {0}"
+  "Could not fix: {0}": "No se pudo corregir: {0}",
+  "Red": "Rojo"
 }

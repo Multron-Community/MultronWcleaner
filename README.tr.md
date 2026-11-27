@@ -91,7 +91,7 @@
 
 **Multron Win Cleaner**, Windows için tasarlanmış kapsamlı bir sistem bakımı, güvenlik ve disk alanı kazanma paketidir. Sıradan temizlik araçlarından farklı olarak derin, düşük seviyeli sistem denetimlerini (DISM, SFC, WinSxS, açılışta yapılan işlemler) şeffaf ve topluluk tarafından güncellenebilen temizlik tanımlarıyla birleştirir. Tek bir tarama; gereksiz dosyaları, sistem sağlığını, güvenlik duvarı kurallarını, kısayolları, güvenlik ayarlarını, yinelenen dosyaları, unutulmuş büyük dosyaları ve zararlı yazılımları birlikte kontrol eder.
 
-Uygulama **12 dile** tamamen çevrilmiştir: İngilizce, Türkçe, Almanca, İspanyolca, Fransızca, İtalyanca, Brezilya Portekizcesi, Rusça, Japonca, Korece, Basitleştirilmiş Çince ve Geleneksel Çince.
+Uygulama **24 dile** tamamen çevrilmiştir: İngilizce, Türkçe, Almanca, İspanyolca, Fransızca, İtalyanca, Felemenkçe, Lehçe, Brezilya Portekizcesi, İsveççe, Çekçe, Macarca, Romence, Yunanca, Rusça, Ukraynaca, Japonca, Korece, Basitleştirilmiş Çince, Geleneksel Çince, Hintçe, Tayca, Vietnamca ve Endonezce.
 
 ---
 
@@ -215,7 +215,7 @@ Uygulama **12 dile** tamamen çevrilmiştir: İngilizce, Türkçe, Almanca, İsp
 * **Otomatik Kaydetme:** Ayarlar değiştirdiğiniz anda kaydedilir; Kaydet düğmesi yoktur. Ayarlar penceresi yeniden boyutlandırılabilir, büyütülebilir ve varsayılanlara sıfırlanabilir.
 * **Yerleşik Güncellemeler:** Uygulama ve temizlik veritabanı güncellemeleri arka planda, seçtiğiniz aralıkta veya istediğiniz zaman Ayarlar > Uygulama Güncellemeleri'nden kontrol edebilir. Uygulama ayrı bir güncelleyici olmadan kendini günceller: kendi dosyalarını değiştirir, yeniden başlar ve bir şey ters giderse eski dosyaları geri koyar. Ayarlarınızın üzerine asla yazılmaz ve kendi klasörü dışına yazacak güncelleme paketleri reddedilir.
 * **Tek Seferde Tek Kopya:** Uygulamayı yeniden başlatmak veya sağ tık menüsünden taramak, ikinci bir kopya açmak yerine zaten çalışan kopyayı kullanır.
-* **12 Dil:** Dil, Ayarlar'dan istenildiği zaman değiştirilebilir.
+* **24 Dil:** Uygulama, varsa Windows dilinizle açılır; dil, Ayarlar'dan istenildiği zaman değiştirilebilir.
 
 ### 📊 Bellek ve Performans İzleme
 * **RAM İyileştirici:** Belleği elle, belirli aralıklarla veya RAM kullanımı %50, 60, 70, 80 ya da 90'ı geçince temizleyin (yeni sınır hemen kontrol edilir). Bir temizliğin kaç kez tekrarlanacağını seçin (Kapalı, 3, 5, 8 veya 10); sistem belleği, dosya önbelleği ve sayfa birleştirmeyi ekleyin; hiç temizlenmemesi gereken uygulamaları listeleyin. Her seçeneğin yanındaki **?** düğmesi ne yaptığını anlatır.

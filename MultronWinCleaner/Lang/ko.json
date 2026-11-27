@@ -1262,15 +1262,15 @@
   "Reset Findings": "발견 결과 초기화",
   "Permanently deletes the saved duplicates cache file.": "저장된 중복 캐시 파일을 영구적으로 삭제합니다.",
   "Search files or folders...": "파일 또는 폴더 검색...",
-  "\uD83C\uDF33 Folders": "\uD83C\uDF33 폴더",
+  "🌳 Folders": "🌳 폴더",
   "Show duplicates grouped by folder": "폴더별로 중복 항목 표시",
   "⇄ Side by side": "⇄ 나란히 보기",
   "Show each copy next to the original it was copied from": "각 사본을 복사된 원본 옆에 표시",
-  "\uD83D\uDCC1 Open Folder": "\uD83D\uDCC1 폴더 열기",
+  "📁 Open Folder": "📁 폴더 열기",
   "Click to view every duplicate file inside this folder": "클릭하여 이 폴더의 모든 중복 파일 보기",
-  "\uD83D\uDCC4 Open File": "\uD83D\uDCC4 파일 열기",
-  "\uD83D\uDCC2 Open File Location": "\uD83D\uDCC2 파일 위치 열기",
-  "\uD83D\uDD0D Show Matching Files": "\uD83D\uDD0D 일치하는 파일 표시",
+  "📄 Open File": "📄 파일 열기",
+  "📂 Open File Location": "📂 파일 위치 열기",
+  "🔍 Show Matching Files": "🔍 일치하는 파일 표시",
   "Delete this file when you click CLEAN": "[정리]를 클릭하면 이 파일 삭제",
   "The oldest file with this content": "이 내용을 가진 가장 오래된 파일",
   "ORIGINAL": "원본",
@@ -2758,5 +2758,6 @@
   "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "Duplicate File Finder가 이미 검사 중이므로 건너뛰었습니다. 결과는 Duplicate File Finder에 표시됩니다.",
   "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "오래된 Windows 업데이트 파일을 정리하고 Windows가 구성 요소를 설치하는 저장소를 검사하고 복구합니다. 몇 분 정도 걸립니다.",
   "Fixed: {0}": "수정됨: {0}",
-  "Could not fix: {0}": "수정하지 못함: {0}"
+  "Could not fix: {0}": "수정하지 못함: {0}",
+  "Windows Search": "Windows Search"
 }

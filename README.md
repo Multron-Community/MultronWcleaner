@@ -91,7 +91,7 @@
 
 **Multron Win Cleaner** is a comprehensive system maintenance, security and disk recovery suite engineered for Windows. Unlike conventional cleaning tools, it pairs deep low-level system controls (DISM, SFC, WinSxS, boot-time operations) with transparent, community-updatable cleaning definitions — and one scan checks junk files, system health, firewall rules, shortcuts, security settings, duplicate files, forgotten large files and malware together.
 
-The application is fully localized into **12 languages**: English, Turkish, German, Spanish, French, Italian, Brazilian Portuguese, Russian, Japanese, Korean, Simplified Chinese, and Traditional Chinese.
+The application is fully localized into **24 languages**: English, Turkish, German, Spanish, French, Italian, Dutch, Polish, Brazilian Portuguese, Swedish, Czech, Hungarian, Romanian, Greek, Russian, Ukrainian, Japanese, Korean, Simplified Chinese, Traditional Chinese, Hindi, Thai, Vietnamese, and Indonesian.
 
 ---
 
@@ -215,7 +215,7 @@ The application is fully localized into **12 languages**: English, Turkish, Germ
 * **Automatic Saving:** Settings are saved as soon as you change them; there is no Save button. The Settings window can be resized, maximized and reset to defaults.
 * **Updates Built In:** The app and the cleaning database can check for updates in the background, at an interval you choose, or on demand from Settings > App Updates. The app updates itself without a separate updater: it swaps its own files, restarts and puts the old files back if anything fails. Your settings are never overwritten, and update packages that would write outside their own folder are refused.
 * **One Copy at a Time:** Starting the app again, or scanning from the right-click menu, uses the copy that is already running instead of opening a second one.
-* **12 Languages:** The language can be changed at any time in Settings.
+* **24 Languages:** The app starts in your Windows language when it is available, and the language can be changed at any time in Settings.
 
 ### 📊 Memory & Performance Tracking
 * **RAM Optimizer:** Clean memory by hand, at an interval or when RAM usage goes above 50, 60, 70, 80 or 90% (a new limit is checked right away). Choose how many times a cleaning repeats (Off, 3, 5, 8 or 10), add system memory, file cache and page merging, and list apps that should never be cleaned. Every option has a **?** button that explains it.

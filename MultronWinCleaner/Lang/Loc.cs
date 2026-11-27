@@ -25,13 +25,24 @@ namespace MultronWinCleaner
             ("fr", "Français"),
             ("es", "Español"),
             ("it", "Italiano"),
+            ("nl", "Nederlands"),
             ("pl", "Polski"),
             ("pt-br", "Português (Brasil)"),
+            ("sv", "Svenska"),
+            ("cs", "Čeština"),
+            ("hu", "Magyar"),
+            ("ro", "Română"),
+            ("el", "Ελληνικά"),
             ("ru", "Русский"),
+            ("uk", "Українська"),
             ("ja", "日本語"),
             ("zh-cn", "简体中文"),
             ("zh-tw", "繁體中文"),
             ("ko", "한국어"),
+            ("hi", "हिन्दी"),
+            ("th", "ไทย"),
+            ("vi", "Tiếng Việt"),
+            ("id", "Bahasa Indonesia"),
         };
 
         public static string DetectWindowsLanguage()
@@ -64,7 +75,21 @@ namespace MultronWinCleaner
 
         public static bool IsEnglish => Language == DefaultLanguage;
 
-        public static CultureInfo Culture => IsEnglish ? CultureInfo.InvariantCulture : CultureInfo.GetCultureInfo(Language);
+        private static CultureInfo? culture;
+
+        public static CultureInfo Culture => culture ??= CreateCulture();
+
+        // Some languages (e.g. Thai) default to a non-Gregorian calendar, which would show 2026 as 2569.
+        private static CultureInfo CreateCulture()
+        {
+            if (IsEnglish) return CultureInfo.InvariantCulture;
+            CultureInfo baseCulture = CultureInfo.GetCultureInfo(Language);
+            if (baseCulture.DateTimeFormat.Calendar is GregorianCalendar) return baseCulture;
+            CultureInfo copy = (CultureInfo)baseCulture.Clone();
+            try { copy.DateTimeFormat.Calendar = new GregorianCalendar(); }
+            catch (ArgumentException) { return baseCulture; }
+            return CultureInfo.ReadOnly(copy);
+        }
 
         private static string SettingsPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Settings.txt");
 
@@ -121,6 +146,7 @@ namespace MultronWinCleaner
             strings = new Dictionary<string, string>(StringComparer.Ordinal);
             reverse = new Dictionary<string, string>(StringComparer.Ordinal);
             Language = DefaultLanguage;
+            culture = null;
             if (code == DefaultLanguage) return;
 
             try
@@ -137,6 +163,7 @@ namespace MultronWinCleaner
                     reverse.TryAdd(pair.Value, pair.Key);
                 }
                 Language = code;
+                culture = null;
             }
             catch (Exception ex)
             {

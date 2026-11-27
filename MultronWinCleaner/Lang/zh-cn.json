@@ -1262,15 +1262,15 @@
   "Reset Findings": "重置发现结果",
   "Permanently deletes the saved duplicates cache file.": "永久删除已保存的重复项缓存文件。",
   "Search files or folders...": "搜索文件或文件夹...",
-  "\uD83C\uDF33 Folders": "\uD83C\uDF33 文件夹",
+  "🌳 Folders": "🌳 文件夹",
   "Show duplicates grouped by folder": "按文件夹分组显示重复项",
   "⇄ Side by side": "⇄ 并排",
   "Show each copy next to the original it was copied from": "将每个副本显示在其原始文件旁边",
-  "\uD83D\uDCC1 Open Folder": "\uD83D\uDCC1 打开文件夹",
+  "📁 Open Folder": "📁 打开文件夹",
   "Click to view every duplicate file inside this folder": "点击查看此文件夹中的所有重复文件",
-  "\uD83D\uDCC4 Open File": "\uD83D\uDCC4 打开文件",
-  "\uD83D\uDCC2 Open File Location": "\uD83D\uDCC2 打开文件位置",
-  "\uD83D\uDD0D Show Matching Files": "\uD83D\uDD0D 显示匹配的文件",
+  "📄 Open File": "📄 打开文件",
+  "📂 Open File Location": "📂 打开文件位置",
+  "🔍 Show Matching Files": "🔍 显示匹配的文件",
   "Delete this file when you click CLEAN": "点击“清理”时删除此文件",
   "The oldest file with this content": "具有此内容的最早文件",
   "ORIGINAL": "原始",
@@ -2758,5 +2758,6 @@
   "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "由于 Duplicate File Finder 正在扫描，已跳过。结果显示在 Duplicate File Finder 中。",
   "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "清理旧的 Windows 更新文件，并检查和修复 Windows 安装组件所用的存储。需要几分钟。",
   "Fixed: {0}": "已修复：{0}",
-  "Could not fix: {0}": "无法修复：{0}"
+  "Could not fix: {0}": "无法修复：{0}",
+  "Windows Search": "Windows Search"
 }

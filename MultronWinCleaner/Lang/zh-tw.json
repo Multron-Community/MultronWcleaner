@@ -1262,15 +1262,15 @@
   "Reset Findings": "重設發現結果",
   "Permanently deletes the saved duplicates cache file.": "永久刪除已儲存的重復項快取檔案。",
   "Search files or folders...": "搜尋檔案或資料夾...",
-  "\uD83C\uDF33 Folders": "\uD83C\uDF33 資料夾",
+  "🌳 Folders": "🌳 資料夾",
   "Show duplicates grouped by folder": "按資料夾分組顯示重復項",
   "⇄ Side by side": "⇄ 并排",
   "Show each copy next to the original it was copied from": "將每個副本顯示在其原始檔案旁邊",
-  "\uD83D\uDCC1 Open Folder": "\uD83D\uDCC1 開啟資料夾",
+  "📁 Open Folder": "📁 開啟資料夾",
   "Click to view every duplicate file inside this folder": "點擊查看此資料夾中的所有重復檔案",
-  "\uD83D\uDCC4 Open File": "\uD83D\uDCC4 開啟檔案",
-  "\uD83D\uDCC2 Open File Location": "\uD83D\uDCC2 開啟檔案位置",
-  "\uD83D\uDD0D Show Matching Files": "\uD83D\uDD0D 顯示匹配的檔案",
+  "📄 Open File": "📄 開啟檔案",
+  "📂 Open File Location": "📂 開啟檔案位置",
+  "🔍 Show Matching Files": "🔍 顯示匹配的檔案",
   "Delete this file when you click CLEAN": "點擊“清理”時刪除此檔案",
   "The oldest file with this content": "具有此內容的最早檔案",
   "ORIGINAL": "原始",
@@ -2758,5 +2758,6 @@
   "Skipped because Duplicate File Finder is already scanning. Its results are shown in Duplicate File Finder.": "由於 Duplicate File Finder 正在掃描，已略過。結果會顯示在 Duplicate File Finder 中。",
   "Cleans up old Windows update files and checks and repairs the store Windows installs its components from. Takes several minutes.": "清理舊的 Windows 更新檔案，並檢查和修復 Windows 安裝元件所用的存放區。需要幾分鐘。",
   "Fixed: {0}": "已修正：{0}",
-  "Could not fix: {0}": "無法修正：{0}"
+  "Could not fix: {0}": "無法修正：{0}",
+  "Windows Search": "Windows Search"
 }
